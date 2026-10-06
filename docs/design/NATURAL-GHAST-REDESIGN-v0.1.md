@@ -1,6 +1,6 @@
 # Natural Ghast redesign — current design
 
-Revision: v0.4  
+Revision: v0.5  
 Date: 2026-10-06
 
 ## Core identity
@@ -608,6 +608,339 @@ Ghast Fireball Family
 ```
 
 This keeps the family expandable. Future Ghast-derived projectile types should preferably solve a new combat problem instead of only changing damage or color.
+
+
+
+## Major Art system
+
+Soutou Ghast has three major actions. They are not ordinary attacks with larger damage numbers. Each one temporarily changes the combat grammar.
+
+1. **Overhead Bombing** — a pursuit major art that forces movement and vertical attention.
+2. **Grand Danmaku** — a stationary showcase / ranged-damage opportunity built around beautiful projectile geometry.
+3. **Domain Expansion** — a ruleset-changing major art that replaces normal air combat with a dedicated domain/ground encounter.
+
+Major actions should be scheduled by a dedicated **Major Action Director** rather than mixed into ordinary shot selection.
+
+The director should consider:
+- current Mobility Context;
+- available clearance;
+- recent major actions;
+- current combat rhythm;
+- whether the previous major action has fully recovered;
+- whether the intended major action is physically readable in the current arena.
+
+Major actions must not chain back-to-back without a meaningful return to ordinary combat.
+
+A major action should normally follow:
+
+`NORMAL COMBAT -> MAJOR TELEGRAPH -> MAJOR ACTION -> RECOVERY -> NORMAL COMBAT`
+
+Repeated use of the same major action receives a strong short-term penalty.
+
+### Major Art 1 — Overhead Bombing
+
+**Core fantasy:** Soutou Ghast appears to disengage, suddenly returns at speed, captures the player's vertical axis, stares straight down at them and performs repeated bombing runs while remaining directly overhead.
+
+#### Entry
+
+The signature entry is:
+
+`WITHDRAW FAR -> PLAYER READS RETREAT -> HIGH-SPEED RETURN -> OVERHEAD CAPTURE`
+
+The withdrawal should be large enough to visibly read as disengagement, but it is still part of the attack.
+
+The return may temporarily ignore the normal frontal Combat Anchor Volume because this is a deliberate major-art exception.
+
+#### Overhead Axis Lock
+
+Once the attack reaches its bombing state, Soutou Ghast enters a dedicated **Overhead Axis Lock**.
+
+During this state:
+- its horizontal X/Z axis is bound to the player's horizontal position;
+- it keeps a dedicated bombing altitude above the player;
+- the entity rotates/faces downward toward the player;
+- ordinary Combat Anchor corrections are suspended;
+- ordinary orbiting and dodge behavior are suspended.
+
+The intended player experience is literal:
+
+> if the player looks straight upward, Soutou Ghast is there and looking directly down at them.
+
+The lock is allowed to be much tighter than normal inertia-driven flight. Reaching the lock still uses visible movement; the special lock begins only after the major art has successfully acquired the overhead position.
+
+#### Bomb release
+
+Bombs are released at a fixed or slightly varied cadence.
+
+Each bomb should lock its target/impact point at release. The bomb itself does **not** continue to home horizontally after release.
+
+Thus:
+
+`GHAST FOLLOWS PLAYER -> BOMB RELEASES -> BOMB COMMITS TO RELEASE-TIME GROUND POSITION`
+
+This creates the intended counterplay:
+- keep moving to avoid successive impacts;
+- optionally look upward and attack Soutou Ghast during the sequence.
+
+Bomb damage, cadence and count remain runtime-tuning parameters. The major art should be dangerous through repeated pressure, not through unavoidable single-hit lethality.
+
+#### Vulnerability
+
+During the stable bombing phase, Soutou Ghast should generally not perform normal projectile dodges.
+
+The player receives a real offensive choice:
+- focus on movement and avoid the bombs;
+- or risk looking upward / aiming upward to damage the boss.
+
+#### Presentation
+
+Each release may use the firing face as a readable micro-telegraph.
+
+The body remains downward-facing so the player's upward view continuously reinforces the visual relationship between boss and target.
+
+#### Exit
+
+After the final bomb:
+
+`FINAL RELEASE -> AXIS LOCK RELEASE -> BRAKE/CURVE -> RETURN TO COMBAT ANCHOR VOLUME`
+
+Soutou Ghast returns to normal combat rather than immediately starting another major action.
+
+#### Environment rules
+
+Overhead Bombing requires:
+- viable overhead clearance;
+- enough height for the bombing altitude;
+- a clear or mostly clear vertical bombing corridor.
+
+OPEN_AIR strongly favors it.
+
+SEMI_OPEN may allow it if a safe vertical route exists.
+
+CONFINED and GROUND_FORCED normally suppress it.
+
+---
+
+### Major Art 2 — Grand Danmaku
+
+**Core fantasy:** Soutou Ghast becomes an unmoving visual center and personally fires a large Touhou-like projectile composition that grows outward from its body into a beautiful pattern.
+
+This is not a system that places finished bullets in empty space.
+
+The central rule is:
+
+> **Every gameplay projectile originates from Soutou Ghast and the pattern becomes beautiful through flight.**
+
+#### Relative Stationary Lock
+
+During Grand Danmaku, Soutou Ghast establishes a stable relative position at a suitable distance from the player.
+
+It may translate through world space to preserve that player-relative relationship, but from the player's perspective it should appear almost perfectly stationary.
+
+This creates a stable visual center for the composition.
+
+Ordinary dodge behavior is suspended.
+
+That is intentional: Grand Danmaku is also a major ranged-damage opportunity for the player.
+
+#### Danmaku Coordinate Frame
+
+Grand Danmaku uses a player-readable local coordinate frame.
+
+- **origin:** Soutou Ghast's face/mouth firing region;
+- **forward axis:** from Soutou Ghast toward the player;
+- **right/up axes:** a stable orthogonal basis around that forward axis.
+
+Pattern definitions operate in this frame.
+
+This means the projectile choreography is designed to look coherent from the player's combat view while still existing as real world-space projectiles.
+
+#### Source-integrity rule
+
+Gameplay bullets may not appear fully formed in arbitrary empty space.
+
+Every damaging danmaku projectile must:
+1. spawn at or inside a small emission region attached to Soutou Ghast;
+2. visibly leave the entity;
+3. travel through world space;
+4. create the larger pattern through direction, timing and curved/predefined motion.
+
+Cosmetic particles may decorate trails or impacts, but they must not disguise newly spawned damaging bullets away from the boss.
+
+The player should always be able to perceive:
+
+`SOUTOU GHAST -> PROJECTILE EMISSION -> PATTERN BLOOMS`
+
+#### Charge / prelude
+
+Before the first projectile:
+- Soutou Ghast becomes still;
+- the firing face appears;
+- particles/light may gather toward the face or mouth;
+- an audio cue announces the start;
+- no damaging bullets have yet appeared around the player.
+
+The contrast between normal smooth motion and sudden stillness is itself part of the telegraph.
+
+#### Pattern growth
+
+Patterns are authored as **emission choreography**, not static geometry.
+
+Examples:
+
+##### Halo Bloom
+
+A timed burst of bullets leaves the face in evenly distributed angular directions around the forward axis.
+
+From the player's perspective the small cluster expands into a ring/halo centered on Soutou Ghast.
+
+##### Twin Spiral
+
+Projectile emission angle rotates over time.
+
+Two or more emission arms rotate in opposite directions, creating counter-rotating spirals that visibly grow from the boss.
+
+##### Petal Bloom
+
+Emission direction oscillates while rotating, causing repeated arcs to form petal-like lobes.
+
+The important visual feature is that each petal can be traced back to successive shots leaving Soutou Ghast.
+
+##### Weave
+
+Two low-density families are emitted with different phase offsets or rotation directions.
+
+As they travel, the families cross visually and create a woven/lattice impression without bullets materializing at the crossing points.
+
+##### Finale Bloom
+
+A final broad burst or expanding ring marks the end of the performance.
+
+The finale should remain readable and contain intentional escape lanes rather than becoming a screen-filling unavoidable wall.
+
+These motifs are an initial vocabulary, not a mandatory fixed sequence.
+
+#### Player-perspective beauty contract
+
+Grand Danmaku is judged primarily from the player's combat view.
+
+The design should therefore favor:
+- Soutou Ghast remaining a visible compositional center;
+- radial or rotational balance around the boss;
+- clear color/brightness contrast between bullet families;
+- visible motion trails that explain the trajectory;
+- gradual growth from small source to large pattern;
+- intentional negative space / safe lanes;
+- no damaging projectiles spawning behind the player without having travelled there visibly;
+- no invisible or misleading collision volume.
+
+The desired reaction is:
+
+> "It is beautiful, I can see how it is being drawn, and I still have to dodge it."
+
+#### Real projectile rule
+
+The visual composition must remain physically honest.
+
+Danmaku bullets are world entities/projectiles, not a screen overlay.
+
+Their trajectories may use deterministic curves, angular drift or other authored motion, but they should not secretly retarget the player's current position after emission unless a future explicitly telegraphed homing motif is designed.
+
+#### Damage model
+
+Danmaku bullets should generally deal low damage per projectile relative to the Standard Fireball.
+
+They should normally:
+- avoid large terrain explosions;
+- avoid heavy block destruction;
+- rely on density, pattern and movement pressure;
+- use a visually forgiving collision relationship where the rendered bullet can be slightly larger than its damaging core if helpful for fair dodging.
+
+The major art's threat comes from navigating the composition, not from one bullet deleting the player.
+
+#### Attack opportunity
+
+Soutou Ghast does not use normal evasive maneuvers during the main danmaku performance.
+
+This creates deliberate tension:
+
+`WATCH BULLETS AND DODGE`
+
+versus
+
+`LOOK AT BOSS AND TAKE THE FREE RANGED SHOT`
+
+The player is rewarded for finding moments where both can be managed.
+
+#### Danmaku score rather than one fixed script
+
+Repeated uses should not replay one identical animation from start to finish.
+
+Use a **Danmaku Score**:
+
+`FIXED PRELUDE -> 2-3 SELECTED MOTIFS -> FIXED/RECOGNIZABLE FINALE -> RECOVERY`
+
+Motifs may vary in:
+- clockwise/counter-clockwise orientation;
+- phase offset;
+- density within bounded limits;
+- motif order;
+- safe-lane orientation.
+
+The grammar remains recognizable while individual performances differ.
+
+The score must obey the same short-term memory principles as normal AI so one motif combination is not repeated mechanically.
+
+#### Cognitive-load rule
+
+Grand Danmaku itself is already the major surprise.
+
+During the main performance:
+- no large body feints;
+- no Overhead Re-anchor;
+- no unrelated heavy fireball profiles;
+- no simultaneous second major action.
+
+The boss's stationary presentation and the projectile choreography should carry the scene.
+
+#### Environment rules
+
+Grand Danmaku requires enough clear volume between boss and player for the pattern to visibly develop.
+
+OPEN_AIR strongly favors it.
+
+SEMI_OPEN may allow reduced-width motif sets if collision sampling verifies the necessary space.
+
+CONFINED normally suppresses the full Grand Danmaku rather than truncating it into an ugly or unreadable version.
+
+GROUND_FORCED uses the separate low-damage/high-frequency ground barrage identity, not Grand Danmaku.
+
+#### Exit
+
+After the final motif:
+- damaging emission stops;
+- existing projectiles continue their valid trajectories / expire according to their own rules;
+- the firing face may remain briefly;
+- Relative Stationary Lock releases;
+- Soutou Ghast returns to normal Combat Anchor Volume behavior.
+
+---
+
+### Major Art 3 — Domain Expansion
+
+Domain Expansion is the third major action.
+
+Unlike Overhead Bombing and Grand Danmaku, it does not primarily change projectile behavior. It changes the combat arena and locomotion rules.
+
+Its detailed world/barrier architecture remains defined in the Domain Expansion section below.
+
+At the Major Action Director level its identity is:
+
+`AIR COMBAT -> DOMAIN CREATION -> LANDING -> DOMAIN/GROUND COMBAT -> DOMAIN RESTORE -> TAKEOFF -> NORMAL AIR COMBAT`
+
+Domain Expansion should also obey major-action spacing and repetition memory.
+
+It must not begin immediately after another major action unless a future explicit exceptional transition is deliberately designed.
 
 
 ## Perception and short-term memory
