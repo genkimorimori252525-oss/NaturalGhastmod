@@ -1,0 +1,10 @@
+{
+  "entity.soutou_ghast.soutou_ghast": "Soutou Ghast",
+  "item.soutou_ghast.soutou_ghast_spawn_egg": "Soutou Ghast Spawn Egg",
+  "subtitles.soutou_ghast.soutou_ghast_ambient": "Soutou Ghast cries",
+  "subtitles.soutou_ghast.soutou_ghast_hurt": "Soutou Ghast hurts",
+  "subtitles.soutou_ghast.soutou_ghast_death": "Soutou Ghast dies",
+  "subtitles.soutou_ghast.soutou_ghast_attack": "Soutou Ghast attacks",
+  "subtitles.soutou_ghast.soutou_ghast_shoot": "Soutou Ghast shoots",
+  "subtitles.soutou_ghast.soutou_ghast_fireball_impact": "Fireball impacts"
+}

@@ -1,0 +1,6 @@
+Historical isolated validation: Gradle wrapper 8.8 / Java17 / compileJava --offline
+* What went wrong:
+Could not resolve all artifacts for configuration 'classpath'.
+> Could not download foojay-resolver-0.7.0.jar (org.gradle.toolchains:foojay-resolver:0.7.0): No cached version available for offline mode
+
+Result: Java compilation was not reached.

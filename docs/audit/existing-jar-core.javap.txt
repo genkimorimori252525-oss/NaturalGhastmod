@@ -1,0 +1,153 @@
+Compiled from "SoutouGhast.java"
+public class com.genki.soutoughast.entity.SoutouGhast extends net.minecraft.world.entity.monster.Ghast {
+  public com.genki.soutoughast.entity.SoutouGhast(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.monster.Ghast>, net.minecraft.world.level.Level);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: invokespecial #20                 // Method net/minecraft/world/entity/monster/Ghast."<init>":(Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/world/level/Level;)V
+       6: return
+
+  public static net.minecraft.world.entity.ai.attributes.AttributeSupplier$Builder m_32752_();
+    Code:
+       0: invokestatic  #31                 // Method net/minecraft/world/entity/monster/Ghast.m_32752_:()Lnet/minecraft/world/entity/ai/attributes/AttributeSupplier$Builder;
+       3: areturn
+
+  protected void m_8099_();
+    Code:
+       0: aload_0
+       1: getfield      #37                 // Field f_21345_:Lnet/minecraft/world/entity/ai/goal/GoalSelector;
+       4: iconst_5
+       5: new           #39                 // class com/genki/soutoughast/entity/ai/SoutouGhastRandomFloatGoal
+       8: dup
+       9: aload_0
+      10: invokespecial #42                 // Method com/genki/soutoughast/entity/ai/SoutouGhastRandomFloatGoal."<init>":(Lnet/minecraft/world/entity/monster/Ghast;)V
+      13: invokevirtual #48                 // Method net/minecraft/world/entity/ai/goal/GoalSelector.m_25352_:(ILnet/minecraft/world/entity/ai/goal/Goal;)V
+      16: aload_0
+      17: getfield      #37                 // Field f_21345_:Lnet/minecraft/world/entity/ai/goal/GoalSelector;
+      20: bipush        7
+      22: new           #50                 // class com/genki/soutoughast/entity/ai/SoutouGhastLookGoal
+      25: dup
+      26: aload_0
+      27: invokespecial #51                 // Method com/genki/soutoughast/entity/ai/SoutouGhastLookGoal."<init>":(Lnet/minecraft/world/entity/monster/Ghast;)V
+      30: invokevirtual #48                 // Method net/minecraft/world/entity/ai/goal/GoalSelector.m_25352_:(ILnet/minecraft/world/entity/ai/goal/Goal;)V
+      33: aload_0
+      34: getfield      #37                 // Field f_21345_:Lnet/minecraft/world/entity/ai/goal/GoalSelector;
+      37: bipush        7
+      39: new           #53                 // class com/genki/soutoughast/entity/ai/SoutouGhastShootGoal
+      42: dup
+      43: aload_0
+      44: invokespecial #56                 // Method com/genki/soutoughast/entity/ai/SoutouGhastShootGoal."<init>":(Lcom/genki/soutoughast/entity/SoutouGhast;)V
+      47: invokevirtual #48                 // Method net/minecraft/world/entity/ai/goal/GoalSelector.m_25352_:(ILnet/minecraft/world/entity/ai/goal/Goal;)V
+      50: aload_0
+      51: getfield      #59                 // Field f_21346_:Lnet/minecraft/world/entity/ai/goal/GoalSelector;
+      54: iconst_1
+      55: new           #61                 // class net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal
+      58: dup
+      59: aload_0
+      60: ldc           #63                 // class net/minecraft/world/entity/player/Player
+      62: bipush        10
+      64: iconst_1
+      65: iconst_0
+      66: aload_0
+      67: invokedynamic #82,  0             // InvokeDynamic #0:test:(Lcom/genki/soutoughast/entity/SoutouGhast;)Ljava/util/function/Predicate;
+      72: invokespecial #85                 // Method net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal."<init>":(Lnet/minecraft/world/entity/Mob;Ljava/lang/Class;IZZLjava/util/function/Predicate;)V
+      75: invokevirtual #48                 // Method net/minecraft/world/entity/ai/goal/GoalSelector.m_25352_:(ILnet/minecraft/world/entity/ai/goal/Goal;)V
+      78: return
+
+  protected net.minecraft.sounds.SoundEvent m_7515_();
+    Code:
+       0: getstatic     #94                 // Field com/genki/soutoughast/sound/ModSounds.SOUTOU_GHAST_AMBIENT:Lnet/minecraftforge/registries/RegistryObject;
+       3: invokevirtual #100                // Method net/minecraftforge/registries/RegistryObject.get:()Ljava/lang/Object;
+       6: checkcast     #102                // class net/minecraft/sounds/SoundEvent
+       9: areturn
+
+  protected net.minecraft.sounds.SoundEvent m_7975_(net.minecraft.world.damagesource.DamageSource);
+    Code:
+       0: getstatic     #107                // Field com/genki/soutoughast/sound/ModSounds.SOUTOU_GHAST_HURT:Lnet/minecraftforge/registries/RegistryObject;
+       3: invokevirtual #100                // Method net/minecraftforge/registries/RegistryObject.get:()Ljava/lang/Object;
+       6: checkcast     #102                // class net/minecraft/sounds/SoundEvent
+       9: areturn
+
+  protected net.minecraft.sounds.SoundEvent m_5592_();
+    Code:
+       0: getstatic     #113                // Field com/genki/soutoughast/sound/ModSounds.SOUTOU_GHAST_DEATH:Lnet/minecraftforge/registries/RegistryObject;
+       3: invokevirtual #100                // Method net/minecraftforge/registries/RegistryObject.get:()Ljava/lang/Object;
+       6: checkcast     #102                // class net/minecraft/sounds/SoundEvent
+       9: areturn
+
+  private boolean m_289148_(net.minecraft.world.entity.LivingEntity);
+    Code:
+       0: aload_1
+       1: invokevirtual #119                // Method net/minecraft/world/entity/LivingEntity.m_20186_:()D
+       4: aload_0
+       5: invokevirtual #120                // Method m_20186_:()D
+       8: dsub
+       9: invokestatic  #126                // Method java/lang/Math.abs:(D)D
+      12: ldc2_w        #127                // double 4.0d
+      15: dcmpg
+      16: ifgt          23
+      19: iconst_1
+      20: goto          24
+      23: iconst_0
+      24: ireturn
+}
+Compiled from "SoutouGhastFireball.java"
+public class com.genki.soutoughast.entity.projectile.SoutouGhastFireball extends net.minecraft.world.entity.projectile.LargeFireball {
+  public com.genki.soutoughast.entity.projectile.SoutouGhastFireball(net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.projectile.LargeFireball>, net.minecraft.world.level.Level);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: invokespecial #10                 // Method net/minecraft/world/entity/projectile/LargeFireball."<init>":(Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/world/level/Level;)V
+       6: return
+
+  public com.genki.soutoughast.entity.projectile.SoutouGhastFireball(net.minecraft.world.level.Level, net.minecraft.world.entity.LivingEntity, double, double, double, int);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: dload_3
+       4: dload         5
+       6: dload         7
+       8: iload         9
+      10: invokespecial #20                 // Method net/minecraft/world/entity/projectile/LargeFireball."<init>":(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;DDDI)V
+      13: return
+
+  protected void m_6532_(net.minecraft.world.phys.HitResult);
+    Code:
+       0: aload_0
+       1: invokevirtual #34                 // Method m_9236_:()Lnet/minecraft/world/level/Level;
+       4: getfield      #40                 // Field net/minecraft/world/level/Level.f_46443_:Z
+       7: ifne          67
+      10: aload_0
+      11: invokevirtual #34                 // Method m_9236_:()Lnet/minecraft/world/level/Level;
+      14: aconst_null
+      15: aload_0
+      16: invokevirtual #44                 // Method m_20185_:()D
+      19: aload_0
+      20: invokevirtual #47                 // Method m_20186_:()D
+      23: aload_0
+      24: invokevirtual #50                 // Method m_20189_:()D
+      27: getstatic     #56                 // Field com/genki/soutoughast/sound/ModSounds.SOUTOU_GHAST_FIREBALL_IMPACT:Lnet/minecraftforge/registries/RegistryObject;
+      30: invokevirtual #62                 // Method net/minecraftforge/registries/RegistryObject.get:()Ljava/lang/Object;
+      33: checkcast     #64                 // class net/minecraft/sounds/SoundEvent
+      36: getstatic     #70                 // Field net/minecraft/sounds/SoundSource.HOSTILE:Lnet/minecraft/sounds/SoundSource;
+      39: fconst_2
+      40: aload_0
+      41: getfield      #74                 // Field f_19796_:Lnet/minecraft/util/RandomSource;
+      44: invokeinterface #80,  1           // InterfaceMethod net/minecraft/util/RandomSource.m_188501_:()F
+      49: aload_0
+      50: getfield      #74                 // Field f_19796_:Lnet/minecraft/util/RandomSource;
+      53: invokeinterface #80,  1           // InterfaceMethod net/minecraft/util/RandomSource.m_188501_:()F
+      58: fsub
+      59: ldc           #81                 // float 0.2f
+      61: fmul
+      62: fconst_1
+      63: fadd
+      64: invokevirtual #85                 // Method net/minecraft/world/level/Level.m_6263_:(Lnet/minecraft/world/entity/player/Player;DDDLnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FF)V
+      67: aload_0
+      68: aload_1
+      69: invokespecial #87                 // Method net/minecraft/world/entity/projectile/LargeFireball.m_6532_:(Lnet/minecraft/world/phys/HitResult;)V
+      72: return
+}

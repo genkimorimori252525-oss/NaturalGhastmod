@@ -1,0 +1,33 @@
+{
+  "snapshot_version": "0.02",
+  "publication_date": "2026-10-06",
+  "scope": "Source snapshot publication; known bugs deliberately remain unfixed.",
+  "imported_original_files": 73,
+  "raw_changed_original_files": [
+    ".gitignore",
+    "gradle.properties"
+  ],
+  "unexpected_source_or_asset_changes": [],
+  "original_archive_changed_files": [],
+  "markdown_links": "all referenced files exist",
+  "fireball_diagnostic": {
+    "java": "17",
+    "minecraft": "1.20.1",
+    "forge_mapped_api": "47.4.10",
+    "exit_code": 1,
+    "errors": 4,
+    "root_causes": [
+      "BaseFireBlock import",
+      "private explosionPower access"
+    ],
+    "scope": "single-source javac diagnostic; not full Gradle build"
+  },
+  "static_probes": "exit 0; 73 snapshot files, no changed file, no missing sound reference",
+  "minecraft_runtime_tests": "not executed",
+  "legacy_mod_jar": "not published",
+  "generated_build_outputs": "not published",
+  "git_staged_snapshot_hash_match_count": 73,
+  "staged_total_file_count": 86,
+  "authored_diff_whitespace_check": "passed",
+  "full_import_whitespace_check": "Inherited trailing whitespace/newline warnings in original Forge MDK files. Original files deliberately preserved; not a game code failure."
+}

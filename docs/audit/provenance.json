@@ -1,0 +1,35 @@
+{
+  "projectRoot": ".",
+  "originalTrackedAuditFileCount": 73,
+  "originalChangedFiles": [],
+  "originalAddedFiles": [],
+  "existingJar": {
+    "path": "Original archive build/libs/Soutou_Ghastmod-1.0.0.jar (not included in this repository)",
+    "sha256": "248da7ee01775ebe667f10e4f7fd05ce32fc5393c4013be305d0fc3b816c6240",
+    "classCount": 15,
+    "classes": [
+      "com/genki/soutoughast/Config.class",
+      "com/genki/soutoughast/SoutouGhastMod$ClientModEvents.class",
+      "com/genki/soutoughast/SoutouGhastMod.class",
+      "com/genki/soutoughast/client/ClientModEvents.class",
+      "com/genki/soutoughast/client/model/SoutouGhastArmorModel.class",
+      "com/genki/soutoughast/client/renderer/SoutouGhastRenderer.class",
+      "com/genki/soutoughast/client/renderer/layer/GhastArmorLayer.class",
+      "com/genki/soutoughast/entity/ModEntities.class",
+      "com/genki/soutoughast/entity/ModEntityAttributes.class",
+      "com/genki/soutoughast/entity/SoutouGhast.class",
+      "com/genki/soutoughast/entity/ai/SoutouGhastLookGoal.class",
+      "com/genki/soutoughast/entity/ai/SoutouGhastRandomFloatGoal.class",
+      "com/genki/soutoughast/entity/ai/SoutouGhastShootGoal.class",
+      "com/genki/soutoughast/entity/projectile/SoutouGhastFireball.class",
+      "com/genki/soutoughast/sound/ModSounds.class"
+    ]
+  },
+  "exactMinecraftForgeSourcesJar": "forge-1.20.1-47.4.10_mapped_official_1.20.1-sources.jar",
+  "compileStatus": "Diagnostic fireball compile: 4 errors at 12,125,172,186. Complete Gradle compile blocked by offline foojay resolver; no rebuilt distributable.",
+  "publishedSnapshotVersion": "0.02",
+  "gameCodeFixesApplied": false,
+  "versionOnlyChanges": [
+    "gradle.properties: mod_version and mod_name"
+  ]
+}

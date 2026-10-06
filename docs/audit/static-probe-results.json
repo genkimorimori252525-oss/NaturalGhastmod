@@ -1,0 +1,55 @@
+{
+  "scope": "Static algebra/scalar motion recurrence/resource resolution/hash checks; no Minecraft execution.",
+  "orbit_plus_minus_max_difference": 0.0,
+  "cooldown": {
+    "post_fire": -26,
+    "after_one_occluded_tick": 0,
+    "normal_next_release_ticks": 44,
+    "after_occlusion_release_ticks": 19
+  },
+  "motion_profiles": {
+    "FAST_SMALL": {
+      "configured": 1.45,
+      "steady_speed": 1.5334841628959275,
+      "formula_steady_speed": 1.533484162895928,
+      "distance_at_tick_18": 20.741311837728592
+    },
+    "HEAVY_SLOW": {
+      "configured": 0.55,
+      "steady_speed": 0.9689655172413557,
+      "formula_steady_speed": 0.9689655172413792,
+      "distance_at_tick_18": 11.157268643331957
+    },
+    "GROUND_FIRE": {
+      "configured": 0.85,
+      "steady_speed": 1.1317073170731708,
+      "formula_steady_speed": 1.1317073170731704,
+      "distance_at_tick_18": 13.744615843262988
+    },
+    "SPLITTER": {
+      "configured": 0.92,
+      "steady_speed": 1.2241379310344536,
+      "formula_steady_speed": 1.2241379310344827,
+      "distance_at_tick_18": 14.095481738017243
+    },
+    "WALL_BURST": {
+      "configured": 0.95,
+      "steady_speed": 1.244827586206866,
+      "formula_steady_speed": 1.2448275862068963,
+      "distance_at_tick_18": 14.333715232180912
+    }
+  },
+  "missing_sound_files": [],
+  "sound_event_counts": {
+    "soutou_ghast_ambient": 14,
+    "soutou_ghast_hurt": 19,
+    "soutou_ghast_death": 1,
+    "soutou_ghast_attack": 15,
+    "soutou_ghast_shoot": 15,
+    "soutou_ghast_fireball_impact": 2
+  },
+  "lava_only_enrage_probability_per_tick": 0.125,
+  "expected_lava_only_phase_switches_per_second_at_20tps": 4.375,
+  "snapshot_files_checked": 73,
+  "snapshot_changed_files": []
+}

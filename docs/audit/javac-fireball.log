@@ -1,0 +1,17 @@
+src\main\java\com\genki\soutoughast\entity\projectile\SoutouGhastFireball.java:12: error: cannot find symbol
+import net.minecraft.world.level.BaseFireBlock;
+                                ^
+  symbol:   class BaseFireBlock
+  location: package net.minecraft.world.level
+src\main\java\com\genki\soutoughast\entity\projectile\SoutouGhastFireball.java:125: error: explosionPower has private access in LargeFireball
+            SoutouGhastFireball child = new SoutouGhastFireball(this.level(), owner, dir.x, dir.y, dir.z, Math.max(1, this.explosionPower - 1))
+                                                                                                                          ^
+src\main\java\com\genki\soutoughast\entity\projectile\SoutouGhastFireball.java:172: error: explosionPower has private access in LargeFireball
+            SoutouGhastFireball child = new SoutouGhastFireball(this.level(), owner, n.x, n.y, n.z, Math.max(1, this.explosionPower - 1))
+                                                                                                                    ^
+src\main\java\com\genki\soutoughast\entity\projectile\SoutouGhastFireball.java:186: error: cannot find symbol
+                    this.level().setBlockAndUpdate(firePos, BaseFireBlock.getState(this.level(), firePos));
+                                                            ^
+  symbol:   variable BaseFireBlock
+  location: class SoutouGhastFireball
+4 errors

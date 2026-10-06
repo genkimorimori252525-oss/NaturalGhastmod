@@ -1,0 +1,22 @@
+SoutouGhast AI implementation summary
+
+Implemented in source:
+- Distance-keeping combat movement
+- Above/behind flanking behavior
+- 3D orbiting with obstacle-aware reposition attempts
+- Move-to-last-seen-position memory when line of sight is lost
+- Combat phases: scouting, chasing, bombardment, enraged, retreating
+- Predictive aiming
+- Feint movement
+- Temperament / emotion profiles: cowardly, tenacious, irascible, balanced
+- Terrain usage: openness-aware altitude/range and lava-aggression bias
+- Fireball variants:
+  - FAST_SMALL
+  - HEAVY_SLOW
+  - GROUND_FIRE
+  - SPLITTER
+  - WALL_BURST
+
+Important note:
+- This archive contains updated source code.
+- I could not rebuild the jar inside this environment because the included Gradle wrapper needs to fetch the Gradle distribution from services.gradle.org, and internet access is unavailable here.

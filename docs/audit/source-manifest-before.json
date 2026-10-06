@@ -1,0 +1,367 @@
+[
+  {
+    "path": ".gitattributes",
+    "bytes": 256,
+    "sha256": "448fc4f5b88765df18eec1a82fb0ed09d7fb148e50fe49bd004be05effb06285"
+  },
+  {
+    "path": ".gitignore",
+    "bytes": 188,
+    "sha256": "efc7995172c172d5e2a5dfad4484abc9f4b6030aa2bf5bb9453180043f8d593f"
+  },
+  {
+    "path": "AI_IMPLEMENTATION_NOTES.txt",
+    "bytes": 853,
+    "sha256": "0bebcdebc6ec7f3f755bd8214602c49f58a5d0ca205338d94bc2674c21aeb314"
+  },
+  {
+    "path": "build.gradle",
+    "bytes": 9966,
+    "sha256": "240a83df42074a2f845b0c0fc19c8cd0724a7f41e8502df729506408b1d4926c"
+  },
+  {
+    "path": "changelog.txt",
+    "bytes": 74297,
+    "sha256": "049123e0c52b662b710a21674d29f303d44cca4986803dc4efc026516e2f1d9b"
+  },
+  {
+    "path": "CREDITS.txt",
+    "bytes": 3317,
+    "sha256": "7be4dedbc5b2f09361820e04758c01ff10fc70cb693117e112d683466a8a7fba"
+  },
+  {
+    "path": "gradle/wrapper/gradle-wrapper.jar",
+    "bytes": 62076,
+    "sha256": "ed2c26eba7cfb93cc2b7785d05e534f07b5b48b5e7fc941921cd098628abca58"
+  },
+  {
+    "path": "gradle/wrapper/gradle-wrapper.properties",
+    "bytes": 221,
+    "sha256": "0c0c22ccb8e653a13a7df19493b11fe5ce0f5fae7ee4835223d2d2ad028799da"
+  },
+  {
+    "path": "gradle.properties",
+    "bytes": 3459,
+    "sha256": "a18213c0019b69cba61a52ec1164530a42fb547212303cfae3f488dc6085bcad"
+  },
+  {
+    "path": "gradlew",
+    "bytes": 8496,
+    "sha256": "fb3cbfe6d066ee52bc07f62ed61ff77bde195384f52496c94280a83008d9f531"
+  },
+  {
+    "path": "gradlew.bat",
+    "bytes": 2868,
+    "sha256": "8e327fcb99d29ce0fe3ee2fec6e6a25de815a2df83a6a44a553dea89ffc92955"
+  },
+  {
+    "path": "LICENSE.txt",
+    "bytes": 27732,
+    "sha256": "481c96d94d182382c4225d5b210f8c658c85350cf548f25c9f56c058804f1e57"
+  },
+  {
+    "path": "Models/soutou_ghast.java",
+    "bytes": 2955,
+    "sha256": "e67ba7290184ca3a8fb9d5be192c200ab44a0d6cdf4b3468cfcd94962db2dca1"
+  },
+  {
+    "path": "README.txt",
+    "bytes": 2184,
+    "sha256": "a57fbf6a97775ceee096147a3c93166746dcdc95adc88b571fa827fc9c3940f3"
+  },
+  {
+    "path": "settings.gradle",
+    "bytes": 289,
+    "sha256": "21c8c1cfea9f78f7fed6d7ad325aafa24e0d1bd330a40719997c303d2217b830"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/client/ClientModEvents.java",
+    "bytes": 1075,
+    "sha256": "de0d69d24b3bef3b33d1a2388c09fe94623904c203da6e2d501de55701f93cea"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/client/model/SoutouGhastArmorModel.java",
+    "bytes": 3815,
+    "sha256": "9a5827e84fb0be597dea7962619d8949711e73c4780747a7d594b6bcdbcad0b5"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/client/renderer/layer/GhastArmorLayer.java",
+    "bytes": 2051,
+    "sha256": "2db41711153154c677964ff8f7be7e85933e9360f8c4eb880bb4a97fb2380c72"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/client/renderer/SoutouGhastRenderer.java",
+    "bytes": 862,
+    "sha256": "d4cf3d7c464fd63fbc9c34443c6086a24fa77997845dde1a3820ece4540772d2"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/Config.java",
+    "bytes": 2739,
+    "sha256": "33761dd44db0f76ea9309efe24d947d0735ac55e167dbbfdf9277d60232648d3"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/entity/ai/SoutouGhastCombatMoveGoal.java",
+    "bytes": 6457,
+    "sha256": "7ffcc0cc2982adbf8424e39bc198e052ef53fbbcf69ddeea730997f10244e104"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/entity/ai/SoutouGhastLookGoal.java",
+    "bytes": 1597,
+    "sha256": "4562de4de813d6efde72c4c9f9b6612ea8280b385ee80334f5d55aa408c24412"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/entity/ai/SoutouGhastMoveControl.java",
+    "bytes": 1850,
+    "sha256": "823814a9da973df5dcf3a070337e9414a7842c0ffb19a636e51710d694508821"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/entity/ai/SoutouGhastRandomFloatGoal.java",
+    "bytes": 1977,
+    "sha256": "a494775eb49b903c735799fb284c00b85f9e07af424eb3a7d6485ec6e2a2b8b2"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/entity/ai/SoutouGhastShootGoal.java",
+    "bytes": 8666,
+    "sha256": "bb959b96a0a3e1cf1bc2fe22ec02662bc16e2e72a8247f5e8296e97bb4336ae6"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/entity/ModEntities.java",
+    "bytes": 1529,
+    "sha256": "bfc401d040ef8bdc442bd88a273bce6564c2d5ad0080bc79064afbfebb875cae"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/entity/ModEntityAttributes.java",
+    "bytes": 578,
+    "sha256": "6942a8eb85fdd0f204ddc14ad64fc5be8d61fa62e672627c13f167ad33a527cd"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/entity/projectile/SoutouGhastFireball.java",
+    "bytes": 7909,
+    "sha256": "d746ae06c45651e1065724ee51c3770f8a23fd45ab7af1bf87e9c5d5eea1e89a"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/entity/SoutouGhast.java",
+    "bytes": 13585,
+    "sha256": "7d0b107c53c02dc1e1abd8d0da3a01be1b41c33db6df9111f2d997d6186e3b01"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/sound/ModSounds.java",
+    "bytes": 2379,
+    "sha256": "66ff097cecb0fb15ee2bb9212c3f13a82df9e190385b16c767dda6fc20b15705"
+  },
+  {
+    "path": "src/main/java/com/genki/soutoughast/SoutouGhastMod.java",
+    "bytes": 7205,
+    "sha256": "e7e683d5e572669086b48054d9646bbda7a5373d6bc79cb502047cd0c89f7ae6"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/lang/en_us.json",
+    "bytes": 555,
+    "sha256": "b936a19228031c1a3d3b082e6e137799c5a258a32e8cbd5e74b3b08a753bc428"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/abayohimura_2.ogg",
+    "bytes": 22479,
+    "sha256": "5497bdf357a383fa42b1568b3c5d805fe0cbfa2f3b5e6b29e56b16092243e5f8"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angrury3_2.ogg",
+    "bytes": 84510,
+    "sha256": "a0775b858c22304e539533c3ecb3ec97824343930db3ff457b7249a91982269c"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angry2.ogg",
+    "bytes": 136585,
+    "sha256": "2670db751b44f3aa089c28cec139527dbfa4c6171f227e68d9e7e236583fd7d1"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angury1.ogg",
+    "bytes": 51338,
+    "sha256": "a5477fd3496ba38e45a74e4a9d525ae52ce364e68f5a2c10b99e61cc42c024dc"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angury10_2.ogg",
+    "bytes": 37934,
+    "sha256": "82e85affb21608e6e962642449abeaea1475049e54d9a9f8bce87bb67ba5f9d7"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angury4_2.ogg",
+    "bytes": 25516,
+    "sha256": "aa0e8e7d33fcc86b082f4da252daf00ca727c23e2cfc3f37bb028b96c34241c9"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angury5_2.ogg",
+    "bytes": 41164,
+    "sha256": "27c2eaecdeb7e5ca1a7fb72312123be992ff5302907f936f478c69e84c985971"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angury6_2.ogg",
+    "bytes": 27599,
+    "sha256": "22c8beefdd323ab68c9f1ca90a51bc9ffd19ce1c60ce5e659b5b03aa4e685fe9"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angury7_2.ogg",
+    "bytes": 50281,
+    "sha256": "e2b2b35aaac116b92e13de879d697d52b10ff02a031bcab9689edf176d21bb1f"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angury8.ogg",
+    "bytes": 77896,
+    "sha256": "a5e3fc2e6bcdf6fc2d78520744e3739aa991a246e6b77fc8b66d24867fb0a3ae"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/angury9_2.ogg",
+    "bytes": 79748,
+    "sha256": "c365d22e3dc3502f7b6b9dc77a07cf08bccde045eef341eb3b9e1963ae41139d"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/anguryhimura_2.ogg",
+    "bytes": 94954,
+    "sha256": "6fb08f5922d90786a7a0986c7faba58e56b2700761edf1f3aaffd1fed8bb6e99"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/ann_2.ogg",
+    "bytes": 19479,
+    "sha256": "431591de35559a67bdf65bcfc59390b0ebe3ab49a01fdc5a82b6c57d4babd14d"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/anpontan_2.ogg",
+    "bytes": 35165,
+    "sha256": "d61fecbd3d974230f2565bcefeaf46f6c418d2647d80f6c2409e74e904ccdfba"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/attack.ogg",
+    "bytes": 11794,
+    "sha256": "b3f3a2ecf47cc9748bb7b165e2b1003aed3fbc26ec98c2e69add8cd52d872d49"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/attack2.ogg",
+    "bytes": 37554,
+    "sha256": "e783a2f06a07bed90bdc9b318fe874d755c8775806fdc5eb4384d340d7e65cf2"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/banzai_2.ogg",
+    "bytes": 25612,
+    "sha256": "7d5b4a6205456087a1b546295b589cee71a869d2d844f590f164444115ecebfb"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/breakfast.ogg",
+    "bytes": 20469,
+    "sha256": "80c74d7cc219a0179c89a95cdc74dd14e93c50767408b604b588018a1ccdb69c"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/chikuchou.ogg",
+    "bytes": 28352,
+    "sha256": "61f30ca82251dbce49d0d34eb69ad0881653c15b64ce45771b0a995e7812d57c"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/daikirai.ogg",
+    "bytes": 52183,
+    "sha256": "467ecb71ad63c4ecc0615923c52b2a5eeb47814bcb9f21eb4dbafbe3b6a317f3"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/doon1_2.ogg",
+    "bytes": 29950,
+    "sha256": "29167b502497813af99eba4eba8bfce5343be37634a277c5856b2c1d3f108ac2"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/doon2_2.ogg",
+    "bytes": 34509,
+    "sha256": "9b32bccefd41898ec53341827758f94ac01254e979e7d445201524b6fe4fba59"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/evason_2.ogg",
+    "bytes": 37491,
+    "sha256": "af2e3260bf49f33b76cba20073acbaec64b41fcefc6b14f5e1d381b960572ee6"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/eyeneedlecat.ogg",
+    "bytes": 27255,
+    "sha256": "6ad8bcfac96743b24c3ff993728f5faf59ae85b049aaf887b1464bd1154fa4a2"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/fck_2.ogg",
+    "bytes": 31561,
+    "sha256": "23aece6eaa946a18ca69a47568c0140ff3e048065dd7358771e9e0e1e61582d2"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/handanryoku_2.ogg",
+    "bytes": 79943,
+    "sha256": "1021b8445e4c7a930fd2158ea9ed227abface03c5962830423b9eb579758f0c4"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/himura_2.ogg",
+    "bytes": 32315,
+    "sha256": "dd4f321f5c1962cc147ee6266a375c5e74ae34045843c1b4e75c6c9821510ab4"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/itatatata.ogg",
+    "bytes": 18067,
+    "sha256": "efd11e5c238b3d6f1f093e9261f33b4c4ba22230f56c6026756f27681035795b"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/notflg_2.ogg",
+    "bytes": 30438,
+    "sha256": "8830a9d6cef6e6d00bee9b5ab91fd1bc4652040c744c7eb76ac83a7197c0854e"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/oppurupuru.ogg",
+    "bytes": 42362,
+    "sha256": "986a94045cbcf5056b3ad856aedbf2d117c09b5babc508a32eb5e8f378fd9cee"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/oraa_2.ogg",
+    "bytes": 25460,
+    "sha256": "f0b051f74d2366f1c973af369a4aa70fe3b54214efcc9b345e0441551128b1e6"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/pen.ogg",
+    "bytes": 29791,
+    "sha256": "12116bcff2c540d2835c7c514ae053d1aa2e1ed62b9419ff3fc0e51ff4eeae30"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/shibatasan.ogg",
+    "bytes": 64049,
+    "sha256": "3200ac096a7cb24d4b64336403752caecb4136a862a613480b1ac9747bef1d72"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/ss.ogg",
+    "bytes": 58117,
+    "sha256": "f53808e280497bc614a063f8fe7f8787d91e847c3d3c0a731cb6dee2cdef46df"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/starlin.ogg",
+    "bytes": 28770,
+    "sha256": "ce2cfc363e93a503c7186a898856ef0dcf3d950cf667fb0bbc4b7c312c166373"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/tigau.ogg",
+    "bytes": 21039,
+    "sha256": "6d6f19472d2ba92b0a16305db9813f2367119212f3f6d3387d83af02cbb25984"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds/uo.ogg",
+    "bytes": 12347,
+    "sha256": "4e165009dc0677e36eca7e2fe61de1bdfd87068d8427560edbfb9285c1205f91"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/sounds.json",
+    "bytes": 2750,
+    "sha256": "ab55e67f634964457c90af8d7ea02c6ad2545666e1c6abba31a7f8799fa2daf2"
+  },
+  {
+    "path": "src/main/resources/assets/soutou_ghast/textures/entity/soutou_ghast_armor.png",
+    "bytes": 138,
+    "sha256": "c64d9fe9e239b2f0157d44f4139439e5446acbf8b944f94bd77160fb9e2de37c"
+  },
+  {
+    "path": "src/main/resources/META-INF/mods.toml",
+    "bytes": 5079,
+    "sha256": "ed0e7e454f6f1c1ffbfcabdece14ded32321450a23e7203acf1382523b87415a"
+  },
+  {
+    "path": "src/main/resources/pack.mcmeta",
+    "bytes": 105,
+    "sha256": "69e4b682449054686cb0e5918f13501cd53ea33477d306d9d27f82f0fd9da3f1"
+  }
+]
