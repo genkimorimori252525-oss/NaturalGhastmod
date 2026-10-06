@@ -342,6 +342,184 @@ Soutou Ghast Brain
     +-- Arrival correction
 ```
 
+
+## Environment-aware combat adaptation
+
+Soutou Ghast must adapt its combat style to the amount and shape of usable space around itself and the player.
+
+The environment must not be treated as a simple difficulty penalty. A confined arena should unlock different behaviors rather than merely disabling open-air behaviors.
+
+Before selecting maneuvers, the AI should maintain a lightweight **Mobility Context** derived from local collision/clearance samples, line-of-sight corridors, ceiling height, horizontal escape space and vertical clearance.
+
+Suggested coarse context classes:
+
+- OPEN_AIR — large horizontal and vertical clearance;
+- SEMI_OPEN — enough room for normal flight, but with meaningful walls/terrain;
+- CONFINED — limited lateral/vertical freedom, such as caves, corridors or rooms;
+- GROUND_FORCED — insufficient clearance for viable air combat.
+
+These are tactical contexts, not rigid biome or dimension labels.
+
+### OPEN_AIR behavior
+
+Open air unlocks the largest maneuvers.
+
+Examples:
+- broad curved dodges;
+- long False Retreat / Burst Approach sequences;
+- large vertical fakes;
+- high-speed pass-by maneuvers;
+- rare camera-disruption maneuvers.
+
+A notable rare behavior is **Overhead Re-anchor**:
+
+1. Soutou Ghast accelerates out of the player's normal frontal Combat Anchor Volume;
+2. it passes above the player's head;
+3. it continues behind the player rather than immediately returning;
+4. the preferred Combat Anchor Volume is deliberately transferred to the player's rear side;
+5. combat resumes from the new anchor.
+
+This maneuver should be low-frequency because the normal design goal is to keep the fight readable and reduce unnecessary camera spinning.
+
+It is therefore an intentional exception: occasional loss of frontal control becomes a surprise precisely because the boss normally stays visible.
+
+After enough time, another maneuver may restore a frontal anchor.
+
+### Camera-disruption budget
+
+Leaving the player's frontal field of view should be treated as a limited tactical resource.
+
+The AI should track recent off-screen relocations and strongly reduce their likelihood after use.
+
+This prevents repeated behind-the-player loops while allowing rare, memorable spatial deception.
+
+### SEMI_OPEN behavior
+
+Semi-open terrain should favor medium-scale flight:
+- curved strafes around obstacles;
+- short vertical changes;
+- cover-to-cover repositioning;
+- controlled pass-bys;
+- fireball angles that exploit openings;
+- Combat Anchor migration to preserve line of sight.
+
+The AI should prefer movement that remains visually readable while using the terrain to alter approach angles.
+
+### CONFINED behavior
+
+Confined space should not make Soutou Ghast a degraded version of its open-air AI.
+
+Large maneuvers that require unavailable clearance should be suppressed, but confinement-specific behaviors should become more likely.
+
+Examples:
+- rapid short-range left/right jukes;
+- short brake-and-burst movement;
+- tight vertical bobbing when ceiling room exists;
+- wall-skimming movement;
+- repeated front-of-player oscillation;
+- intentionally useless-looking short passes used as taunts;
+- short-range feints that stay within the same visible lane;
+- compact projectile patterns designed for corridors or rooms;
+- fast recovery into a nearby anchor volume instead of long arcs.
+
+The result should feel like the same intelligence choosing a different fighting style for a different space.
+
+### GROUND_FORCED fallback
+
+If the ceiling is too low or collision clearance is insufficient for meaningful flight, Soutou Ghast may intentionally land and enter a **Ground Combat Mode** even outside Domain Expansion.
+
+This is a fallback combat form, not a failure state.
+
+Ground Mode should have its own identity:
+
+- very fast, low-profile scuttling movement;
+- abrupt but readable left/right changes;
+- frequent zig-zagging and lateral crossing;
+- strong use of floor space rather than vertical space;
+- lower per-hit projectile damage;
+- much higher projectile frequency / barrage density;
+- short pauses followed by sudden bursts of movement;
+- deliberate movement in front of the player to remain visible while being irritating.
+
+The intended visual impression is insect-like / cockroach-like scuttling: fast, restless and difficult to pin down, without becoming random teleportation.
+
+### Ground-mode taunts
+
+Ground Mode may include low-value or intentionally non-optimal movement whose purpose is personality rather than damage.
+
+Example:
+- Soutou Ghast rapidly runs left-to-right and right-to-left directly in front of the player several times;
+- no immediate positional advantage is gained;
+- the movement acts as a visible taunt / provocation;
+- it may or may not transition into a real attack afterward.
+
+Such actions should remain rare enough to feel intentional and should be covered by the same short-term repetition memory as feints.
+
+### Ground-mode barrage identity
+
+Ground-mode projectile offense should contrast with air combat:
+
+Air mode:
+- stronger individual shots;
+- larger spacing;
+- deliberate telegraphs;
+- stronger positional mind games.
+
+Ground mode:
+- lower individual damage;
+- many more shots;
+- lateral or fan-shaped barrages;
+- movement and firing can overlap more often;
+- pressure comes from volume and movement rather than single-hit power.
+
+This gives the fallback mode a positive identity rather than making it merely “air combat without flight”.
+
+### Environment-to-tactics rule
+
+The Tactical Evaluator should first ask:
+
+`WHAT SPACE IS ACTUALLY AVAILABLE?`
+
+Only then should it score maneuvers that can physically and visually work inside that space.
+
+Conceptually:
+
+`Perception -> Mobility Context -> Candidate Maneuver Set -> Tactical Scoring -> Maneuver Composer -> Controller`
+
+A maneuver that cannot fit the current clearance should not simply fail at runtime; it should normally be excluded or heavily penalized before selection.
+
+### Environment transition
+
+Mobility Context should be smoothed over time to avoid rapid AIR/GROUND or OPEN/CONFINED flicker at doorways and uneven terrain.
+
+Use hysteresis / minimum dwell times:
+- entering a more constrained state requires sustained evidence;
+- returning to a more open state also requires sustained evidence;
+- Ground Mode should not immediately take off again because of one transient clear sample.
+
+### Design goal
+
+The environment should change **how** Soutou Ghast is dangerous, not whether it is dangerous.
+
+Open air emphasizes:
+- space;
+- momentum;
+- perspective tricks;
+- large feints.
+
+Confined areas emphasize:
+- pressure;
+- compact jukes;
+- lane control;
+- irritating visible movement.
+
+Ground-forced areas emphasize:
+- scuttling;
+- barrage density;
+- short-range deception;
+- taunting movement.
+
+
 ## Domain Expansion
 
 Domain Expansion remains part of Soutou Ghast.
