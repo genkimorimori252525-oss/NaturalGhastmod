@@ -1,6 +1,6 @@
 # Natural Ghast redesign — current design
 
-Revision: v0.3  
+Revision: v0.4  
 Date: 2026-10-06
 
 ## Core identity
@@ -238,6 +238,377 @@ Rarely:
 The incoming fireball then passes by or impacts elsewhere.
 
 This works only if ordinary rally returns are common enough for the player to learn the firing face as a meaningful signal first.
+
+
+## Special Ghast-fireball profiles
+
+The first special projectile set should remain recognizably derived from Ghast fireballs. These are not three stronger versions of the Standard Soutou Fireball. Each one exists to force a different kind of defensive decision.
+
+Shared rule:
+- Standard Fireball remains the damage/presentation baseline.
+- Special profiles should generally stay near the Standard Fireball's damage and explosion budget unless a later design explicitly changes it.
+- Their strength comes from timing, trajectory and space control rather than raw damage escalation.
+- The firing face remains the common attack telegraph.
+- Projectile-specific cues appear after or around launch so the player can learn the difference.
+- A valid melee deflection may transition a special projectile into a common `RALLY_NORMALIZED` state for clear rally play: enlarged deflection interaction, straightened return behavior and shared rally-speed cap. This prevents every special projectile from requiring a completely different rally rule.
+
+### Delayed Burst Fireball
+
+**Combat role:** break the player's dodge timing.
+
+This projectile begins slower than the Standard Fireball and then performs a short, visible acceleration burst.
+
+It should create the thought:
+
+> "I already started dodging this."
+
+and then punish an early or lazy dodge without becoming an unavoidable instant-speed projectile.
+
+#### Flight phases
+
+`SLOW TRAVEL -> PRE-BURST CUE -> ACCELERATION BURST -> FAST TRAVEL`
+
+Candidate tuning direction:
+- initial speed: roughly 55-75% of Standard Fireball;
+- slow phase: roughly 0.6-1.2 seconds with controlled variation;
+- pre-burst warning: brief, roughly 0.15-0.30 seconds;
+- post-burst speed: roughly 1.5-1.9x Standard Fireball;
+- acceleration should occur across several ticks rather than one velocity teleport.
+
+Exact values remain runtime-tuning parameters.
+
+#### Telegraph
+
+The launch uses the normal firing face and normal charge grammar.
+
+The projectile itself communicates the coming burst:
+- glow/intensity increases;
+- particles visually compress or pull inward;
+- a short rising or tightening sound cue may be reused/created;
+- then the projectile accelerates.
+
+The burst cue must remain readable enough that an attentive player can perform a late dodge.
+
+#### Aim
+
+Delayed Burst should not home after launch.
+
+Its launch vector may use the same modest predictive aiming available to the Standard Fireball, but once fired the projectile commits to its path.
+
+This keeps the challenge about **timing**, not invisible steering.
+
+#### Range rules
+
+Do not prefer Delayed Burst at point-blank range.
+
+The AI should require enough travel distance for:
+- the slow phase;
+- the warning cue;
+- a meaningful reaction window after the burst.
+
+If Soutou Ghast is too close, Standard Fireball, withdrawal or another action should score higher.
+
+#### Maneuver connections
+
+Good pairings:
+- HOLD + Delayed Burst;
+- DRIFT + Delayed Burst;
+- False Approach + Delayed Burst;
+- False Retreat + Delayed Burst.
+
+A strong example:
+
+`SLOW APPROACH -> FIRE -> WITHDRAW -> PROJECTILE SLOW PHASE -> BURST -> RETURN`
+
+The body appears to disengage while the projectile becomes more dangerous.
+
+Avoid stacking this with another major deception at the same moment. The burst itself should usually be the primary surprise.
+
+#### Deflection
+
+If the player deflects before the burst, the return should be rewarded rather than invalidated.
+
+Preferred first-pass rule:
+- the projectile enters `RALLY_NORMALIZED` on valid deflection;
+- its special burst steering/timer is cancelled;
+- the reflected ball travels as a readable rally projectile under the shared rally speed cap.
+
+This keeps Fireball Rally consistent and prevents a hidden post-deflection burst from becoming unfair.
+
+---
+
+### Curve Fireball
+
+**Combat role:** attack lateral movement and alter the expected line of approach.
+
+Curve Fireball is not homing.
+
+It follows a precommitted curved trajectory whose lateral direction is chosen at launch.
+
+The player should be able to learn:
+
+> "This one is coming around from the side."
+
+rather than:
+
+> "This projectile magically followed me."
+
+#### Flight shape
+
+Conceptually:
+
+`LAUNCH -> OUTWARD / LATERAL ARC -> INWARD SWEEP -> COMMITTED EXIT`
+
+The curve should be smooth and continuous.
+
+It must not:
+- snap direction;
+- reverse itself multiple times;
+- U-turn behind the player;
+- retarget every tick.
+
+The projectile's path should remain physically legible.
+
+#### Curve strength
+
+Use multiple soft profiles rather than arbitrary steering:
+- SHALLOW — small lateral bend;
+- NORMAL — default combat curve;
+- DEEP — wider arc used only when space allows.
+
+The AI selects a profile based on Mobility Context and available clearance.
+
+#### Telegraph
+
+The firing face remains normal.
+
+After launch, the player should be able to identify the intended curve side through one or more of:
+- asymmetric particle trail;
+- slight projectile roll/spin cue;
+- curved ember trail;
+- initial launch angle that visibly opens toward the arc.
+
+The left/right version should be learnable before the projectile reaches the player.
+
+#### Tactical selection
+
+Curve direction should consider:
+- free space;
+- walls;
+- the player's recent strafe tendency;
+- current Combat Anchor side;
+- other active projectiles.
+
+However, it should not perfectly counter the player every time.
+
+The AI may deliberately choose the less-optimal side sometimes to retain uncertainty and avoid looking omniscient.
+
+#### Maneuver connections
+
+Good pairings:
+- STRAFE + Curve;
+- HOLD + Curve;
+- Left-Right Fake + Curve;
+- Right-Left Fake + Curve.
+
+A particularly useful grammar is:
+
+`BODY MOVES RIGHT -> CURVE PROJECTILE ENTERS FROM LEFT`
+
+but this should be used sparingly because it contains two simultaneous directional reads.
+
+Often the clearer pairing is simply:
+
+`LIGHT STRAFE -> CURVE FIREBALL -> RETURN/HOLD`
+
+#### Environment rules
+
+OPEN_AIR:
+- NORMAL and occasional DEEP curves available.
+
+SEMI_OPEN:
+- Curve is especially valuable because it can use gaps and obstacle edges.
+- Candidate arcs must be collision-tested before selection.
+
+CONFINED:
+- only SHALLOW or corridor-compatible arcs;
+- never choose a curve profile whose required lateral space is unavailable.
+
+GROUND_FORCED:
+- not part of the default ground barrage set unless a future ground-specific adaptation is designed.
+
+#### Deflection
+
+On valid melee deflection, Curve Fireball enters `RALLY_NORMALIZED`.
+
+The return becomes a straight, readable rally ball rather than preserving hidden lateral steering.
+
+---
+
+### Lob Fireball
+
+**Combat role:** attack cover, stationary positions and the player's ground space.
+
+Lob Fireball changes the vertical geometry of Ghast combat.
+
+Instead of flying directly at the player, it climbs and then descends toward a locked landing/impact point.
+
+This is a pseudo-ballistic projectile profile; it does not need to use vanilla gravity internally as long as the visible path behaves like a coherent arc.
+
+#### Flight phases
+
+`ASCEND -> APEX -> DESCEND -> IMPACT`
+
+The target impact point is selected and locked when fired.
+
+The projectile does not continuously retarget the player after launch.
+
+A modest predictive impact point may use the player's current velocity at launch.
+
+#### Why target locking matters
+
+The counterplay should be:
+
+> "Move away from where it is going to land."
+
+not:
+
+> "Keep running because the falling projectile is secretly following me."
+
+This also lets Lob act as a setup tool that pushes the player out of a preferred position.
+
+#### Arc selection
+
+The arc height depends on available vertical clearance.
+
+OPEN_AIR:
+- high, visually dramatic lob permitted.
+
+SEMI_OPEN:
+- lower arc chosen to clear known obstacles when a safe route exists.
+
+CONFINED:
+- use only when a verified vertical corridor and landing path exist;
+- otherwise suppress Lob entirely.
+
+GROUND_FORCED / low ceiling:
+- do not select the normal Lob profile.
+
+The AI should test the intended arc before firing rather than allowing the projectile to immediately hit the ceiling.
+
+#### Telegraph
+
+The attack should be obvious once launched:
+- visibly upward launch angle;
+- persistent ember/smoke trail that exposes the arc;
+- a distinct apex/descending audio cue if useful;
+- stronger glow while descending may help the player relocate the threat.
+
+A game-like ground marker is not required for the first design. The projectile's visible arc should provide the primary information.
+
+#### Damage
+
+Lob should initially use approximately the Standard Fireball explosion budget.
+
+Its advantage is trajectory and area displacement, not greater raw explosion damage.
+
+#### Maneuver connections
+
+Good pairings:
+- HOLD + Lob;
+- slow DRIFT + Lob;
+- light reposition after launch.
+
+The body should usually remain relatively readable while the projectile performs the large motion.
+
+Example:
+
+`HOLD -> LOB LAUNCH -> PROJECTILE ASCENDS -> SOUTOU SMALL STRAFE -> PLAYER MOVES FROM IMPACT AREA -> NEXT DECISION`
+
+Lob can later become a setup attack for another maneuver, but the follow-up should not be guaranteed or immediate every time.
+
+Sometimes Soutou Ghast should simply watch the player move and return to normal combat.
+
+#### Cover behavior
+
+Lob receives extra tactical value when:
+- direct line of fire is blocked but a valid overhead arc exists;
+- the player remains near one piece of cover;
+- the player repeatedly holds a stationary firing position.
+
+It should not magically pass through roofs. If there is no viable ballistic corridor, the attack is invalid.
+
+#### Deflection
+
+A player may still deflect a Lob Fireball if physically reachable.
+
+On valid deflection, it enters `RALLY_NORMALIZED` and leaves the lob arc, becoming a straight rally projectile.
+
+---
+
+## Projectile selection grammar
+
+The Tactical Evaluator should select projectile profiles by **combat problem**, not by random rotation.
+
+| Combat problem | Preferred profile |
+| --- | --- |
+| Neutral ranged pressure | Standard Fireball |
+| Player dodges too early / predictable timing | Delayed Burst |
+| Player relies on lateral strafing / side lanes | Curve |
+| Player hides behind cover / holds one area | Lob |
+| Player returns a fireball | Rally state |
+
+These are preference signals, not deterministic counters.
+
+Short-term memory must reduce repeated use of the same profile.
+
+A player who early-dodges once should not cause every future projectile to become Delayed Burst.
+
+## Projectile cognitive-load rule
+
+One action should normally contain only one dominant projectile trick.
+
+Avoid combinations such as:
+
+`DEEP CURVE + DELAYED BURST + DOUBLE SHOT + BODY DOUBLE FEINT`
+
+even if the composition system technically supports them.
+
+The design goal is readable deception, not unreadable complexity.
+
+Recommended first-pass composition limits:
+- one major movement deception plus a simple projectile; or
+- one special projectile profile plus simple body movement;
+- a second surprise only at low frequency.
+
+## Fireball family hierarchy
+
+```text
+Ghast Fireball Family
+|
++-- STANDARD
+|   +-- baseline damage
+|   +-- baseline telegraph
+|   +-- baseline rally
+|
++-- DELAYED_BURST
+|   +-- timing pressure
+|
++-- CURVE
+|   +-- lateral pressure
+|
++-- LOB
+|   +-- vertical / cover pressure
+|
++-- RALLY_NORMALIZED
+    +-- common readable state after valid deflection
+    +-- enlarged deflection interaction
+    +-- straight return trajectory
+    +-- shared rally speed cap
+```
+
+This keeps the family expandable. Future Ghast-derived projectile types should preferably solve a new combat problem instead of only changing damage or color.
+
 
 ## Perception and short-term memory
 
