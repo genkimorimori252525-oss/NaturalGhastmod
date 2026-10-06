@@ -1,6 +1,6 @@
 # Natural Ghast redesign — current design
 
-Revision: v0.2  
+Revision: v0.3  
 Date: 2026-10-06
 
 ## Core identity
@@ -13,17 +13,57 @@ Date: 2026-10-06
 
 ## Air-combat foundation
 
-Normal combat uses a player-relative **Combat Anchor** instead of constant orbiting.
+Normal combat uses a player-relative **Combat Anchor Volume** instead of constant orbiting.
 
-The anchor is not a fixed world coordinate. It describes a preferred relationship to the player: approximate range, altitude and bearing. It follows meaningful player displacement but does not continuously spin around the player.
+The anchor is not a fixed world coordinate and not a single exact point. It is a preferred three-dimensional combat region expressed relative to the player.
 
-Temporary maneuvers such as dodge, feint, pass-by, attack reposition and emergency movement normally preserve the same anchor and return to it afterward.
+The volume combines:
+- approximate range;
+- approximate altitude;
+- preferred bearing;
+- horizontal freedom;
+- vertical freedom;
+- a soft preferred point inside the region.
+
+The volume follows meaningful player displacement but does not continuously spin around the player.
+
+Temporary maneuvers such as dodge, feint, pass-by, attack reposition and emergency movement normally preserve the same anchor volume and return to it afterward.
 
 Typical lifecycle:
 
-`ANCHOR -> TEMPORARY MANEUVER -> BRAKE -> RETURN -> ANCHOR`
+`ANCHOR VOLUME -> TEMPORARY MANEUVER -> BRAKE -> RETURN -> ANCHOR VOLUME`
 
-After avoiding an attack, Soutou Ghast should often return to roughly the same combat position as if nothing happened.
+After avoiding an attack, Soutou Ghast should often return to roughly the same frontal combat region as if nothing happened.
+
+## Frontal-view combat volume
+
+The preferred combat region should normally stay within the player's **front-facing field of view**.
+
+The purpose is not to lock Soutou Ghast to the center of the screen. The purpose is to prevent the fight from becoming a camera-search exercise where the player must constantly spin around to find the boss.
+
+The frontal volume should therefore have:
+- a preferred horizontal sector around the player's forward direction;
+- a preferred vertical sector that allows visible altitude changes;
+- the normal preferred range band;
+- enough width for drifting, strafing, dodging and feints.
+
+Soutou Ghast may temporarily leave the frontal volume for a meaningful maneuver, but should usually recover back into it afterward.
+
+The player's instantaneous look vector must not directly drag the volume every tick. Use a **smoothed combat-facing reference** that follows sustained changes in player orientation rather than tiny camera motions.
+
+Concept:
+
+`PLAYER LOOK -> SMOOTHED COMBAT FACING -> FRONTAL ANCHOR VOLUME`
+
+Candidate movement points should receive a preference bonus for remaining inside or near this frontal volume, not an absolute hard constraint.
+
+This preserves:
+- visibility of feints;
+- visibility of attack-face telegraphs;
+- readable fireball rally interactions;
+- reduced need for constant camera rotation.
+
+The target experience is: Soutou Ghast feels mobile and evasive, but the player can usually keep watching it.
 
 ## Preferred range band
 
@@ -51,7 +91,7 @@ The range band may shift temporarily for:
 - a specific future attack;
 - recovery after a high-speed action.
 
-Once the temporary reason ends, the AI should generally recover toward its normal band and Combat Anchor.
+Once the temporary reason ends, the AI should generally recover toward its normal band and frontal Combat Anchor Volume.
 
 ## Flight feel
 
@@ -81,8 +121,8 @@ The Flight Controller owns:
 
 Complex actions should be composed from reusable primitives rather than one-off hard-coded goals.
 
-- HOLD — remain around the current Combat Anchor
-- DRIFT — low-acceleration directional movement
+- HOLD — remain within the current Combat Anchor Volume
+- DRIFT — low-acceleration movement within or around the volume
 - APPROACH — close distance
 - WITHDRAW — open distance
 - STRAFE — lateral movement
@@ -91,7 +131,7 @@ Complex actions should be composed from reusable primitives rather than one-off 
 - BRAKE — intentionally reduce velocity
 - BURST — short strong acceleration
 - CURVE — inertia-preserving turn
-- RETURN — return toward Combat Anchor
+- RETURN — return toward the frontal Combat Anchor Volume
 - OVERSHOOT — intentionally or physically pass the desired position
 
 ## Feint system
@@ -114,6 +154,8 @@ Initial Feint Recipes:
 - Abort Fake — begin something that resembles a feint, then simply return to normal behavior
 
 Normal HOLD/DRIFT/reposition movement must remain common so that not every movement automatically signals a feint.
+
+Most feints should be designed to remain visible within the frontal combat space. The player should be deceived by the movement, not lose track of the entity entirely.
 
 ## Movement, attack and timing are separate
 
@@ -203,11 +245,12 @@ The AI may use observable information such as:
 - player position;
 - player velocity;
 - player facing/look direction;
+- smoothed combat-facing direction;
 - distance;
 - line of sight;
 - local terrain;
 - hostile projectiles;
-- offset from Combat Anchor;
+- position within/outside the Combat Anchor Volume;
 - recent player movement;
 - recent Soutou Ghast maneuvers;
 - recent attacks.
@@ -225,6 +268,7 @@ Use context-aware candidate scoring with bounded variation.
 Allow controlled imperfections:
 - slight timing variation;
 - small preferred-range variation;
+- slight movement within the frontal anchor volume;
 - occasional overshoot;
 - curved recovery;
 - minor final-position correction;
@@ -241,7 +285,7 @@ Typical rhythm:
 
 `MOTION -> RECOVERY -> BRIEF STILLNESS -> NEXT INTENT`
 
-A short irregular HOLD after returning to the Combat Anchor helps emphasize the “as if nothing happened” personality.
+A short irregular HOLD after returning to the Combat Anchor Volume helps emphasize the “as if nothing happened” personality.
 
 ## Candidate air-AI architecture
 
@@ -250,7 +294,9 @@ Soutou Ghast Brain
 |
 +-- Perception
 |   +-- Player tracking
-|   +-- Distance / preferred range band
+|   +-- Smoothed combat-facing reference
+|   +-- Preferred range band
+|   +-- Frontal-view volume
 |   +-- Line of sight
 |   +-- Projectile detection
 |   +-- Terrain awareness
@@ -261,11 +307,18 @@ Soutou Ghast Brain
 |   +-- Recent attacks
 |   +-- Recent reactions
 |
-+-- Combat Anchor
++-- Combat Anchor Volume
+|   +-- Preferred range
+|   +-- Preferred altitude
+|   +-- Preferred bearing
+|   +-- Horizontal band
+|   +-- Vertical band
+|   +-- Soft preferred point
 |
 +-- Tactical Evaluator
 |   +-- Hold
 |   +-- Distance correction
+|   +-- Frontal-volume correction
 |   +-- Dodge
 |   +-- Reposition
 |   +-- Feint
@@ -345,6 +398,7 @@ The player should be able to think:
 - “I thought it would do the same thing again.”
 - “It looked like it was running away, then came straight back.”
 - “It dodged and calmly went back to the same place.”
+- “It stayed in front of me, but still moved enough to be annoying.”
 - “It made the firing face, so I expected the rally return — and then it dodged.”
 - “That was irritating, but readable.”
 
