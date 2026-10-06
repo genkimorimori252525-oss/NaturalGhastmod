@@ -16,7 +16,8 @@ public final class GrandDanmakuScore {
     public enum Frame { WORLD, PLAYER_VIEW }
 
     public record Track(String name, int startTick, int endTick, DanmakuPattern.Config pattern,
-                        Frame frame, double forwardSpeed, double hue, double radius) {
+                        Frame frame, double forwardSpeed, double phaseDeg,
+                        double hue, double radius) {
         public Track {
             if (name == null || !name.matches("[A-Za-z0-9_-]{1,32}"))
                 throw new IllegalArgumentException("track name must be 1..32 safe ASCII chars");
@@ -28,6 +29,7 @@ public final class GrandDanmakuScore {
                 throw new IllegalArgumentException("pattern duration must equal endTick-startTick");
             if (frame == null) throw new IllegalArgumentException("frame is required");
             range(forwardSpeed, 0, 4, "forwardSpeed");
+            range(phaseDeg, -360, 360, "phaseDeg");
             range(hue, 0, 360, "hue");
             range(radius, 0.04, 1.0, "radius");
         }
@@ -52,13 +54,11 @@ public final class GrandDanmakuScore {
         }
     }
 
-    /** One virtual projectile spawn; no Minecraft Entity is implied. */
     public record SpawnSpec(long id, int trackIndex, int bornTick,
                             double x, double y, double z,
                             double vx, double vy, double vz,
                             int lifetimeTicks, double hue, double radius) {}
 
-    /** Compact deterministic network boundary: one descriptor reconstructs a whole burst. */
     public record BurstDescriptor(int trackIndex, int bornTick) {}
 
     public record BulletState(long id, int trackIndex, int bornTick,
@@ -93,15 +93,20 @@ public final class GrandDanmakuScore {
         var vectors = DanmakuPattern.burst(track.pattern(), localBorn);
         var out = new ArrayList<SpawnSpec>(vectors.size());
         int burstNumber = localBorn / track.pattern().intervalTicks();
+        double phase = Math.toRadians(track.phaseDeg());
+        double cos = Math.cos(phase), sin = Math.sin(phase);
         for (DanmakuPattern.Velocity v : vectors) {
-            double vx = v.x(), vy = v.y(), vz = v.z();
+            double rotatedX = v.x() * cos + v.z() * sin;
+            double rotatedZ = -v.x() * sin + v.z() * cos;
+            double vx, vy, vz;
             if (track.frame() == Frame.PLAYER_VIEW) {
-                double screenRight = v.x();
-                double screenUp = v.z();
-                double forward = track.forwardSpeed() + v.y();
-                vx = screenRight;
-                vy = screenUp;
-                vz = forward;
+                vx = rotatedX;
+                vy = rotatedZ;
+                vz = track.forwardSpeed() + v.y();
+            } else {
+                vx = rotatedX;
+                vy = v.y();
+                vz = rotatedZ;
             }
             long id = deterministicId(burst.trackIndex(), burstNumber, v.bulletIndex());
             out.add(new SpawnSpec(id, burst.trackIndex(), burst.bornTick(),
