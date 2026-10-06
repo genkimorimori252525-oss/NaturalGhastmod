@@ -12,9 +12,12 @@ public final class GrandDanmakuCoreTest {
         String json = Files.readString(Path.of(args[0]));
         GrandDanmakuScore.Config score = GrandDanmakuScoreJson.read(json);
 
-        truth(score.tracks().size() == 4, "score track count");
+        truth(score.tracks().size() >= 10, "multi-motif score track count");
         truth(score.tracks().stream().allMatch(t -> t.frame() == GrandDanmakuScore.Frame.PLAYER_VIEW),
             "all initial tracks use player-view frame");
+        truth(GrandDanmakuScore.at(score, 140).size() >= 250, "petal section is visibly dense");
+        truth(GrandDanmakuScore.at(score, 140).size() <= GrandDanmakuScore.MAX_LIVE_BULLETS,
+            "score respects live budget");
 
         var haloBurst = GrandDanmakuScore.emitAt(score, 20);
         equal(haloBurst.size(), 24, "halo burst count");
@@ -22,14 +25,18 @@ public final class GrandDanmakuCoreTest {
         near(haloBurst.get(0).y(), GrandDanmakuScore.EMITTER_Y, "spawn y");
         near(haloBurst.get(0).z(), 0, "spawn z");
         near(haloBurst.get(0).vx(), 0, "player-view top vx");
-        near(haloBurst.get(0).vy(), 0.16, "player-view Pattern Z becomes screen up");
-        near(haloBurst.get(0).vz(), 0.11, "forwardSpeed advances toward player");
+        near(haloBurst.get(0).vy(), 0.14, "player-view Pattern Z becomes screen up");
+        near(haloBurst.get(0).vz(), 0.09, "forwardSpeed advances toward player");
 
-        truth(GrandDanmakuScore.at(score, 60).equals(GrandDanmakuScore.at(score, 60)),
+        var phasedPattern = new DanmakuPattern.Config(DanmakuPattern.Kind.RING, 4, 1, 20, 360, 0, 0, 20, 20);
+        var phasedTrack = new GrandDanmakuScore.Track("phase", 0, 20, phasedPattern,
+            GrandDanmakuScore.Frame.PLAYER_VIEW, 0.25, 90, 10, 0.1);
+        var phaseBurst = GrandDanmakuScore.emitAt(new GrandDanmakuScore.Config(20, List.of(phasedTrack)), 0);
+        near(phaseBurst.get(0).vx(), 1, "phase rotates screen-up to screen-right");
+        near(phaseBurst.get(0).vy(), 0, "phase rotates screen-up away from up");
+
+        truth(GrandDanmakuScore.at(score, 140).equals(GrandDanmakuScore.at(score, 140)),
             "analytic score is deterministic");
-        truth(GrandDanmakuScore.at(score, 100).size() > 0, "score has live bullets");
-        truth(GrandDanmakuScore.at(score, 100).size() <= GrandDanmakuScore.MAX_LIVE_BULLETS,
-            "score respects live budget");
 
         var session = new GrandDanmakuSession(score);
         for (int i = 0; i <= 20; i++) session.tick();
@@ -40,13 +47,12 @@ public final class GrandDanmakuCoreTest {
             "burst descriptor reconstructs deterministic family");
         session.tick();
         var first = session.bullets().get(0);
-        near(first.y(), GrandDanmakuScore.EMITTER_Y + 0.16, "virtual bullet advances without Entity");
-        near(first.z(), 0.11, "virtual forward movement");
+        near(first.y(), GrandDanmakuScore.EMITTER_Y + 0.14, "virtual bullet advances without Entity");
+        near(first.z(), 0.09, "virtual forward movement");
 
-        // Explicit spawn-during-iteration staging, inspired by Youkai Homecoming's temp spawn list.
         var tinyPattern = new DanmakuPattern.Config(DanmakuPattern.Kind.FAN, 1, 0, 2, 0, 0, 0, 1, 2);
         var tinyTrack = new GrandDanmakuScore.Track("tiny", 0, 2, tinyPattern,
-            GrandDanmakuScore.Frame.WORLD, 0, 0, 0.1);
+            GrandDanmakuScore.Frame.WORLD, 0, 0, 0, 0.1);
         var tinyScore = new GrandDanmakuScore.Config(2, List.of(tinyTrack));
         final boolean[] expiryCalled = {false};
         var staging = new GrandDanmakuSession(tinyScore, (expired, owner) -> {
@@ -56,9 +62,9 @@ public final class GrandDanmakuCoreTest {
                 0.25, 0, 0, 2, 120, 0.1));
             truth(owner.pendingCountForTest() == 1, "spawn during iteration is staged");
         });
-        staging.tick(); // tick 0: score parent appears at origin
+        staging.tick();
         equal(staging.activeCount(), 1, "tiny parent emitted");
-        staging.tick(); // parent expires; child is staged then merged
+        staging.tick();
         truth(expiryCalled[0], "expiry handler ran");
         equal(staging.pendingCountForTest(), 0, "pending list merged after iteration");
         equal(staging.activeCount(), 1, "staged child became active");
@@ -79,7 +85,7 @@ public final class GrandDanmakuCoreTest {
         return new GrandDanmakuScore.Track(name, start, end,
             new DanmakuPattern.Config(DanmakuPattern.Kind.RING, bullets, 1, interval,
                 360, 0, 0, lifetime, end - start),
-            GrandDanmakuScore.Frame.WORLD, 0, 0, 0.1);
+            GrandDanmakuScore.Frame.WORLD, 0, 0, 0, 0.1);
     }
 
     private static void truth(boolean value, String message) {
