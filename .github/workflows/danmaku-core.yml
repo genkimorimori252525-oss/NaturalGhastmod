@@ -1,0 +1,46 @@
+name: Grand Danmaku pure core
+
+on:
+  push:
+    paths:
+      - 'src/main/java/com/genki/soutoughast/danmaku/core/**'
+      - 'src/danmakuTest/**'
+      - 'src/main/resources/data/soutou_ghast/danmaku/**'
+      - '.github/workflows/danmaku-core.yml'
+  pull_request:
+    paths:
+      - 'src/main/java/com/genki/soutoughast/danmaku/core/**'
+      - 'src/danmakuTest/**'
+      - 'src/main/resources/data/soutou_ghast/danmaku/**'
+      - '.github/workflows/danmaku-core.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  pure-java:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile isolated Grand Danmaku core
+        shell: bash
+        run: |
+          mkdir -p build/danmaku-core
+          javac --release 17 -encoding UTF-8 -d build/danmaku-core \
+            src/main/java/com/genki/soutoughast/danmaku/core/DanmakuPattern.java \
+            src/main/java/com/genki/soutoughast/danmaku/core/GrandDanmakuScore.java \
+            src/main/java/com/genki/soutoughast/danmaku/core/GrandDanmakuScoreJson.java \
+            src/main/java/com/genki/soutoughast/danmaku/core/GrandDanmakuSession.java \
+            src/danmakuTest/java/com/genki/soutoughast/danmaku/core/GrandDanmakuCoreTest.java
+      - name: Run isolated Grand Danmaku core assertions
+        shell: bash
+        run: |
+          java -cp build/danmaku-core com.genki.soutoughast.danmaku.core.GrandDanmakuCoreTest \
+            src/main/resources/data/soutou_ghast/danmaku/grand_danmaku_v1.json
