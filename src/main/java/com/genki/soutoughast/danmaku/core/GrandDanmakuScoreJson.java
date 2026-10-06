@@ -9,7 +9,10 @@ import java.util.Set;
 /** Strict reader for the Techhub Score JSON v2 contract. */
 public final class GrandDanmakuScoreJson {
     private static final Set<String> ROOT_KEYS = Set.of("schemaVersion", "tickRate", "durationTicks", "tracks");
-    private static final Set<String> TRACK_KEYS = Set.of("name", "startTick", "endTick", "frame", "forwardSpeed",
+    private static final Set<String> TRACK_ALLOWED = Set.of("name", "startTick", "endTick", "frame", "forwardSpeed",
+        "phaseDeg", "hue", "radius", "pattern", "bullets", "speed", "intervalTicks", "fanAngleDeg",
+        "rotationDegPerSecond", "elevationDeg", "lifetimeTicks");
+    private static final Set<String> TRACK_REQUIRED = Set.of("name", "startTick", "endTick", "frame", "forwardSpeed",
         "hue", "radius", "pattern", "bullets", "speed", "intervalTicks", "fanAngleDeg",
         "rotationDegPerSecond", "elevationDeg", "lifetimeTicks");
 
@@ -26,7 +29,7 @@ public final class GrandDanmakuScoreJson {
         var tracks = new ArrayList<GrandDanmakuScore.Track>();
         for (Object raw : rawTracks) {
             Map<String, Object> t = object(raw, "track");
-            exactKeys(t, TRACK_KEYS, "track");
+            allowedAndRequired(t, TRACK_ALLOWED, TRACK_REQUIRED, "track");
             GrandDanmakuScore.Frame frame;
             try { frame = GrandDanmakuScore.Frame.valueOf(string(t, "frame")); }
             catch (IllegalArgumentException ex) { throw new IllegalArgumentException("unknown frame", ex); }
@@ -34,11 +37,12 @@ public final class GrandDanmakuScoreJson {
             try { kind = DanmakuPattern.Kind.valueOf(string(t, "pattern")); }
             catch (IllegalArgumentException ex) { throw new IllegalArgumentException("unknown pattern", ex); }
             int start = integer(t, "startTick"), end = integer(t, "endTick");
+            double phaseDeg = t.containsKey("phaseDeg") ? number(t, "phaseDeg") : 0.0;
             var pattern = new DanmakuPattern.Config(kind, integer(t, "bullets"), number(t, "speed"),
                 integer(t, "intervalTicks"), number(t, "fanAngleDeg"), number(t, "rotationDegPerSecond"),
                 number(t, "elevationDeg"), integer(t, "lifetimeTicks"), end - start);
             tracks.add(new GrandDanmakuScore.Track(string(t, "name"), start, end, pattern, frame,
-                number(t, "forwardSpeed"), number(t, "hue"), number(t, "radius")));
+                number(t, "forwardSpeed"), phaseDeg, number(t, "hue"), number(t, "radius")));
         }
         return new GrandDanmakuScore.Config(duration, tracks);
     }
@@ -54,6 +58,10 @@ public final class GrandDanmakuScoreJson {
     }
     private static void exactKeys(Map<String, Object> map, Set<String> keys, String label) {
         if (!map.keySet().equals(keys)) throw new IllegalArgumentException(label + " fields mismatch: " + map.keySet());
+    }
+    private static void allowedAndRequired(Map<String, Object> map, Set<String> allowed, Set<String> required, String label) {
+        if (!allowed.containsAll(map.keySet())) throw new IllegalArgumentException(label + " has unknown fields: " + map.keySet());
+        if (!map.keySet().containsAll(required)) throw new IllegalArgumentException(label + " is missing required fields");
     }
     private static String string(Map<String, Object> map, String key) {
         Object v = map.get(key);
