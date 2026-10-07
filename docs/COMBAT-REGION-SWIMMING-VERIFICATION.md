@@ -1,6 +1,6 @@
 # Combat region and swimming verification
 
-2026-10-08. Implementation verified within the scopes below; **visual acceptance PENDING_USER**. No attacks/danmaku, multiplayer, ground locomotion or final balance acceptance.
+2026-10-08. Implementation verified within the scopes below; **user qualitative movement feedback positive**, controlled native scenarios still unverified. No attacks/danmaku, multiplayer, ground locomotion or final balance acceptance.
 
 ## Source and behavior
 
@@ -51,4 +51,4 @@ Fresh private `build/tank/manual-swimming-20261008-beb1755b`, exact reviewed-sou
 
 Observation limits: prior native motion is selected-Ghast server telemetry, not full-room roster coverage. Supplemental raw images use the Player presentation; no cardinal four-view capture was used. Current manual session has no live telemetry roster. Room interior cells `[0,224,0]`..`[52,248,52)` give local `(x,y-224,z)`; body containment also needs AABB. Do not treat initial NBT poses as current positions. Tech Hub guide/AF-0017 distinguish existing selected-subject spatial maps, frozen cardinal snapshots and opt-in mob POV from an unimplemented on-demand whole-room roster.
 
-Next manual checks: turn yaw/pitch while staying still, walk/fall from the platform, observe sustained floating/swimming, approach region boundaries/obstacles, and report visible jerks or repeated repositioning. Treat new bugs as higher priority than further NaturalGhast features. Prior failure/recovery of original-save inspection padding remains recorded in Tech Hub AF-0016; original NBT is now inspected only through a disposable baseline copy.
+Human follow-up,2026-10-08: user reports the current Ghast looks very good. This supplies positive qualitative movement feedback; it does not establish a controlled camera-turn/moving-Player/LOS protocol or complete Boss acceptance. The earlier manual manifest's PENDING_USER describes its preparation time and is preserved. Remaining scoped checks: turn yaw/pitch while staying still, walk/fall from the platform, approach region boundaries/obstacles, and report visible jerks or repeated repositioning when relevant. Treat new bugs as higher priority than further NaturalGhast features. This MOD also tests Tank usability; Tech Hub's `docs/TANK-OPERATING-GUIDE.md` and AF-0018/0019 consolidate operation and camera ideas without new runtime changes. Prior failure/recovery of original-save inspection padding remains AF-0016; original NBT is inspected only through a disposable baseline copy.
