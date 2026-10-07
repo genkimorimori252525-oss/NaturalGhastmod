@@ -7,6 +7,7 @@ import com.genki.soutoughast.entity.ai.flight.MobilityContext;
 import com.genki.soutoughast.entity.ai.flight.MovementPlanner;
 import com.genki.soutoughast.entity.ai.flight.MovementPrimitive;
 import com.genki.soutoughast.entity.ai.flight.CombatAnchor;
+import com.genki.soutoughast.entity.ai.flight.TacticalBrain;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
@@ -20,6 +21,7 @@ public final class SoutouGhastInertialMoveControl extends MoveControl {
     private final MobilityContext mobility = new MobilityContext();
     private MovementPrimitive primitive = MovementPrimitive.HOLD;
     private CombatAnchor.Region combatRegion;
+    private TacticalBrain.State tacticalState=TacticalBrain.State.idle();
 
     public SoutouGhastInertialMoveControl(SoutouGhast ghast) {
         super(ghast);
@@ -33,6 +35,8 @@ public final class SoutouGhastInertialMoveControl extends MoveControl {
     public MovementPrimitive getPrimitive() { return primitive; }
     public CombatAnchor.Region getCombatRegion(){return combatRegion;}
     public void setCombatRegion(CombatAnchor.Region region){combatRegion=region;}
+    public TacticalBrain.State getTacticalState(){return tacticalState;}
+    public void setTacticalState(TacticalBrain.State state){tacticalState=state;}
     public void resetMobility() { mobility.reset(); primitive = MovementPrimitive.HOLD; }
     public void setMovementPlan(MovementPlanner.Plan plan) { intent = plan.intent(); primitive = plan.primitive(); }
     public MobilityContext.Sample sampleMobility() {

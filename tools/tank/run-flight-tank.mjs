@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL, fileURLToPath} from 'node:url';
 import {analyzeSwimming} from './swimming-results.mjs';
+import {analyzeTactics} from './tactics-results.mjs';
 import {waitForFlightAction} from './flight-owner.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
@@ -14,6 +15,7 @@ const javaHome = option('java-home');
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const template = JSON.parse(await fs.readFile(templateFile));
 assert.equal(template.launch.env.KNEEKURA_DEBUG_MOD_PROFILE, 'TANK_CORE');
+const host=path.isAbsolute(template.launch.command)?path.dirname(template.launch.command):template.workspaceDir;
 const privateParent = path.join(repository, 'build/tank');
 await fs.mkdir(privateParent, {recursive: true});
 const trial = await fs.mkdtemp(path.join(privateParent, 'flight-'));
@@ -30,9 +32,11 @@ const {finalizeEvidenceRun} = await load('evidence/finalize.mjs');
 const {readTankContext} = await load('tank-cli.mjs');
 const {submitSelectedAction,inspectSelectedAction,readInstalledControl} = await load('bridge/owner-action-adapter.mjs');
 const {prepareTankResourceFile} = await load('tank-cli.mjs');
+const {verifyCompiledClasses} = await load('bridge/native/class-readiness.mjs');
+const {finalizeNativeTrial} = await load('bridge/native/trial-finalization.mjs');
 const hashJson = value => sha(Buffer.from(stableJson(value)));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-const report = {schema: 'naturalghast.swimming-tank/v1', trial, profile: 'TANK_CORE', failures: [],
+const report = {schema: 'naturalghast.tactics-tank/v1', trial, profile: 'TANK_CORE', failures: [],
     limitations: ['Static real survival Player fixture; moving/facing-change/target-change/LOS-loss/ground/multiplayer NOT_RUN.',
         'Canonical LAB evidence and supplementary flight/frame observations have different producers.',
         'Class-resource/container linkage is not resident transformed-definition attestation.']};
@@ -66,6 +70,7 @@ try {
     await fs.writeFile(path.join(trial, 'target-build.log'), targetBuild, {flag: 'wx'});
     assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], {cwd: repository, encoding: 'utf8', windowsHide: true}).trim(), targetRevision, 'Target revision changed during build');
     report.targetBuild = {status: 'PASS', sourceRevision: targetRevision};
+    report.bridgeReadiness=await verifyCompiledClasses({outputRoot:path.resolve(host,'build/classes/java/kneekuraDebug'),classes:['ClientBootstrap','ScopedOwnerGate','ActionJournal','ArenaRuntime','EvidenceWriter'].map(name=>({className:'com.github.tartaricacid.touhoulittlemaid.sim.debug.KneekuraDebug'+name}))});
     originalRows = await inventory(original); await write(path.join(trial, 'original-hashes.json'), originalRows);
     const world = path.join(trial, 'game/saves/KNEEKURA_DEBUG_WORLD');
     await fs.mkdir(path.dirname(world), {recursive: true}); await fs.cp(original, world, {recursive: true, errorOnExist: true, force: false});
@@ -79,7 +84,7 @@ try {
     const classes = path.join(trial, 'classes'); await fs.mkdir(classes);
     const exec = (tool, args) => execFileSync(path.join(javaHome, 'bin', tool + '.exe'), args, {cwd: trial, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']});
     const sources = ['TankSeedEntities.java', 'PrepareFlightTank.java', 'ObserveFlightTank.java'].map(name => path.join(repository, 'tools/tank', name));
-    const compileCp = classpath + ';' + path.join(repository, 'build/classes/java/main');
+    const compileCp = classpath + ';' + path.join(repository, 'build/classes/java/main')+';'+report.bridgeReadiness.outputRoot;
     const compileArgs = path.join(trial, 'javac.args');
     await fs.writeFile(compileArgs, ['--release', '17', '-encoding', 'UTF-8', '-cp', compileCp, '-d', classes, ...sources].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('javac', ['@' + compileArgs]);
@@ -137,15 +142,15 @@ try {
             dimensionId: 'minecraft:overworld', permissions: ['BOUNDED_DIAGNOSTIC_CONTROL']}};
     const operatorFile = path.join(privateDir, 'operator.json'); await write(operatorFile, operator);
     const initScript = path.join(trial, 'native.init.gradle');
-    await fs.writeFile(initScript, `gradle.beforeProject { p ->\n p.plugins.withId('net.minecraftforge.gradle') {\n  p.dependencies.add('runtimeOnly', p.files('${artifact.replaceAll('\\','/')}','${observer.replaceAll('\\','/')}'))\n  p.afterEvaluate { p.minecraft.runs.client.workingDirectory p.file('${path.join(trial, 'game').replaceAll('\\','/')}') }\n }\n}\n`, {flag: 'wx'});
+    await fs.writeFile(initScript, `gradle.beforeProject { p ->\n p.plugins.withId('net.minecraftforge.gradle') {\n  p.dependencies.add('runtimeOnly', p.files('${artifact.replaceAll('\\','/')}','${observer.replaceAll('\\','/')}'))\n  p.afterEvaluate {\n   p.minecraft.runs.client.workingDirectory p.file('${path.join(trial, 'game').replaceAll('\\','/')}')\n   p.tasks.matching { it.name == 'runClient' }.configureEach { task -> task.environment System.getenv().findAll { k,v -> k.startsWith('KNEEKURA_DEBUG_') } }\n  }\n }\n}\n`, {flag: 'wx'});
     const config = structuredClone(template);
     // The registered target source is NaturalGhast. The separate TANK_CORE host is
     // selected explicitly by Gradle project-dir and recorded as a second identity.
     config.workspaceId = experiment; config.workspaceDir = repository;
     config.runtimeRoot = path.join(trial, 'runtime'); config.gameDir = path.join(trial, 'game');
     config.readyTimeoutMs = 240000;
-    config.launch.command = path.join(template.workspaceDir, template.launch.command);
-    config.launch.args = ['--project-dir', template.workspaceDir, '-Pforge_version=1.20.1-47.4.10',
+    config.launch.command = path.resolve(host, template.launch.command);
+    config.launch.args = ['--project-dir', host, '-Pforge_version=1.20.1-47.4.10',
         ...template.launch.args.slice(0, -2).filter(arg => arg !== '--offline'), '--init-script', initScript];
     config.launch.env = {JAVA_HOME: javaHome, KNEEKURA_DEBUG_MOD_PROFILE: 'TANK_CORE', NATURALGHAST_PRIVATE_GAME_DIR: path.join(trial, 'game')};
     config.ownerControl = {requestHash, operatorRegistration: {trustedRoot: privateDir, relativePath: 'operator.json', sha256: sha(await fs.readFile(operatorFile))}};
@@ -153,12 +158,13 @@ try {
     await registerBridgeRequest({runtimeRoot: config.runtimeRoot, registration: {schemaVersion: 1, trustedRoot: inputs,
         requestFile: 'request.json', bindingFile: 'binding.json', assertionsFile: 'assertions.json',
         materials: {buildArtifact: {relativePath: 'naturalghast-dev.jar'}, configArtifact: {relativePath: 'config.bin'}, resourceArtifact: {relativePath: 'resources.zip'}}}});
-    report.sourceRevision = sourceRevision; report.buildHash = buildHash; report.hostRevision = execFileSync('git', ['rev-parse','HEAD'], {cwd: template.workspaceDir, encoding: 'utf8', windowsHide: true}).trim();
+    report.sourceRevision = sourceRevision; report.buildHash = buildHash; report.hostRevision = execFileSync('git', ['rev-parse','HEAD'], {cwd: host, encoding: 'utf8', windowsHide: true}).trim();
     report.labRevision=execFileSync('git',['rev-parse','HEAD'],{cwd:lab,encoding:'utf8',windowsHide:true}).trim();
     assert.equal(execFileSync('git',['status','--porcelain'],{cwd:lab,encoding:'utf8',windowsHide:true}).trim(),'','Clean LAB source required');
-    assert.equal(execFileSync('git',['status','--porcelain'],{cwd:template.workspaceDir,encoding:'utf8',windowsHide:true}).trim(),'','Clean host source required');
+    assert.equal(execFileSync('git',['status','--porcelain'],{cwd:host,encoding:'utf8',windowsHide:true}).trim(),'','Clean host source required');
     await verifyOriginal(); console.log('REGISTERED ' + experiment);
     try {
+        await verifyCompiledClasses({outputRoot:report.bridgeReadiness.outputRoot,classes:report.bridgeReadiness.classResources});
         await launchDebugRun(config, lab); current = await readCurrent(config, lab); assert(current.live && current.runtimeOwnership?.owned);
         report.runDir = current.runDir;
         const targetControl = await setTargetControl(current, fixture.subjectUuid, {decisionSnapshot: false}); report.targetRevision = targetControl.revision;
@@ -202,19 +208,16 @@ try {
         assert(rows.every(row=>row.playerUuid===fixture.playerUuid&&Math.abs(row.playerX-9.5)<.001&&Math.abs(row.playerY-224)<.001&&Math.abs(row.playerZ-3.5)<.001&&Math.abs(row.playerYaw)<.001&&Math.abs(row.playerPitch+18)<.001),'Static player fixture changed');
         report.flight=analyzeSwimming(rows,fixture.playerUuid);await write(path.join(derived,'flight-summary.json'),report.flight);
         assert.equal(report.flight.status,'PASS',report.flight.failures.join(','));
-        report.nativeScope = 'PASS_STATIC_PLAYER_PERSISTENT_REGION_PHYSICAL_SWIMMING';
-        console.log(report.nativeScope);
+        report.tactics=analyzeTactics(rows);await write(path.join(derived,'tactics-summary.json'),report.tactics);
+        assert.equal(report.tactics.status,'PASS',report.tactics.failures.join(','));
+        report.nativeScope = 'CHECKS_PASSED_FINALIZATION_PENDING';
     } finally {
         current ??= await readCurrent(config, lab).catch(() => null);
-        if (current?.live) { const stopped = await stopCurrent(config, lab); report.cleanup = {live: stopped.live, clean: stopped.evidenceShutdown?.clean}; assert.equal(stopped.live, false); assert.equal(stopped.evidenceShutdown?.clean, true); }
-        if (runtime) { await runtime.ingestAvailable(); report.canonicalObservations = (await runtime.store.readObservations()).length; }
         if (current?.runDir) {
-            const stopped = await readCurrent(config, lab);
-            if (stopped.live === false) {
-                const finalized = await finalizeEvidenceRun(stopped, {cleanShutdown: stopped.evidenceShutdown?.clean === true,
-                    shutdownMode: stopped.evidenceShutdown?.clean === true ? 'PROBE_FLUSH_ACK_THEN_PROCESS_STOP' : 'UNACKNOWLEDGED_STOP'});
-                report.finalization = {file: finalized.file, status: finalized.manifest.status};
-            }
+            const finish=await finalizeNativeTrial({current,stop:()=>stopCurrent(config,lab),read:()=>readCurrent(config,lab),finalize:finalizeEvidenceRun});
+            report.cleanup=finish.stopped.cleanup;report.shutdown=finish.shutdown;report.finalization=finish.finalization;
+            assert.equal(finish.status,'PASS',finish.reason);
+            if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope='PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
         }
     }
 } catch (error) {
@@ -223,6 +226,7 @@ try {
     console.log('FAIL ' + error.message.split('\n')[0]);
 } finally {
     if (originalRows.length) { try { await verifyOriginal(); report.originalFilesVerified = originalRows.length; } catch (error) { report.failures.push(error.message); } }
+    report.status=report.failures.length||report.nativeScope!=='PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT'?'FAIL':'PASS';
     await write(path.join(trial, 'report.json'), report);
 }
 process.exitCode = report.failures.length ? 1 : 0;

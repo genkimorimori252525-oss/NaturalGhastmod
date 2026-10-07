@@ -57,6 +57,9 @@ public final class ObserveFlightTank {
    }
    row.addProperty("intent",control.getIntent().mode().name());row.addProperty("primitive",control.getPrimitive().name());row.addProperty("context",control.getMobilityContext().name());
    row.addProperty("clearanceBlocked",control.isClearanceBlocked());row.addProperty("collisionFree",ghast.level().noCollision(ghast,ghast.getBoundingBox()));
+   var tactical=control.getTacticalState();
+   row.addProperty("tacticalAction",tactical.action().name());row.addProperty("tacticalPhase",tactical.phase().name());
+   row.addProperty("tacticalTiming",tactical.timingSlot().name());row.addProperty("tacticalCommitted",tactical.committed());
    var region=control.getCombatRegion();
    if(region!=null){
     row.addProperty("regionGeneration",region.generation());row.addProperty("regionReason",region.reason().name());

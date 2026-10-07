@@ -5,6 +5,7 @@ import com.genki.soutoughast.entity.ai.flight.CombatAnchor;
 import com.genki.soutoughast.entity.ai.flight.FlightVector;
 import com.genki.soutoughast.entity.ai.flight.FlightController;
 import com.genki.soutoughast.entity.ai.flight.MovementPlanner;
+import com.genki.soutoughast.entity.ai.flight.TacticalBrain;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.phys.Vec3;
@@ -12,13 +13,14 @@ import net.minecraft.world.phys.Vec3;
 import java.util.EnumSet;
 import java.util.UUID;
 
-/** Observed encounter -> retained region -> swimming intent. No attacks or hidden pursuit. */
+/** Observed encounter -> retained region -> motion composition. No attacks or hidden pursuit. */
 public final class SoutouGhastAnchorGoal extends Goal {
     private final SoutouGhast ghast;
     private final CombatAnchor anchor = new CombatAnchor();
     private UUID observedSubject;
     private FlightVector lastObservedPosition;
     private final MovementPlanner planner = new MovementPlanner();
+    private final TacticalBrain brain = new TacticalBrain();
 
     public SoutouGhastAnchorGoal(SoutouGhast ghast) {
         this.ghast = ghast;
@@ -36,7 +38,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
         FlightVector boss=SoutouGhastInertialMoveControl.from(ghast.position());
         if(visible){
             UUID subject=target.getUUID();
-            if(!subject.equals(observedSubject)){planner.reset();control().resetMobility();observedSubject=subject;}
+            if(!subject.equals(observedSubject)){planner.reset();brain.reset();control().resetMobility();observedSubject=subject;}
             lastObservedPosition=SoutouGhastInertialMoveControl.from(target.position());
             anchor.observe(subject,lastObservedPosition,boss,control().isClearanceBlocked()
                     ||control().getPrimitive()==com.genki.soutoughast.entity.ai.flight.MovementPrimitive.BRAKE);
@@ -46,11 +48,17 @@ public final class SoutouGhastAnchorGoal extends Goal {
         }
         control().setCombatRegion(anchor.region());
         if(anchor.region()==null||lastObservedPosition==null){
-            planner.reset();control().setIntent(FlightController.Intent.hold());return;
+            planner.reset();brain.reset();control().setTacticalState(brain.state());control().setIntent(FlightController.Intent.hold());return;
         }
         var sample = control().sampleMobility();
-        var plan = planner.step(anchor,lastObservedPosition,boss,FlightVector.ZERO,
-                control().getMobilityContext(), sample, ghast.getRandom().nextDouble(),control()::hasDirectionalClearance);
+        // No live geometry or velocity is read after LOS loss. Committed recipes use locked waypoints.
+        FlightVector observedVelocity=visible?SoutouGhastInertialMoveControl.from(target.getDeltaMovement()):null;
+        double variation=ghast.getRandom().nextDouble();
+        var plan = brain.step(anchor,visible?lastObservedPosition:null,observedVelocity,boss,visible,
+                control().getMobilityContext(),sample,variation,control()::hasDirectionalClearance,
+                ()->planner.step(anchor,lastObservedPosition,boss,FlightVector.ZERO,
+                        control().getMobilityContext(),sample,variation,control()::hasDirectionalClearance));
+        control().setTacticalState(brain.state());
         control().setMovementPlan(plan);
         if(visible){
             Vec3 look=target.getEyePosition().subtract(ghast.getEyePosition());
@@ -64,6 +72,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
         lastObservedPosition=null;
         anchor.clear();control().setCombatRegion(null);
         planner.reset();
+        brain.reset();control().setTacticalState(brain.state());
         control().resetMobility();
         control().setIntent(FlightController.Intent.hold());
         ((SoutouGhastFlightLookControl)ghast.getLookControl()).clearIntent();

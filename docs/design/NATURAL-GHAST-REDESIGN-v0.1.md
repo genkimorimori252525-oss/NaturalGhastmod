@@ -3,7 +3,7 @@
 Revision: v0.6
 Date: 2026-10-08
 
-The user's2026-10-08 clarification supersedes v0.5's player-camera-relative anchor. A combat anchor is a broad, boss-owned world-space region, retained during combat and reselected only when necessary. The local flight branch implements that correction and has separate static-player physical-swimming acceptance; user visual acceptance is pending. See [the correction design](../superpowers/specs/2026-10-08-combat-region-swimming-design.md) and [verification receipt](../COMBAT-REGION-SWIMMING-VERIFICATION.md).
+The user's2026-10-08 clarification supersedes v0.5's player-camera-relative anchor. A combat anchor is a broad, boss-owned world-space region, retained during combat and reselected only when necessary. The user has explicitly accepted its current swimming and authorized further non-danmaku development. Separate controlled camera/moving-Player/LOS scenarios remain limited as recorded. See [the correction design](../superpowers/specs/2026-10-08-combat-region-swimming-design.md), [verification receipt](../COMBAT-REGION-SWIMMING-VERIFICATION.md) and [next tactical unit](../superpowers/plans/2026-10-08-observed-tactics.md). Grand Danmaku implementation is excluded by the current user instruction, including runtime adapters.
 
 ## Core identity
 
