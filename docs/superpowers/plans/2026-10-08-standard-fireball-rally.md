@@ -12,12 +12,12 @@ Base: `b393bf8`, authoritative redesign v0.6. User authorizes non-danmaku contin
 
 ## Coherent tasks and gates
 
-- [ ] Read genuine Forge projectile/spawn/impact and damage sources; implement pure charge/rally state with RED→GREEN boundary/LOS/lock/cooldown/finite reaction tests.
-- [ ] Register dedicated Standard, client renderer and durable origin/deflection/return state; valid melee only; bounds/expiry; use normal Forge hooks/network synchronization.
-- [ ] Wire baseline attack and narrow own-return immunity, preserving attributed damage once and normal hurt bookkeeping.
-- [ ] Genuine Forge compilation and meaningful mapped tests: registry constructor, separate dimensions/pick size, save/reload, spawn state, provenance and damage admission; measure explosion implications rather than equating integer power with gameplay.
-- [ ] Explicit finite private native trial with actual survival target, registered room roster, charge/shot telemetry and retained swimming. Do not claim synthetic melee as real input proof; no infinite fixture invulnerability, fake Player or owner bypass. Keep native/manual gaps explicit.
-- [ ] One compact fresh-context Astra source review; fix Important/Critical findings in one RED→GREEN pass. Record receipts, failures and final decision status; commit/push only scoped branches.
+- [x] Read genuine sources and implement pure state;444charge/rally regressions PASS, including Astra's recovery correction.
+- [x] Register dedicated Standard/client renderer and persistent provenance; valid melee only, one boss return, finite expiry and Forge hooks. Real instantiated reload/deflected synchronization acceptance remains NOT_RUN.
+- [x] Wire baseline attack and narrow attributed own-return admission; no HP-only clamp. Native20damage pipeline/event/invulnerability/death acceptance remains NOT_RUN.
+- [x] Genuine Forge build and mapped10 codec/type, clearance5, fixture14/seed5 checks PASS; scope is explicit. Gameplay explosion/visual size comparison remains NOT_RUN.
+- [x] Fresh `flight-lGyhyy` passes scoped native natural-shot verification, two COMPLETE room rosters and retained swimming; original85/historic artifact unchanged. See [receipt](../../STANDARD-FIREBALL-VERIFICATION.md).
+- [x] One compact Astra review; one Important fixed RED→GREEN. Preserved failing `flight-8at5rP`; published scoped decisions/results. Full Standard/rally acceptance is gated, not marked complete.
 
 Later non-danmaku units: special fireball profiles, overhead bombing, positive ground mode and reversible conflict-aware Domain. **All Grand Danmaku remains excluded.** Completing this unit does not complete the boss.
 
