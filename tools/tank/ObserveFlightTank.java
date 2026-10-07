@@ -83,6 +83,7 @@ public final class ObserveFlightTank {
     row.addProperty("rallyFace",attack.rallyState().face());
     row.addProperty("lastFiredProfile",attack.lastFiredProfile().name());
     row.addProperty("selectedProfile",attack.selectedProfile().name());row.addProperty("lastCandidate",attack.lastCandidate());row.addProperty("lastRejection",attack.lastRejection());
+    row.addProperty("stationaryTicks",attack.stationaryTicks());row.addProperty("observedDisplacement",attack.observedDisplacement());
     var candidateProof=attack.lastPreflight();if(candidateProof!=null){row.addProperty("preflightClear",candidateProof.result().clear());row.addProperty("preflightSegments",candidateProof.result().segments());}
     JsonArray projectiles=new JsonArray();var all=ghast.level().getEntitiesOfClass(StandardSoutouFireball.class,new net.minecraft.world.phys.AABB(0,224,0,52,248,52));
     row.addProperty("projectileCoverage",all.size()>16?"PARTIAL":"LOADED_ROOM_SELECTED_TYPE");

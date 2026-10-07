@@ -6,6 +6,7 @@ import com.genki.soutoughast.entity.ai.flight.RallyReaction;
 import com.genki.soutoughast.entity.ai.flight.StandardAttack;
 import com.genki.soutoughast.entity.ai.flight.CommittedTrajectory;
 import com.genki.soutoughast.entity.ai.flight.ProjectileSelector;
+import com.genki.soutoughast.entity.ai.flight.ObservedStationarity;
 import com.genki.soutoughast.entity.ai.flight.MobilityContext;
 import com.genki.soutoughast.entity.projectile.StandardSoutouFireball;
 import com.genki.soutoughast.entity.projectile.CommittedSoutouFireball;
@@ -27,7 +28,7 @@ public final class SoutouGhastStandardAttack {
     private final ProjectileSelector selector=new ProjectileSelector();
     private ProjectileSelector.Choice choice=ProjectileSelector.Choice.STANDARD,lastFired=ProjectileSelector.Choice.STANDARD;
     private Vec3 lockedEye,lockedLanding;
-    private int stationaryTicks;
+    private final ObservedStationarity stationarity=new ObservedStationarity();
     private double selectionVariation;
     private CommittedPathClearance.Proof lastProof;
     private String lastCandidate="NONE",lastRejection="NONE";
@@ -40,14 +41,16 @@ public final class SoutouGhastStandardAttack {
     public ProjectileSelector.Choice selectedProfile(){return choice;}
     public String lastCandidate(){return lastCandidate;}
     public String lastRejection(){return lastRejection;}
+    public int stationaryTicks(){return stationarity.ticks();}
+    public double observedDisplacement(){return stationarity.displacement();}
     public boolean engaged(){return attack.state().face()||rally.state().face();}
-    public void reset(){attack.reset();rally.reset();incoming=null;targetUuid=null;selector.reset();stationaryTicks=0;lockedEye=null;lockedLanding=null;ghast.setCharging(false);}
+    public void reset(){attack.reset();rally.reset();incoming=null;targetUuid=null;selector.reset();stationarity.reset();lockedEye=null;lockedLanding=null;ghast.setCharging(false);}
     public Vec3 tick(LivingEntity target,boolean visible,boolean movementFeint){
         selector.tick();
         boolean present=target!=null&&target.isAlive();
         if(!present||!target.getUUID().equals(targetUuid)){
             attack.invalidateTarget();rally.reset();incoming=null;targetUuid=present?target.getUUID():null;
-            selector.reset();stationaryTicks=0;lockedEye=null;lockedLanding=null;
+            selector.reset();stationarity.reset();lockedEye=null;lockedLanding=null;
         }
         if(!present){
             var committed=attack.step(null,false);ghast.setCharging(committed.face());
@@ -60,8 +63,8 @@ public final class SoutouGhastStandardAttack {
             observedVelocity=target.getDeltaMovement();Vec3 lead=observedVelocity.scale(leadTicks);
             if(lead.length()>2)lead=lead.normalize().scale(2);
             aimPoint=target.getEyePosition().add(lead);aim=offset.add(lead).normalize();
-            stationaryTicks=observedVelocity.length()<.025?Math.min(80,stationaryTicks+1):0;
-        }else{stationaryTicks=0;}
+            stationarity.observe(from(target.position()));
+        }else{stationarity.observe(null);}
         if(incoming==null&&!attack.state().face()&&!movementFeint&&visible){
             var candidates=ghast.level().getEntitiesOfClass(StandardSoutouFireball.class,ghast.getBoundingBox().inflate(14),p->p.canBossReact(ghast));
             candidates.sort(java.util.Comparator.comparingDouble(ghast::distanceToSqr));
@@ -91,7 +94,7 @@ public final class SoutouGhastStandardAttack {
         if(state.phase()==StandardAttack.Phase.CHARGE&&state.ticks()==0){
             lastProof=null;lastCandidate="NONE";lastRejection="NONE";
             selectionVariation=ghast.getRandom().nextDouble();
-            choice=selector.choose(context(),ghast.getEyePosition().distanceTo(aimPoint),from(observedVelocity),stationaryTicks,selectionVariation);
+            choice=selector.choose(context(),ghast.getEyePosition().distanceTo(aimPoint),from(observedVelocity),stationarity.ticks(),selectionVariation);
             // A rejected candidate never commits a special tell. Standard remains a baseline alternative.
             if(choice!=ProjectileSelector.Choice.STANDARD&&profileShot(ghast.getEyePosition().add(look.scale(3)))==null){
                 selector.record(choice);choice=ProjectileSelector.Choice.STANDARD;
