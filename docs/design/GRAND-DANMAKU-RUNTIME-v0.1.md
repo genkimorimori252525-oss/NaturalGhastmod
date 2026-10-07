@@ -40,21 +40,15 @@ NaturalGhast resource:
 
 `data/soutou_ghast/danmaku/grand_danmaku_v1.json`
 
-## Current first score
+## Current test score status
 
-Current score is approximately 14 seconds / 280 ticks:
+**The actual Soutou Ghast danmaku design has not been created yet.**
 
-1. Halo Gold
-2. counter-rotating blue/magenta Twin Spiral
-3. Six Petal Bloom
-4. cyan/violet Weave
-5. Double Finale
+The JSON currently stored here is an **engineering / visualization test score only**. It exists to prove that the Score schema, PLAYER_VIEW coordinates, phase rotation, VirtualBullet lifecycle, batch reconstruction and JavaFX authoring path work end-to-end.
 
-The six petals use six FAN Tracks with 60° phase separation.
-Each petal is 28° wide, leaving roughly 32° between adjacent petal centers as intentional negative space.
+Its Halo / Twin Spiral / petal / weave / finale motifs are examples used for validation. They are **not approved gameplay content and must not be treated as the final Grand Danmaku pattern**.
 
-This is already more than an engineering placeholder: it is the first concrete visual grammar for Grand Danmaku.
-It remains tunable in the Techhub JavaFX Score Mode.
+The final danmaku is expected to be designed separately, using the TECH-HUB JavaFX tool and the Youkai Homecoming research as references. Once approved, its Score JSON can replace the current test resource without rewriting the runtime core.
 
 ## Player-view coordinate frame
 
