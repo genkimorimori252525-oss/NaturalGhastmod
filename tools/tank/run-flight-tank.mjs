@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL, fileURLToPath} from 'node:url';
 import {analyzeFlight} from './flight-results.mjs';
+import {waitForFlightAction} from './flight-owner.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
 const option = name => { const i = process.argv.indexOf('--' + name); if (i < 0 || !process.argv[i + 1]) throw Error('Missing --' + name); return path.resolve(process.argv[i + 1]); };
@@ -27,7 +28,7 @@ const {setTargetControl} = await load('evidence/target-control.mjs');
 const {evidenceRuntimeFromCurrent} = await load('evidence/runtime.mjs');
 const {finalizeEvidenceRun} = await load('evidence/finalize.mjs');
 const {readTankContext} = await load('tank-cli.mjs');
-const {submitSelectedAction,inspectSelectedAction} = await load('bridge/owner-action-adapter.mjs');
+const {submitSelectedAction,inspectSelectedAction,inspectOwnerControl} = await load('bridge/owner-action-adapter.mjs');
 const {prepareTankResourceFile} = await load('tank-cli.mjs');
 const hashJson = value => sha(Buffer.from(stableJson(value)));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -169,6 +170,7 @@ try {
         const options={runDir:current.runDir,envelopeHash:owner.ownerEnvelopeHash};
         report.actions=[];
         for(const action of actions){
+            await waitForFlightAction({inspect:()=>inspectOwnerControl({...options,allowBusyObservation:true}),selectedActionId:action.action_id});
             await submitSelectedAction({...options,selectedActionId:action.action_id});
             const deadline=Date.now()+5000;let receipt;
             do{receipt=await inspectSelectedAction({...options,selectedActionId:action.action_id});if(receipt.reportedStatus==='VERIFIED')break;await sleep(50);}while(Date.now()<deadline);
