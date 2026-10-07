@@ -128,11 +128,11 @@ try {
     // selected explicitly by Gradle project-dir and recorded as a second identity.
     config.workspaceId = experiment; config.workspaceDir = repository;
     config.runtimeRoot = path.join(trial, 'runtime'); config.gameDir = path.join(trial, 'game');
-    config.readyTimeoutMs = 180000;
+    config.readyTimeoutMs = 240000;
     config.launch.command = path.join(template.workspaceDir, template.launch.command);
     config.launch.args = ['--project-dir', template.workspaceDir, '-Pforge_version=1.20.1-47.4.10',
         ...template.launch.args.slice(0, -2).filter(arg => arg !== '--offline'), '--init-script', initScript];
-    config.launch.env = {JAVA_HOME: javaHome, KNEEKURA_DEBUG_MOD_PROFILE: 'TANK_CORE'};
+    config.launch.env = {JAVA_HOME: javaHome, KNEEKURA_DEBUG_MOD_PROFILE: 'TANK_CORE', NATURALGHAST_PRIVATE_GAME_DIR: path.join(trial, 'game')};
     config.ownerControl = {requestHash, operatorRegistration: {trustedRoot: privateDir, relativePath: 'operator.json', sha256: sha(await fs.readFile(operatorFile))}};
     await write(path.join(trial, 'config.json'), config);
     await registerBridgeRequest({runtimeRoot: config.runtimeRoot, registration: {schemaVersion: 1, trustedRoot: inputs,

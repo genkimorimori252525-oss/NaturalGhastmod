@@ -49,6 +49,29 @@ public final class ObserveFoundationTank {
     @Mod.EventBusSubscriber(modid="naturalghast_tank_observer", value=Dist.CLIENT)
     public static final class ClientObserver {
         private static boolean captured;
+        private static int startupTicks;
+        private static boolean startupCaptured;
+        @SubscribeEvent public static void startup(TickEvent.ClientTickEvent event) throws Exception {
+            if (!active() || event.phase != TickEvent.Phase.END || startupCaptured || ++startupTicks < 300) return;
+            var mc = Minecraft.getInstance();
+            if (mc.level != null) { startupCaptured = true; return; }
+            var expected = System.getenv("NATURALGHAST_PRIVATE_GAME_DIR");
+            if (expected == null || !mc.gameDirectory.toPath().toRealPath().equals(Path.of(expected).toRealPath())) return;
+            startupCaptured = true;
+            Files.createDirectories(output());
+            JsonObject state = new JsonObject();
+            state.addProperty("scope", "PRE_OWNER_PRIVATE_CLIENT_UI_OBSERVATION_ONLY");
+            state.addProperty("screenClass", mc.screen == null ? "NONE" : mc.screen.getClass().getName());
+            state.addProperty("title", mc.screen == null ? "NONE" : mc.screen.getTitle().getString());
+            state.addProperty("integratedServerPresent", mc.getSingleplayerServer() != null);
+            JsonArray messages = new JsonArray();
+            if (mc.screen != null) for (var child : mc.screen.children()) {
+                if (child instanceof net.minecraft.client.gui.components.AbstractWidget widget && messages.size() < 16) messages.add(widget.getMessage().getString());
+            }
+            state.add("widgetLabels", messages);
+            Files.writeString(output().resolve("startup.json"), state + "\n", StandardOpenOption.CREATE_NEW);
+            try (var image = Screenshot.takeScreenshot(mc.getMainRenderTarget())) { image.writeToFile(output().resolve("startup.png")); }
+        }
         @SubscribeEvent public static void frame(RenderLevelStageEvent event) throws Exception {
             if (!active() || !ready || captured || event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL || !owned()) return;
             var mc = Minecraft.getInstance();
