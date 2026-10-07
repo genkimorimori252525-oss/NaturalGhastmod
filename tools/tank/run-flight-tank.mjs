@@ -78,7 +78,7 @@ try {
     const classpath = savedArgs.split(/\r?\n/)[1].replace(/^"|"$/g, '');
     const classes = path.join(trial, 'classes'); await fs.mkdir(classes);
     const exec = (tool, args) => execFileSync(path.join(javaHome, 'bin', tool + '.exe'), args, {cwd: trial, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']});
-    const sources = ['PrepareFlightTank.java', 'ObserveFlightTank.java'].map(name => path.join(repository, 'tools/tank', name));
+    const sources = ['TankSeedEntities.java', 'PrepareFlightTank.java', 'ObserveFlightTank.java'].map(name => path.join(repository, 'tools/tank', name));
     const compileCp = classpath + ';' + path.join(repository, 'build/classes/java/main');
     const compileArgs = path.join(trial, 'javac.args');
     await fs.writeFile(compileArgs, ['--release', '17', '-encoding', 'UTF-8', '-cp', compileCp, '-d', classes, ...sources].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});

@@ -1,7 +1,9 @@
 # Natural Ghast redesign — current design
 
-Revision: v0.5  
-Date: 2026-10-06
+Revision: v0.6
+Date: 2026-10-08
+
+The user's 2026-10-08 clarification supersedes v0.5's player-camera-relative anchor. A combat anchor is a broad, boss-owned world-space region, retained during combat and reselected only when necessary. The initial flight implementation still follows v0.5; its static-player acceptance does not verify this correction. See [the correction design](../superpowers/specs/2026-10-08-combat-region-swimming-design.md).
 
 ## Core identity
 
@@ -13,19 +15,13 @@ Date: 2026-10-06
 
 ## Air-combat foundation
 
-Normal combat uses a player-relative **Combat Anchor Volume** instead of constant orbiting.
+Normal combat uses a persistent **Combat Anchor Volume** instead of constant orbiting.
 
-The anchor is not a fixed world coordinate and not a single exact point. It is a preferred three-dimensional combat region expressed relative to the player.
+Soutou Ghast chooses a broad three-dimensional region in world space. It retains that region during combat, with freedom to swim horizontally and vertically. The center is a reference for the region, not a mandatory return point. Player yaw/pitch must never translate or rotate it; ordinary Player movement must not drag it every tick.
 
-The volume combines:
-- approximate range;
-- approximate altitude;
-- preferred bearing;
-- horizontal freedom;
-- vertical freedom;
-- a soft preferred point inside the region.
+Initial development size in open space: approximately 40 blocks wide, 16 high and 40 deep (ellipsoid radii20/8/20). This is tuning, not final balance. Do not substitute a roughly10-block home region. Body clearance and terrain constrain feasible routes, while confined-space adaptation is an explicit context change.
 
-The volume follows meaningful player displacement but does not continuously spin around the player.
+Reselection requires an explicit reason, such as sustained loss of usable space/LOS, substantial disengagement, target replacement or a committed tactical relocation. Use observation, persistence and cooldowns to avoid oscillation; a Player turning away is not a reason.
 
 Temporary maneuvers such as dodge, feint, pass-by, attack reposition and emergency movement normally preserve the same anchor volume and return to it afterward.
 
@@ -33,41 +29,19 @@ Typical lifecycle:
 
 `ANCHOR VOLUME -> TEMPORARY MANEUVER -> BRAKE -> RETURN -> ANCHOR VOLUME`
 
-After avoiding an attack, Soutou Ghast should often return to roughly the same frontal combat region as if nothing happened.
+After avoiding an attack, Soutou Ghast should often resume swimming within the same retained region as if nothing happened.
 
-## Frontal-view combat volume
+## Combat-region ownership and readability
 
-The preferred combat region should normally stay within the player's **front-facing field of view**.
+`OBSERVED COMBAT GEOMETRY -> BOSS REGION SELECTION -> RETAINED WORLD-SPACE REGION`
 
-The purpose is not to lock Soutou Ghast to the center of the screen. The purpose is to prevent the fight from becoming a camera-search exercise where the player must constantly spin around to find the boss.
+Readable telegraphs remain important, but they must not make the boss chase the Player's camera. Player-facing direction can inform observable tactical choices or telegraphs; it cannot define the retained region, its return destination or continuous idle steering.
 
-The frontal volume should therefore have:
-- a preferred horizontal sector around the player's forward direction;
-- a preferred vertical sector that allows visible altitude changes;
-- the normal preferred range band;
-- enough width for drifting, strafing, dodging and feints.
-
-Soutou Ghast may temporarily leave the frontal volume for a meaningful maneuver, but should usually recover back into it afterward.
-
-The player's instantaneous look vector must not directly drag the volume every tick. Use a **smoothed combat-facing reference** that follows sustained changes in player orientation rather than tiny camera motions.
-
-Concept:
-
-`PLAYER LOOK -> SMOOTHED COMBAT FACING -> FRONTAL ANCHOR VOLUME`
-
-Candidate movement points should receive a preference bonus for remaining inside or near this frontal volume, not an absolute hard constraint.
-
-This preserves:
-- visibility of feints;
-- visibility of attack-face telegraphs;
-- readable fireball rally interactions;
-- reduced need for constant camera rotation.
-
-The target experience is: Soutou Ghast feels mobile and evasive, but the player can usually keep watching it.
+Temporary maneuvers may leave the region and recover into it. Normal swimming can occupy a broad part of it rather than circling an exact point or repeatedly correcting to the screen center. Deliberate region transfers are separate committed actions.
 
 ## Preferred range band
 
-Soutou Ghast should actively try to preserve a **comfortable combat-distance band**, not one exact distance.
+Soutou Ghast should prefer a **comfortable combat-distance band**, not one exact distance. The initial22–34-block band is a soft tactical preference within the retained region; crossing it must not force immediate region relocation or cancel ordinary swimming.
 
 Reason:
 - if it stays too close, ranged attacks and reflected fireballs leave too little reaction time;
@@ -91,11 +65,13 @@ The range band may shift temporarily for:
 - a specific future attack;
 - recovery after a high-speed action.
 
-Once the temporary reason ends, the AI should generally recover toward its normal band and frontal Combat Anchor Volume.
+Once the temporary reason ends, the AI should generally recover into its retained Combat Anchor Volume, considering range without forcing a fixed radius.
 
 ## Flight feel
 
 Motion should be smooth and inertia-heavy.
+
+Normal HOLD/quiet periods allow gentle physical floating and swimming. Use sustained, smoothly changing low-speed horizontal and vertical intent through the same Flight Controller; repeated short bursts followed by full stops must not be the default idle rhythm. Emergency collision braking remains authoritative. Visual-only bobbing cannot substitute for actual flight motion.
 
 Soutou Ghast can intentionally accelerate, brake, turn, dodge and return to position. Braking is possible, but weaker/slower than acceleration.
 
@@ -131,7 +107,7 @@ Complex actions should be composed from reusable primitives rather than one-off 
 - BRAKE — intentionally reduce velocity
 - BURST — short strong acceleration
 - CURVE — inertia-preserving turn
-- RETURN — return toward the frontal Combat Anchor Volume
+- RETURN — recover into the retained Combat Anchor Volume, not its exact center
 - OVERSHOOT — intentionally or physically pass the desired position
 
 ## Feint system
@@ -155,7 +131,7 @@ Initial Feint Recipes:
 
 Normal HOLD/DRIFT/reposition movement must remain common so that not every movement automatically signals a feint.
 
-Most feints should be designed to remain visible within the frontal combat space. The player should be deceived by the movement, not lose track of the entity entirely.
+Most feints should use readable motion and telegraphs within the combat space. The player should be deceived by the movement rather than repeated unexplained region relocation; this does not authorize camera-following steering.
 
 ## Movement, attack and timing are separate
 
@@ -649,7 +625,7 @@ The signature entry is:
 
 The withdrawal should be large enough to visibly read as disengagement, but it is still part of the attack.
 
-The return may temporarily ignore the normal frontal Combat Anchor Volume because this is a deliberate major-art exception.
+The return may temporarily leave the retained Combat Anchor Volume because this is a deliberate major-art exception.
 
 #### Overhead Axis Lock
 
@@ -972,7 +948,7 @@ Use context-aware candidate scoring with bounded variation.
 Allow controlled imperfections:
 - slight timing variation;
 - small preferred-range variation;
-- slight movement within the frontal anchor volume;
+- gentle swimming throughout the broad retained anchor volume;
 - occasional overshoot;
 - curved recovery;
 - minor final-position correction;
@@ -1077,21 +1053,21 @@ Examples:
 
 A notable rare behavior is **Overhead Re-anchor**:
 
-1. Soutou Ghast accelerates out of the player's normal frontal Combat Anchor Volume;
+1. Soutou Ghast accelerates out of its retained Combat Anchor Volume;
 2. it passes above the player's head;
 3. it continues behind the player rather than immediately returning;
-4. the preferred Combat Anchor Volume is deliberately transferred to the player's rear side;
+4. a new world-space Combat Anchor Volume is selected beyond the Player using observed geometry and explicitly committed;
 5. combat resumes from the new anchor.
 
 This maneuver should be low-frequency because the normal design goal is to keep the fight readable and reduce unnecessary camera spinning.
 
-It is therefore an intentional exception: occasional loss of frontal control becomes a surprise precisely because the boss normally stays visible.
+This is a deliberate tactical relocation, not continuous steering into or out of the Player's field of view.
 
-After enough time, another maneuver may restore a frontal anchor.
+After enough time, another committed maneuver may choose a different region; subsequent camera turns do not move either region.
 
 ### Camera-disruption budget
 
-Leaving the player's frontal field of view should be treated as a limited tactical resource.
+Deliberate off-screen tactical relocation should be treated as a limited resource. The Player voluntarily looking away does not consume that resource or require relocation.
 
 The AI should track recent off-screen relocations and strongly reduce their likelihood after use.
 
@@ -1105,7 +1081,7 @@ Semi-open terrain should favor medium-scale flight:
 - cover-to-cover repositioning;
 - controlled pass-bys;
 - fireball angles that exploit openings;
-- Combat Anchor migration to preserve line of sight.
+- explicit Combat Anchor reselection after sustained line-of-sight or usable-space problems, with hysteresis.
 
 The AI should prefer movement that remains visually readable while using the terrain to alter approach angles.
 

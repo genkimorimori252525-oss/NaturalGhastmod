@@ -45,6 +45,7 @@ public final class PrepareFoundationTank {
             NbtIo.writeCompressed(level, world.resolve("level.dat").toFile());
             Path playerFile = world.resolve("playerdata/" + player.getUUID("UUID") + ".dat");
             if (Files.exists(playerFile)) NbtIo.writeCompressed(player, playerFile.toFile());
+            int seedReimuRemoved=TankSeedEntities.removeSeedReimu(world,1);
             Path entities = world.resolve("entities");
             try (RegionFile region = new RegionFile(entities.resolve("r.0.0.mca"), entities, true)) {
                 ChunkPos position = new ChunkPos(0, 0);
@@ -54,10 +55,6 @@ public final class PrepareFoundationTank {
                 for (Tag row : rows) {
                     CompoundTag entity = (CompoundTag)row;
                     if (entity.hasUUID("UUID") && entity.getUUID("UUID").equals(SUBJECT)) throw new IllegalStateException("DUPLICATE_SUBJECT");
-                    if (entity.getString("id").equals("touhou_little_maid:reimu")) {
-                        entity.put("Pos", vector(3.5, 224, 3.5)); entity.put("Motion", vector(0, 0, 0));
-                        entity.putBoolean("NoAI", true); entity.putBoolean("NoGravity", true);
-                    }
                 }
                 CompoundTag ghast = new CompoundTag();
                 ghast.putString("id", "soutou_ghast:soutou_ghast"); ghast.putUUID("UUID", SUBJECT);
@@ -85,7 +82,8 @@ public final class PrepareFoundationTank {
             fixture.addProperty("baselineHash", KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(scope)));
             fixture.addProperty("certainty", "PREDICTED_SCOPE_REQUIRES_NATIVE_OWNER_MATCH");
             fixture.addProperty("subjectUuid", SUBJECT.toString());
-            fixture.addProperty("changes", "PRIVATE_ONLY: spectator camera; saved Reimu moved and frozen; active NaturalGhast added. Tank geometry unchanged.");
+            fixture.addProperty("seedReimuRemoved",seedReimuRemoved);
+            fixture.addProperty("changes", "PRIVATE_ONLY: spectator camera; seed Reimu excluded from room chunks; active NaturalGhast added. Tank geometry unchanged.");
             Files.writeString(root.resolve("fixture.json"), fixture + "\n", StandardOpenOption.CREATE_NEW);
         }
     }

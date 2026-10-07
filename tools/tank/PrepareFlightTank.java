@@ -80,11 +80,11 @@ public final class PrepareFlightTank {
      try(var output=region.getChunkDataOutputStream(pos)){NbtIo.write(chunk,output);}region.flush();
     }
    }
+   int seedReimuRemoved=TankSeedEntities.removeSeedReimu(world,3);
    Path entities=world.resolve("entities");
    try(RegionFile region=new RegionFile(entities.resolve("r.0.0.mca"),entities,true)){
     ChunkPos pos=new ChunkPos(0,0);CompoundTag chunk;try(var input=region.getChunkDataInputStream(pos)){if(input==null)throw new IllegalStateException("ENTITY_CHUNK_MISSING");chunk=NbtIo.read(input);}
-    ListTag rows=chunk.getList("Entities",Tag.TAG_COMPOUND);for(Tag t:rows){CompoundTag e=(CompoundTag)t;if(e.hasUUID("UUID")&&e.getUUID("UUID").equals(SUBJECT))throw new IllegalStateException("DUPLICATE_SUBJECT");
-     if(e.getString("id").equals("touhou_little_maid:reimu")){e.putBoolean("NoAI",true);e.putBoolean("NoGravity",true);e.put("Pos",vector(3.5,224,3.5));e.put("Motion",vector(0,0,0));}}
+    ListTag rows=chunk.getList("Entities",Tag.TAG_COMPOUND);for(Tag t:rows){CompoundTag e=(CompoundTag)t;if(e.hasUUID("UUID")&&e.getUUID("UUID").equals(SUBJECT))throw new IllegalStateException("DUPLICATE_SUBJECT");}
     CompoundTag ghast=new CompoundTag();ghast.putString("id","soutou_ghast:soutou_ghast");ghast.putUUID("UUID",SUBJECT);ghast.put("Pos",vector(9.5,230,9.5));ghast.put("Motion",vector(0,0,0));ghast.put("Rotation",rotation(0,0));ghast.putFloat("Health",10);ghast.putBoolean("PersistenceRequired",true);ghast.putBoolean("NoAI",false);rows.add(ghast);chunk.put("Entities",rows);
     try(var output=region.getChunkDataOutputStream(pos)){NbtIo.write(chunk,output);}region.flush();
    }
@@ -92,7 +92,8 @@ public final class PrepareFlightTank {
    for(int x=7;x<13;x++)for(int y=224;y<235;y++)for(int z=6;z<13;z++){JsonArray b=new JsonArray();b.add(x);b.add(y);b.add(z);b.add(fixtureBlock(x,y,z));blocks.add(b);}scope.add("blocks",blocks);
    JsonObject poses=new JsonObject(),pose=new JsonObject();pose.addProperty("x",9.5d);pose.addProperty("y",230d);pose.addProperty("z",9.5d);pose.addProperty("yaw",0f);pose.addProperty("pitch",0f);for(String key:new String[]{"vx","vy","vz"})pose.addProperty(key,0d);poses.add(SUBJECT.toString(),pose);scope.add("subjectPoses",poses);
    JsonObject fixture=new JsonObject();fixture.add("scope",scope);fixture.addProperty("baselineHash",KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(scope)));fixture.addProperty("subjectUuid",SUBJECT.toString());fixture.addProperty("playerUuid",player.getUUID("UUID").toString());
-   fixture.addProperty("changes","PRIVATE_ONLY: offline56x16x56 bounded Tank shell, survival Player observation fixture, opaque wall, active ghast. Runtime window opening only through registered owner block actions.");
+   fixture.addProperty("seedReimuRemoved",seedReimuRemoved);
+   fixture.addProperty("changes","PRIVATE_ONLY: offline56x16x56 bounded Tank shell, survival Player observation fixture, opaque wall, active ghast; seed Reimu excluded from room chunks. Runtime window opening only through registered owner block actions.");
    Files.writeString(root.resolve("fixture.json"),fixture+"\n",StandardOpenOption.CREATE_NEW);
    JsonObject owner=JsonParser.parseString(Files.readString(world.resolve("kneekura-tank-owner.json"))).getAsJsonObject(),recipe=owner.getAsJsonObject("recipe");
    recipe.addProperty("preset","custom");JsonObject sizes=recipe.getAsJsonObject("dimensions");sizes.addProperty("width",SIZE);sizes.addProperty("height",HEIGHT);sizes.addProperty("depth",SIZE);owner.addProperty("recipeHash","sha256:"+KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(recipe)));

@@ -84,13 +84,9 @@ Implementation should therefore preserve the Score/runtime abstraction so the fi
 
 ### Combat Anchor Volume
 
-Normal air combat is organized around a player-relative 3D preferred region rather than constant orbiting.
+User clarification,2026-10-08: normal air combat uses a broad boss-owned world-space region retained during the fight and reselected only when necessary. It does not follow Player position/look every tick. Initial proposed open-space size40×16×40; a roughly10-block region is too small. The center is not an exact return point. This supersedes v0.5's smoothed-facing frontal anchor.
 
-The Ghast should normally remain in or near the player's frontal field of view.
-
-Concept:
-
-`PLAYER LOOK -> SMOOTHED COMBAT FACING -> FRONTAL COMBAT ANCHOR VOLUME`
+`OBSERVED COMBAT GEOMETRY -> BOSS REGION SELECTION -> RETAINED WORLD-SPACE REGION`
 
 Temporary actions leave the anchor, then normally return:
 
@@ -99,6 +95,8 @@ Temporary actions leave the anchor, then normally return:
 ### Preferred range band
 
 Use a comfortable range band, not an exact radius.
+
+Range is a soft tactical preference inside the retained region, not a hard reason for continuous anchor relocation. Readability must not cause camera-chasing steering.
 
 - too close -> open distance;
 - comfortable -> hold / drift / attack / feint;
@@ -117,6 +115,8 @@ Architecture:
 `Brain -> Movement Intent -> Maneuver -> Flight Controller -> Actual Motion`
 
 The Flight Controller owns momentum, acceleration, braking, turn authority, collision avoidance and arrival correction.
+
+Normal quiet/HOLD intervals include gentle actual horizontal/vertical swimming with sustained commitments; avoid repeated brief bursts followed by complete stops. Safety braking remains authoritative. See the [correction design and grouped acceptance](superpowers/specs/2026-10-08-combat-region-swimming-design.md); product changes are pending written-design review.
 
 ### Feints
 
@@ -259,9 +259,9 @@ Recommended order:
 
 1. **Do not extend the old v0.02 combat phases.**
 2. Establish the new entity/combat state boundary and Flight Controller.
-3. Implement Perception + smoothed combat-facing reference.
-4. Implement Combat Anchor Volume + preferred range state.
-5. Implement movement primitives and environment / Mobility Context.
+3. Preserve observable-only Perception; Player facing cannot move the anchor.
+4. Correct Combat Anchor Volume to a persistent broad world-space region; preferred range is soft.
+5. Correct normal swimming/commitments, then extend movement primitives and environment / Mobility Context.
 6. Implement Tactical Evaluator + short-term repetition memory + Commit Points.
 7. Add Standard Fireball and rally behavior.
 8. Add Delayed Burst / Curve / Lob through reusable projectile profiles.
@@ -304,7 +304,7 @@ Follow the KNEEKURA / TECH-HUB evidence discipline:
 - overall boss identity;
 - new air-AI philosophy;
 - Combat Anchor Volume;
-- preferred range / frontal visibility;
+- preferred range / readable telegraphs without camera-following region ownership;
 - inertia-heavy Flight Controller architecture;
 - feint grammar;
 - environment adaptation;
@@ -322,10 +322,12 @@ Follow the KNEEKURA / TECH-HUB evidence discipline:
 - isolated Grand Danmaku pure-Java runtime scaffold in Draft PR #1;
 - JavaFX Score authoring technology in TECH-HUB.
 
+Local flight-foundation branch also contains a non-attacking inertia/clearance scaffold and a bounded static-player native receipt (`FLIGHT-MOBILITY-VERIFICATION.md`). Its camera-relative anchor and stop/start drift require the2026-10-08 correction before further tactics. NaturalGhast Tank preparation excludes unintended seed Reimu; explicit subject experiments remain separate.
+
 ### Not implemented / not finished
 
 - the redesigned normal combat AI;
-- new Flight Controller;
+- final Flight Controller behavior and native smooth-swimming acceptance;
 - new movement/feint/tactical system;
 - new fireball family;
 - rally gameplay;
