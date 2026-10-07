@@ -107,16 +107,20 @@ try {
     const initScript = path.join(trial, 'native.init.gradle');
     await fs.writeFile(initScript, `gradle.beforeProject { p ->\n p.plugins.withId('net.minecraftforge.gradle') {\n  p.dependencies.add('runtimeOnly', p.files('${artifact.replaceAll('\\','/')}','${observer.replaceAll('\\','/')}'))\n  p.afterEvaluate { p.minecraft.runs.client.workingDirectory p.file('${path.join(trial, 'game').replaceAll('\\','/')}') }\n }\n}\n`, {flag: 'wx'});
     const config = structuredClone(template);
-    config.workspaceId = experiment; config.runtimeRoot = path.join(trial, 'runtime'); config.gameDir = path.join(trial, 'game');
+    // The registered target source is NaturalGhast. The separate TANK_CORE host is
+    // selected explicitly by Gradle project-dir and recorded as a second identity.
+    config.workspaceId = experiment; config.workspaceDir = repository;
+    config.runtimeRoot = path.join(trial, 'runtime'); config.gameDir = path.join(trial, 'game');
     config.readyTimeoutMs = 180000;
-    config.launch.args = template.launch.args.slice(0, -2).concat(['--init-script', initScript]);
+    config.launch.command = path.join(template.workspaceDir, template.launch.command);
+    config.launch.args = ['--project-dir', template.workspaceDir, ...template.launch.args.slice(0, -2), '--init-script', initScript];
     config.launch.env = {JAVA_HOME: javaHome, KNEEKURA_DEBUG_MOD_PROFILE: 'TANK_CORE'};
     config.ownerControl = {requestHash, operatorRegistration: {trustedRoot: privateDir, relativePath: 'operator.json', sha256: sha(await fs.readFile(operatorFile))}};
     await write(path.join(trial, 'config.json'), config);
     await registerBridgeRequest({runtimeRoot: config.runtimeRoot, registration: {schemaVersion: 1, trustedRoot: inputs,
         requestFile: 'request.json', bindingFile: 'binding.json', assertionsFile: 'assertions.json',
         materials: {buildArtifact: {relativePath: 'naturalghast-dev.jar'}, configArtifact: {relativePath: 'config.bin'}, resourceArtifact: {relativePath: 'resources.zip'}}}});
-    report.sourceRevision = sourceRevision; report.buildHash = buildHash; report.hostRevision = execFileSync('git', ['rev-parse','HEAD'], {cwd: config.workspaceDir, encoding: 'utf8', windowsHide: true}).trim();
+    report.sourceRevision = sourceRevision; report.buildHash = buildHash; report.hostRevision = execFileSync('git', ['rev-parse','HEAD'], {cwd: template.workspaceDir, encoding: 'utf8', windowsHide: true}).trim();
     await verifyOriginal(); console.log('REGISTERED ' + experiment);
     try {
         await launchDebugRun(config, lab); current = await readCurrent(config, lab); assert(current.live && current.runtimeOwnership?.owned);
