@@ -148,11 +148,16 @@ try {
         const targetControl = await setTargetControl(current, fixture.subjectUuid, {decisionSnapshot: false}); report.targetRevision = targetControl.revision;
         runtime = evidenceRuntimeFromCurrent(current); await runtime.init();
         const deadline = Date.now() + 45000;
+        let retainedObservations = [];
         while (Date.now() < deadline) {
             await runtime.ingestAvailable();
-            const context = await readTankContext({current, observations: await runtime.store.readObservations(), arenaEpoch: 8,
+            // Use the preceding immutable ingestion snapshot. The owner clock file
+            // can lag the newest client-render sample; never rewrite either clock.
+            const observations = retainedObservations;
+            retainedObservations = await runtime.store.readObservations();
+            const context = await readTankContext({current, observations, arenaEpoch: 8,
                 worldBinding: {authorityHash: hashJson(originalRows), copyBaselineHash: hashJson(originalRows), fixtureHash: hashJson(fixture), fixtureChanges: [fixture.changes]},
-                profile: {kind: 'OBSERVE_GRID', grid: true, brightness: false, motion: false, decisionChannels: ['SERVER_ENTITY_STATE']},
+                profile: {kind: 'OBSERVE_GRID', grid: true, brightness: true, motion: false, decisionChannels: ['SERVER_ENTITY_STATE']},
                 timeBudget: {experimentMs: 10000, finalizationMs: 5000, cleanupMs: 5000, marginMs: 5000}});
             report.preflight = context.preflight;
             const frame = await json(path.join(current.runDir, 'evidence/derived/naturalghast-foundation/frame.json')).catch(() => null);
