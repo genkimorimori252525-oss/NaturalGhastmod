@@ -18,9 +18,11 @@ Base `0a33e05`; authoritative v0.6 projectile sections. User authorizes non-danm
 
 ## Coherent verification tasks
 
-- [ ] Pure RED→GREEN finite trajectories/phase speeds/no U-turn/normalization/selection and bounded segment-validator tests. Preserve prior suites.
-- [ ] Mapped loaded swept-body/declared terminal checks and bounded trajectory NBT codec tests; reject unknown/malformed state without silent Standard fallback.
-- [ ] Register client/server profile entity, readable particle cues and spawn/reload clock; integrate observed selection and initial collision validation.
-- [ ] Genuine Forge build, affected tests, one fresh compact Astra whole-unit source review and one Important/Critical correction pass.
-- [ ] Fresh finite TANK_CORE natural profile trial, paired room roster and explicit telemetry/cue metadata; preserve original85 and lifecycle/evidence. Scope only the profiles actually exercised; no fabricated input or forced product selection.
-- [ ] Publish decisions/receipts/remaining gates on scoped GitHub branches; record useful Tank friction. This is an implementation unit, not full-boss completion.
+- [x] Pure RED→GREEN finite trajectories/phase speeds/no U-turn/normalization/selection and bounded segment-validator tests. Preserve prior suites.
+- [x] Mapped loaded swept-body/declared terminal checks and bounded trajectory NBT codec tests; reject unknown/malformed state without silent Standard fallback.
+- [x] Register client/server profile entity, readable particle cues and spawn/reload clock; integrate observed selection and initial collision validation.
+- [x] Genuine Forge build, affected tests, one fresh compact Astra whole-unit source review and one Important/Critical correction pass.
+- [x] Fresh finite TANK_CORE natural profile trial, paired room roster and explicit telemetry/cue metadata; preserve original85 and lifecycle/evidence. Scope only the profiles actually exercised; no fabricated input or forced product selection.
+- [x] Publish decisions/receipts/remaining gates on scoped GitHub branches; record useful Tank friction. This is an implementation unit, not full-boss completion.
+
+Development-unit receipt: [committed profiles](../../COMMITTED-PROFILES-VERIFICATION.md). Native acceptance covers Lob only; all other gates remain explicit. No full-boss completion.
