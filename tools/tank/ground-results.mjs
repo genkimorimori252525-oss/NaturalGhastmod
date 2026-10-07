@@ -1,5 +1,5 @@
 /** Supplementary actual native rows; never substitutes for canonical roster/owned closure. */
-export function analyzeGround({rows,clients,damage,clientGround,end,request},boss,player){
+export function analyzeGround({rows,clients,events=[],damage,clientGround,end,request},boss,player){
  const failures=[];const require=(ok,name)=>{if(!ok)failures.push(name);};
  require(Array.isArray(rows)&&rows.length>=80&&rows.length<=180,'FINITE_GROUND_COVERAGE');
  if(!rows?.length)return {status:'FAIL',failures,damagePipeline:'NOT_ACCEPTED'};
@@ -21,6 +21,23 @@ export function analyzeGround({rows,clients,damage,clientGround,end,request},bos
  require(rows.every(r=>!r.overheadActive&&!r.rallyFace&&r.firedCount===0),'ONE_GROUND_OFFENSE_ONLY');
  require(clientGround?.subjectUuid===boss&&clientGround.grounded===true&&clientGround.width===4&&clientGround.height===4&&clientGround.cameraUuid===player,'ACTUAL_CLIENT_GROUND_STATE');
  const launches=rows.filter(r=>r.groundFire);require(launches.length>=2&&launches.every((r,i)=>r.grounded&&r.groundSupport&&(!i||r.tick-launches[i-1].tick>=34)),'NATURAL_SINGLE_CADENCE');
+ require(rows.every((r,i)=>Number.isInteger(r.groundFiredCount)&&r.groundFiredCount>=0&&(!i?r.groundFiredCount===0:
+    r.groundFiredCount===rows[i-1].groundFiredCount||r.groundFiredCount===rows[i-1].groundFiredCount+1&&r.groundFire)),'ACTUAL_SUCCESSFUL_LAUNCH_COUNT');
+ const successful=rows.filter((r,i)=>i&&r.groundFiredCount>rows[i-1].groundFiredCount);
+ require(successful.length>=2,'TWO_SUCCESSFUL_NATIVE_LAUNCHES');
+ require(events.length<=8&&events.every((e,i)=>Number.isInteger(e.order)&&e.order>0&&(!i||e.order>events[i-1].order&&e.tick>=events[i-1].tick)),'ORDERED_NATIVE_RELEASE_DEATH');
+ const death=events.find(e=>e.event==='PLAYER_DEATH_LISTENER'&&e.uuid===player);
+ let fullCadences=0;
+ for(const launch of launches){
+  const index=rows.indexOf(launch),charge=rows.slice(Math.max(0,index-8),index);
+  require(charge.length===8&&charge.every((r,i)=>r.groundAttackPhase==='CHARGE'&&r.groundAttackTicks===i&&r.firingFace&&r.grounded&&r.groundSupport&&r.targetUuid===player&&r.lineOfSight),'OBSERVED_EIGHT_TICK_CHARGE');
+  const recovery=rows.slice(index,index+6);
+  require(recovery.every((r,i)=>r.groundAttackPhase==='RECOVER'&&r.groundAttackTicks===i&&r.firingFace),'COMMITTED_SIX_TICK_FACE');
+  const quiet=rows.slice(index+6,index+26);
+  require(quiet.every(r=>r.groundAttackPhase==='IDLE'&&!r.groundFire&&!r.firingFace),'TWENTY_TICK_QUIET');
+  if(recovery.length===6&&quiet.length===20)fullCadences++;
+ }
+ require(fullCadences>=2,'TWO_COMPLETE_CADENCES');
  const shots=new Map();for(const r of rows){require(r.projectileCoverage==='LOADED_ROOM_SELECTED_TYPE','COMPLETE_SELECTED_PROJECTILES');for(const p of r.projectiles??[]){if(!shots.has(p.uuid))shots.set(p.uuid,[]);shots.get(p.uuid).push({tick:r.tick,...p});}}
  const proven=[];
  for(const [uuid,points] of shots){
@@ -29,6 +46,12 @@ export function analyzeGround({rows,clients,damage,clientGround,end,request},bos
   if(points.length>=3){const client=clients?.find(c=>c.uuid===uuid);require(client?.type==='soutou_ghast:ground_fireball'&&client.renderer?.endsWith('ThrownItemRenderer')&&client.powerMagnitude===0&&Math.abs(client.speed-1.9)<1e-6,'ACTUAL_CLIENT_SINGLE_RENDER');proven.push(uuid);}
  }
  require(proven.length>=2,'TWO_MEASURED_SINGLE_FLIGHTS');
+ for(const launch of successful){
+  const uuid=launch.groundLastProjectileUuid,points=shots.get(uuid),join=events.find(e=>e.event==='RELEASE_JOIN_LISTENER'&&e.uuid===uuid&&e.tick===launch.tick);
+  require(typeof uuid==='string'&&points?.[0].tick===launch.tick,'COUNTER_LINKED_ACTUAL_PROJECTILE');
+  require(launch.targetUuid===player&&launch.lineOfSight&&join&&!join.canceledAtListener&&join.targetAlive&&join.targetHealth>0&&join.targetType==='minecraft:player'&&join.targetUuid===player&&join.lineOfSight
+    &&(!death||join.tick<death.tick||join.tick===death.tick&&join.order<death.order),'OBSERVED_ALIVE_TARGET_AT_RELEASE');
+ }
  require(Array.isArray(damage)&&damage.length<=32&&damage.every(d=>Number.isFinite(d.amount)&&d.amount>=0&&Number.isFinite(d.healthBefore)&&typeof d.canceledAtListener==='boolean'&&['NATIVE_HURT_LISTENER_PRE_ARMOR','NATIVE_DAMAGE_LISTENER_PRE_HEALTH_WRITE'].includes(d.producer)),'BOUNDED_DAMAGE_OBSERVATIONS');
  return {status:failures.length?'FAIL':'PASS',failures:[...new Set(failures)],samples:rows.length,measuredProjectiles:proven,launchTicks:launches.map(r=>r.tick),nativeDamageListeners:damage?.length??0,combinedObservedHealthLoss:rows[0].playerHealth-rows.at(-1).playerHealth,
   scope:'DEVELOPMENT_STATIC_SUPPORTED_GROUND_MOVEMENT_AND_SINGLE_FLIGHT',damagePipeline:'NOT_ACCEPTED',nativeTakeoff:'NOT_RUN',realCounterplay:'NOT_RUN',cueReadability:'NOT_RUN',reloadLateClient:'NOT_RUN'};

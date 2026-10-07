@@ -12,7 +12,7 @@ import {analyzeStandard} from './standard-results.mjs';
 import {analyzeProfiles,readShotRows} from './profile-results.mjs';
 import {analyzeOverhead} from './major-results.mjs';
 import {analyzeGround} from './ground-results.mjs';
-import {planOverheadWindow,planGroundWindow,remainingWindowBudget} from './window-budget.mjs';
+import {planOverheadWindow,planGroundWindow,remainingWindowBudget,finalRosterDeadline} from './window-budget.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
 const option = name => { const i = process.argv.indexOf('--' + name); if (i < 0 || !process.argv[i + 1]) throw Error('Missing --' + name); return path.resolve(process.argv[i + 1]); };
@@ -206,8 +206,9 @@ try {
         assert.equal(owner?.status,'ACTIVE_SCOPED_CONTROL');
         const options={runDir:current.runDir,envelopeHash:owner.ownerEnvelopeHash};
         async function roster(index){
+            const deadline=bounded&&index===1?finalRosterDeadline(windowPlan,Date.now()):Date.now()+15000;
             await publishTankRoster({...options,sampleIndex:index});
-            const deadline=Date.now()+(overhead&&index===1?5000:15000);let result;
+            let result;
             do{await runtime.ingestAvailable();result=await inspectTankRoster({...options,sampleIndex:index});if(['COMPLETE','PARTIAL','REJECTED'].includes(result.status))break;await sleep(150);}while(Date.now()<deadline);
             assert.equal(result?.status,'COMPLETE','ROOM_ROSTER_INCOMPLETE');
             assert(!result.roster.entities.some(e=>e.entityType==='touhou_little_maid:reimu'),'UNEXPECTED_REIMU');
@@ -265,7 +266,7 @@ try {
             report.finalRoster=await roster(1);
             const clients=await readShotRows(path.join(derived,'client-projectiles.jsonl'));
             if(ground){
-                report.standard=analyzeGround({rows,clients,damage:await readShotRows(path.join(derived,'ground-damage.jsonl')),clientGround:await json(path.join(derived,'client-ground.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;}),end:await json(path.join(derived,'window-end.json')),request:windowPlan},fixture.subjectUuid,fixture.playerUuid);
+                report.standard=analyzeGround({rows,clients,events:await readShotRows(path.join(derived,'release-death-events.jsonl')),damage:await readShotRows(path.join(derived,'ground-damage.jsonl')),clientGround:await json(path.join(derived,'client-ground.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;}),end:await json(path.join(derived,'window-end.json')),request:windowPlan},fixture.subjectUuid,fixture.playerUuid);
             }else if(overhead){
                 report.standard=analyzeOverhead({rows,clients,paths:await readShotRows(path.join(derived,'profile-paths.jsonl')),impacts:await readShotRows(path.join(derived,'bomb-impacts.jsonl')),events:await readShotRows(path.join(derived,'release-death-events.jsonl')),
                     pose:await json(path.join(derived,'downward-frame.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;}),end:await json(path.join(derived,'window-end.json')),request:windowPlan,

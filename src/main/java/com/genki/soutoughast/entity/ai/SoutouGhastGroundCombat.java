@@ -16,6 +16,7 @@ public final class SoutouGhastGroundCombat {
     private final GroundAttack attack=new GroundAttack();
     private final GroundClearance clearance;
     private UUID targetUuid;
+    private UUID lastProjectileUuid;
     private int constrained,retry,fired;
     public SoutouGhastGroundCombat(SoutouGhast ghast){this.ghast=ghast;clearance=new GroundClearance(ghast);}
     public GroundCombat.State state(){return movement.state();}
@@ -23,6 +24,7 @@ public final class SoutouGhastGroundCombat {
     public boolean active(){return movement.active();}
     public boolean grounded(){return movement.grounded();}
     public int firedCount(){return fired;}
+    public UUID lastProjectileUuid(){return lastProjectileUuid;}
     public void reset(){movement.reset();attack.reset();targetUuid=null;constrained=retry=0;ghast.setCharging(false);}
     public boolean tryBegin(MobilityContext.Sample sample,boolean busy){
         constrained=!sample.clear(8)?Math.min(6,constrained+1):0;
@@ -56,7 +58,7 @@ public final class SoutouGhastGroundCombat {
             boolean loaded=clearance.muzzle(eye,muzzle);
             if(loaded&&ghast.level().clip(new ClipContext(eye,muzzle,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,ghast)).getType()==HitResult.Type.MISS
                     &&ghast.level().noCollision(shot,shot.getBoundingBox())&&ghast.level().addFreshEntity(shot)){
-                fired++;ghast.level().levelEvent(null,1016,ghast.blockPosition(),0);
+                fired++;lastProjectileUuid=shot.getUUID();ghast.level().levelEvent(null,1016,ghast.blockPosition(),0);
             }
         }else if(firing.phase()==GroundAttack.Phase.CHARGE&&firing.ticks()==0){ghast.level().levelEvent(null,1015,ghast.blockPosition(),0);}
         Vec3 look=firing.face()?to(firing.direction()):offset;

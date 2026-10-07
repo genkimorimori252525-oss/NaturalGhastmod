@@ -23,7 +23,7 @@ public final class FlightFixtureTest {
   if(!PrepareFlightTank.block(singleSeal,9,10,6).equals("minecraft:air"))throw new AssertionError("open tactics fixture retains no upper wall");
   if(PrepareFlightTank.allocatedCells()!=75816)throw new AssertionError("variant cannot grow allocation");
   CompoundTag ground=PrepareFlightTank.section(14,0,0,true,true);
-  if(!PrepareFlightTank.block(ground,9,6,9).equals("minecraft:black_concrete"))throw new AssertionError("Ground low ceiling missing");
+  if(!PrepareFlightTank.block(ground,9,6,9).equals("minecraft:stone"))throw new AssertionError("Ground low ceiling must use registered Arena palette");
   if(!PrepareFlightTank.block(ground,9,2,6).equals("minecraft:stone"))throw new AssertionError("Ground initial eye seal missing");
   if(!PrepareFlightTank.block(ground,9,4,6).equals("minecraft:air"))throw new AssertionError("Ground does not inherit old seal");
   if(!PrepareFlightTank.block(ground,9,1,9).equals("minecraft:air"))throw new AssertionError("Ground initial4x4body clearance");

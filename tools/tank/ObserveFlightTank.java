@@ -92,15 +92,16 @@ public final class ObserveFlightTank {
   }
   @SubscribeEvent(priority=net.minecraftforge.eventbus.api.EventPriority.LOWEST,receiveCanceled=true)
   public static void joined(net.minecraftforge.event.entity.EntityJoinLevelEvent event){boundary.run(()->{
-   if(!active()||!overhead()||ready||event.getLevel().isClientSide||!Files.exists(output().resolve("request-window.json"))||!withinOverheadWindow()||!owned())return;
-   if(!(event.getEntity() instanceof CommittedSoutouFireball bomb)||bomb.flight()==null||bomb.flight().path().kind()!=com.genki.soutoughast.entity.ai.flight.CommittedTrajectory.Kind.BOMB||!(bomb.getOwner() instanceof SoutouGhast boss)||!boss.getUUID().equals(UUID.fromString("67676767-1007-4000-8000-000000000001")))return;
+   if(!active()||!bounded()||ready||event.getLevel().isClientSide||!Files.exists(output().resolve("request-window.json"))||!withinOverheadWindow()||!owned())return;
+   if(!(event.getEntity() instanceof StandardSoutouFireball bomb)||!(bomb.getOwner() instanceof SoutouGhast boss)||!boss.getUUID().equals(UUID.fromString("67676767-1007-4000-8000-000000000001")))return;
+   if(ground()?!(bomb instanceof com.genki.soutoughast.entity.projectile.GroundSoutouFireball):!(bomb instanceof CommittedSoutouFireball special)||special.flight()==null||special.flight().path().kind()!=com.genki.soutoughast.entity.ai.flight.CommittedTrajectory.Kind.BOMB)return;
    var target=boss.getTarget();JsonObject row=new JsonObject();row.addProperty("event","RELEASE_JOIN_LISTENER");row.addProperty("tick",boss.level().getGameTime());row.addProperty("uuid",bomb.getUUID().toString());row.addProperty("canceledAtListener",event.isCanceled());
    row.addProperty("targetUuid",target==null?null:target.getUUID().toString());row.addProperty("targetType",target==null?null:BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString());row.addProperty("targetAlive",target!=null&&target.isAlive());row.addProperty("targetHealth",target==null?0:target.getHealth());row.addProperty("lineOfSight",target!=null&&boss.getSensing().hasLineOfSight(target));
    if(target!=null){row.addProperty("targetX",target.getX());row.addProperty("targetY",target.getY());row.addProperty("targetZ",target.getZ());}row.addProperty("bossX",boss.getX());row.addProperty("bossY",boss.getY());row.addProperty("bossZ",boss.getZ());row.addProperty("majorPitch",boss.majorPitch());appendEvent(row);
   });}
   @SubscribeEvent(priority=net.minecraftforge.eventbus.api.EventPriority.LOWEST,receiveCanceled=true)
   public static void died(net.minecraftforge.event.entity.living.LivingDeathEvent event){boundary.run(()->{
-   if(!active()||!overhead()||ready||!(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)||!Files.exists(output().resolve("request-window.json"))||!withinOverheadWindow()||!owned())return;
+   if(!active()||!bounded()||ready||!(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)||!Files.exists(output().resolve("request-window.json"))||!withinOverheadWindow()||!owned())return;
    if(player.level().dimension()!=net.minecraft.world.level.Level.OVERWORLD||!new net.minecraft.world.phys.AABB(0,224,0,52,248,52).contains(player.position()))return;
    JsonObject row=new JsonObject();row.addProperty("event","PLAYER_DEATH_LISTENER");row.addProperty("tick",player.level().getGameTime());row.addProperty("uuid",player.getUUID().toString());row.addProperty("canceledAtListener",event.isCanceled());appendEvent(row);
   });}
@@ -159,6 +160,7 @@ public final class ObserveFlightTank {
      row.addProperty("groundPhase",groundState.phase().name());row.addProperty("groundReason",groundState.reason());row.addProperty("groundTaunt",groundState.taunt());row.addProperty("groundActive",mode.active());row.addProperty("grounded",mode.grounded());
      row.addProperty("groundSupport",new com.genki.soutoughast.entity.ai.GroundClearance(ghast).supportedRoute(SoutouGhastInertialMoveControl.from(ghast.position()),SoutouGhastInertialMoveControl.from(ghast.position())));
      row.addProperty("groundAttackPhase",groundAttack.phase().name());row.addProperty("groundAttackTicks",groundAttack.ticks());row.addProperty("groundFire",groundAttack.fire());row.addProperty("groundFiredCount",mode.firedCount());
+     row.addProperty("groundLastProjectileUuid",mode.lastProjectileUuid()==null?null:mode.lastProjectileUuid().toString());
      row.addProperty("groundPresentation",ghast.groundPresentation());row.addProperty("overheadActive",ghast.getOverheadAttack().active());
     }
     var attack=ghast.getStandardAttack();var state=attack.state();

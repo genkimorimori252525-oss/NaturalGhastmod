@@ -22,7 +22,7 @@ public final class PrepareFlightTank {
   boolean shell=x==-1||x==SIZE||z==-1||z==SIZE||y==Y-1||y==Y+HEIGHT;
   boolean wall=z==6&&x>=7&&x<=12&&y>=224&&y<=237;
   boolean aperture=z==6&&x>=8&&x<=10&&y>=225&&y<=231&&!(x==9&&y==228);
-  return shell||ground&&y==230?"minecraft:black_concrete":(singleCellSeal?x==9&&y==(ground?226:228)&&z==6:wall&&!aperture)?"minecraft:stone":"minecraft:air";
+  return shell?"minecraft:black_concrete":ground&&y==230|| (singleCellSeal?x==9&&y==(ground?226:228)&&z==6:wall&&!aperture)?"minecraft:stone":"minecraft:air";
  }
  private static CompoundTag state(String name){CompoundTag s=new CompoundTag();s.putString("Name",name);return s;}
  private static CompoundTag cell(CompoundTag section,int x,int y,int z){
