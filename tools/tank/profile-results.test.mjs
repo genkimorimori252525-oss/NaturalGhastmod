@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {analyzeProfiles} from './profile-results.mjs';
+import {analyzeProfiles,readShotRows} from './profile-results.mjs';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+test('missing optional telemetry gives zero coverage while malformed records and other I/O errors propagate',async()=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'profile-shot-'));
+ const file=path.join(root,'shots.jsonl');assert.deepEqual(await readShotRows(file),[]);
+ await fs.writeFile(file,'{invalid}\n');await assert.rejects(readShotRows(file),SyntaxError);
+ await assert.rejects(readShotRows(root));
+});
 test('no fabricated profile acceptance from empty or ordinary-only observations',()=>{
  assert.equal(analyzeProfiles([],[],'boss',[]).status,'FAIL');
  assert.equal(analyzeProfiles([{tick:1,projectiles:[]}],[],'boss',[]).status,'FAIL');

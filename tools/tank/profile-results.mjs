@@ -1,4 +1,10 @@
 import {analyzeStandard} from './standard-results.mjs';
+import fs from 'node:fs/promises';
+/** An unobserved optional shot file means zero coverage, never acceptance. Other failures propagate. */
+export async function readShotRows(file){
+ let raw;try{raw=await fs.readFile(file,'utf8');}catch(error){if(error.code==='ENOENT')return [];throw error;}
+ return raw.trim()?raw.trim().split('\n').map(JSON.parse):[];
+}
 /** Actual positions against one immutable declared trajectory, not profile labels alone. */
 export function analyzeProfiles(rows,clients,subjectUuid,paths){
  const common=analyzeStandard(rows,clients,subjectUuid,{profile:true}),failures=[...common.failures];

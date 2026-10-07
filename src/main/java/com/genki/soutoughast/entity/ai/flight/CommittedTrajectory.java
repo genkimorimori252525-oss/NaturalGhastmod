@@ -62,6 +62,17 @@ public record CommittedTrajectory(Kind kind,List<FlightVector> points) {
         }
         return new CommittedTrajectory(Kind.LOB,points);
     }
+    public static List<CommittedTrajectory> lobCandidates(FlightVector start,FlightVector end,double... heights){
+        var candidates=new ArrayList<CommittedTrajectory>();
+        if(heights.length>3)throw new IllegalArgumentException("BOUNDED_LOB_CANDIDATES_REQUIRED");
+        for(double height:heights){
+            try{candidates.add(lob(start,end,height));}
+            catch(IllegalArgumentException rejected){
+                if(!"COMMITTED_SEGMENT_SPEED_BOUND".equals(rejected.getMessage())&&!"COMMITTED_RANGE_INVALID".equals(rejected.getMessage()))throw rejected;
+            }
+        }
+        return List.copyOf(candidates);
+    }
     /** Serializable clock; normalization deliberately ends every special trajectory phase. */
     public static final class Flight {
         private final CommittedTrajectory path;

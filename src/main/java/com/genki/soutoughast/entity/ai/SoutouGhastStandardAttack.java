@@ -30,12 +30,16 @@ public final class SoutouGhastStandardAttack {
     private int stationaryTicks;
     private double selectionVariation;
     private CommittedPathClearance.Proof lastProof;
+    private String lastCandidate="NONE",lastRejection="NONE";
     public SoutouGhastStandardAttack(SoutouGhast ghast){this.ghast=ghast;}
     public StandardAttack.State state(){return attack.state();}
     public RallyReaction.State rallyState(){return rally.state();}
     public int firedCount(){return fired;}
     public ProjectileSelector.Choice lastFiredProfile(){return lastFired;}
     public CommittedPathClearance.Proof lastPreflight(){return lastProof;}
+    public ProjectileSelector.Choice selectedProfile(){return choice;}
+    public String lastCandidate(){return lastCandidate;}
+    public String lastRejection(){return lastRejection;}
     public boolean engaged(){return attack.state().face()||rally.state().face();}
     public void reset(){attack.reset();rally.reset();incoming=null;targetUuid=null;selector.reset();stationaryTicks=0;lockedEye=null;lockedLanding=null;ghast.setCharging(false);}
     public Vec3 tick(LivingEntity target,boolean visible,boolean movementFeint){
@@ -85,6 +89,7 @@ public final class SoutouGhastStandardAttack {
         }
         if(state.face())look=to(state.direction());
         if(state.phase()==StandardAttack.Phase.CHARGE&&state.ticks()==0){
+            lastProof=null;lastCandidate="NONE";lastRejection="NONE";
             selectionVariation=ghast.getRandom().nextDouble();
             choice=selector.choose(context(),ghast.getEyePosition().distanceTo(aimPoint),from(observedVelocity),stationaryTicks,selectionVariation);
             // A rejected candidate never commits a special tell. Standard remains a baseline alternative.
@@ -122,13 +127,20 @@ public final class SoutouGhastStandardAttack {
                             new CommittedTrajectory.Strength[]{CommittedTrajectory.Strength.NORMAL,CommittedTrajectory.Strength.SHALLOW};
                     for(var strength:strengths)for(int direction:new int[]{side,-side})paths.add(CommittedTrajectory.curve(from(muzzle),from(lockedEye),strength,direction));
                 }
-                case LOB -> {for(double height:context()==MobilityContext.Kind.OPEN_AIR?new double[]{10,8,6}:new double[]{6,4})paths.add(CommittedTrajectory.lob(from(muzzle),from(lockedLanding),height));}
+                case LOB -> paths.addAll(CommittedTrajectory.lobCandidates(from(muzzle),from(lockedLanding),context()==MobilityContext.Kind.OPEN_AIR?new double[]{10,8,6}:new double[]{6,4}));
                 default -> {return null;}
             }
-        }catch(IllegalArgumentException invalidRange){return null;}
+        }catch(IllegalArgumentException invalidRange){
+            if(!"COMMITTED_RANGE_INVALID".equals(invalidRange.getMessage())&&!"COMMITTED_SEGMENT_SPEED_BOUND".equals(invalidRange.getMessage())&&!"HORIZONTAL_CURVE_REQUIRED".equals(invalidRange.getMessage()))throw invalidRange;
+            lastRejection=invalidRange.getMessage();return null;
+        }
+        if(paths.isEmpty()){lastCandidate=choice.name();lastRejection="NO_VALID_CANDIDATE_GEOMETRY";}
+        int ordinal=0;
         for(var path:paths){
+            lastCandidate=path.kind().name()+":"+ordinal++;
             var shot=new CommittedSoutouFireball(ghast,path);
             lastProof=CommittedPathClearance.validate(ghast.level(),shot,path);
+            lastRejection=lastProof.result().clear()?"NONE":lastProof.result().reason();
             if(lastProof.result().clear()){shot.setPreflight(lastProof);return shot;}
         }
         return null;

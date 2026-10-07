@@ -26,6 +26,10 @@ public final class CommittedTrajectoryTest {
         check(lob.velocity(0).y()>0,"visible upward launch");
         check(lob.velocity(lob.points().size()-2).y()<0,"visible descent");
         check(lob.points().stream().mapToDouble(FlightVector::y).max().orElseThrow()>10,"coherent apex");
+        var verticalStart=new FlightVector(0,0,0);var verticalEnd=new FlightVector(0,12,0);
+        boolean highRejected=false;try{CommittedTrajectory.lob(verticalStart,verticalEnd,10);}catch(IllegalArgumentException expected){highRejected=true;}
+        check(highRejected,"high arc exceeds segment speed bound");
+        check(CommittedTrajectory.lobCandidates(verticalStart,verticalEnd,10,8,6).size()==2,"one infeasible high arc must not suppress valid lower arcs");
         for(var path:new CommittedTrajectory[]{burst,lob,CommittedTrajectory.curve(start,end,CommittedTrajectory.Strength.NORMAL,1)}){
             var flight=new CommittedTrajectory.Flight(path);
             check(flight.next()!=null,"initial committed step");flight.normalize();check(flight.next()==null&&flight.normalized(),"deflection immediately removes all special motion");

@@ -9,7 +9,7 @@ import {analyzeTactics} from './tactics-results.mjs';
 import {waitForFlightAction} from './flight-owner.mjs';
 import {privateFlightLaunchArgs} from './flight-launch.mjs';
 import {analyzeStandard} from './standard-results.mjs';
-import {analyzeProfiles} from './profile-results.mjs';
+import {analyzeProfiles,readShotRows} from './profile-results.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
 const option = name => { const i = process.argv.indexOf('--' + name); if (i < 0 || !process.argv[i + 1]) throw Error('Missing --' + name); return path.resolve(process.argv[i + 1]); };
@@ -234,12 +234,12 @@ try {
         assert(rows.every(row=>row.width===4&&row.height===4&&row.health===fixture.subjectHealth));
         assert(rows.every(row=>row.playerUuid===fixture.playerUuid),'Real Player identity changed');
         if(standard){
-            const clients=(await fs.readFile(path.join(derived,'client-projectiles.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
-            report.standard=profiles?analyzeProfiles(rows,clients,fixture.subjectUuid,(await fs.readFile(path.join(derived,'profile-paths.jsonl'),'utf8')).trim().split('\n').map(JSON.parse)):analyzeStandard(rows,clients,fixture.subjectUuid);
+            report.finalRoster=await roster(1);
+            const clients=await readShotRows(path.join(derived,'client-projectiles.jsonl'));
+            report.standard=profiles?analyzeProfiles(rows,clients,fixture.subjectUuid,await readShotRows(path.join(derived,'profile-paths.jsonl'))):analyzeStandard(rows,clients,fixture.subjectUuid);
             await write(path.join(derived,profiles?'profile-summary.json':'standard-summary.json'),report.standard);
             report.playerOutcome={initialHealth:rows[0].playerHealth,finalHealth:rows.at(-1).playerHealth,finalPosition:[rows.at(-1).playerX,rows.at(-1).playerY,rows.at(-1).playerZ]};
             assert.equal(report.standard.status,'PASS',report.standard.failures.join(','));
-            report.finalRoster=await roster(1);
         }else{
             assert(rows.every(row=>Math.abs(row.playerX-9.5)<.001&&Math.abs(row.playerY-224)<.001&&Math.abs(row.playerZ-3.5)<.001&&Math.abs(row.playerYaw)<.001&&Math.abs(row.playerPitch+18)<.001),'Static player fixture changed');
             report.flight=analyzeSwimming(rows,fixture.playerUuid);await write(path.join(derived,'flight-summary.json'),report.flight);
