@@ -155,6 +155,7 @@ public final class ObserveFlightTank {
      row.addProperty("majorPhase",majorState.phase().name());row.addProperty("majorTicks",majorState.ticks());row.addProperty("majorActive",major.active());
      row.addProperty("majorDownward",majorState.downward());row.addProperty("majorFace",majorState.face());row.addProperty("majorReleaseRequested",majorState.releaseRequested());row.addProperty("majorReason",majorState.reason());
      row.addProperty("majorSequences",major.sequenceCount());row.addProperty("bombCount",major.bombCount());row.addProperty("majorPitch",ghast.majorPitch());row.addProperty("lookPitch",ghast.getXRot());
+     row.addProperty("majorDecision",major.lastDecision());row.addProperty("majorQuiet",major.quietTicks());row.addProperty("majorRecent",major.recentTicks());
      if(majorState.goal()!=null){JsonArray goal=new JsonArray();goal.add(majorState.goal().x());goal.add(majorState.goal().y());goal.add(majorState.goal().z());row.add("majorGoal",goal);}
      if(deathSample<0&&player!=null&&!player.isAlive())deathSample=samples;
      row.addProperty("windowStage",deathSample<0?"COMBAT":"POST_DEATH_RECOVERY");

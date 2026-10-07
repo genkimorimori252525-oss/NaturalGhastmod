@@ -19,20 +19,25 @@ public final class SoutouGhastOverheadAttack {
     private UUID subject;
     private int sequences,bombs;
     private CommittedPathClearance.Proof lastBombProof;
+    private String lastDecision="NONE";
     public SoutouGhastOverheadAttack(SoutouGhast ghast){this.ghast=ghast;}
     public boolean active(){return art.active();}
     public OverheadBombing.State state(){return art.state();}
     public int sequenceCount(){return sequences;}
     public int bombCount(){return bombs;}
+    public String lastDecision(){return lastDecision;}
+    public int quietTicks(){return director.quietTicks();}
+    public int recentTicks(){return director.recentTicks();}
     public CommittedPathClearance.Proof lastBombProof(){return lastBombProof;}
     public void ordinaryTick(boolean observedCombat){director.tick(observedCombat);}
     private SoutouGhastInertialMoveControl control(){return (SoutouGhastInertialMoveControl)ghast.getMoveControl();}
     public boolean tryBegin(LivingEntity target,boolean visible,CombatAnchor.Region region,boolean busy){
-        if(target==null||!target.isAlive()||!visible||region==null)return false;
+        if(target==null||!target.isAlive()||!visible||region==null){lastDecision="TARGET_OR_REGION_UNOBSERVED";return false;}
         double range=ghast.position().distanceTo(target.position());
-        if(!director.shouldBegin(control().getMobilityContext(),true,busy,range,ghast.getRandom().nextDouble()))return false;
-        if(!bodyRoute(from(target.position()).add(new FlightVector(0,12,0)))){director.rejected();return false;}
-        if(!art.begin(from(ghast.position()),from(target.position()),region.center(),this::bodyRoute)){director.rejected();return false;}
+        if(!director.shouldBegin(control().getMobilityContext(),true,busy,range,ghast.getRandom().nextDouble())){lastDecision=director.decision();return false;}
+        if(!bodyRoute(from(target.position()).add(new FlightVector(0,12,0)))){lastDecision="OVERHEAD_BODY_ROUTE_BLOCKED";director.rejected();return false;}
+        if(!art.begin(from(ghast.position()),from(target.position()),region.center(),this::bodyRoute)){lastDecision="WITHDRAW_BODY_ROUTE_BLOCKED";director.rejected();return false;}
+        lastDecision="STARTED";
         subject=target.getUUID();director.began();sequences++;lastBombProof=null;
         ghast.level().levelEvent(null,1015,ghast.blockPosition(),0);return true;
     }
@@ -85,7 +90,7 @@ public final class SoutouGhastOverheadAttack {
         if(!ghast.level().addFreshEntity(shot))return false;
         bombs++;ghast.level().levelEvent(null,1016,ghast.blockPosition(),0);return true;
     }
-    public void reset(){art.reset();director.reset();subject=null;lastBombProof=null;}
+    public void reset(){art.reset();director.reset();subject=null;lastBombProof=null;lastDecision="NONE";}
     private static FlightVector from(Vec3 point){return SoutouGhastInertialMoveControl.from(point);}
     private static Vec3 to(FlightVector point){return SoutouGhastInertialMoveControl.to(point);}
 }

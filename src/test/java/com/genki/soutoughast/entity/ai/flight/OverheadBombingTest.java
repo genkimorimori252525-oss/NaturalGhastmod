@@ -5,13 +5,17 @@ public final class OverheadBombingTest {
     public static void main(String[] args){
         var director=new MajorActionDirector();
         check(!director.shouldBegin(MobilityContext.Kind.OPEN_AIR,true,false,24,1),"initial ordinary interval");
+        check(director.decision().equals("QUIET_INTERVAL")&&director.quietTicks()==240,"latest quiet reason is observable without changing timer");
         for(int i=0;i<240;i++)director.tick(true);
         check(!director.shouldBegin(MobilityContext.Kind.CONFINED,true,false,24,1),"confined suppresses overhead");
+        check(director.decision().equals("MOBILITY_CONTEXT"),"latest context rejection retained");
         check(!director.shouldBegin(MobilityContext.Kind.OPEN_AIR,true,true,24,1),"ordinary/rally/feint tell excludes major");
         check(!director.shouldBegin(MobilityContext.Kind.OPEN_AIR,false,false,24,1),"unobserved or unsafe excludes major");
         check(director.shouldBegin(MobilityContext.Kind.OPEN_AIR,true,false,24,1),"eligible observed open encounter");
+        check(director.decision().equals("ELIGIBLE")&&director.quietTicks()==0,"eligibility diagnostic does not alter selection");
         director.began();director.finished();for(int i=0;i<600;i++)director.tick(true);
         check(!director.shouldBegin(MobilityContext.Kind.OPEN_AIR,true,false,24,1),"strong repetition memory outlasts ordinary quiet");
+        check(director.decision().equals("RECENT_MAJOR")&&director.recentTicks()==600,"latest repetition reason uses actual memory");
         for(int i=0;i<600;i++)director.tick(true);
         check(director.shouldBegin(MobilityContext.Kind.OPEN_AIR,true,false,24,1),"finite major memory");
         var art=new OverheadBombing();var boss=new FlightVector(0,6,20);var target=FlightVector.ZERO;var region=new FlightVector(0,6,28);
