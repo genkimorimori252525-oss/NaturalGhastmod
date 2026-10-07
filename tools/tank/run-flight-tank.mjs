@@ -84,7 +84,8 @@ try {
     const classes = path.join(trial, 'classes'); await fs.mkdir(classes);
     const exec = (tool, args) => execFileSync(path.join(javaHome, 'bin', tool + '.exe'), args, {cwd: trial, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']});
     const sources = ['TankSeedEntities.java', 'PrepareFlightTank.java', 'ObserveFlightTank.java'].map(name => path.join(repository, 'tools/tank', name));
-    const compileCp = classpath + ';' + path.join(repository, 'build/classes/java/main')+';'+report.bridgeReadiness.outputRoot;
+    // The registered argument file can include an older product checkout; current verified classes take precedence.
+    const compileCp = path.join(repository, 'build/classes/java/main')+';'+report.bridgeReadiness.outputRoot+';'+classpath;
     const compileArgs = path.join(trial, 'javac.args');
     await fs.writeFile(compileArgs, ['--release', '17', '-encoding', 'UTF-8', '-cp', compileCp, '-d', classes, ...sources].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('javac', ['@' + compileArgs]);
