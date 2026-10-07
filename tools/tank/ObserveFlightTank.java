@@ -36,6 +36,7 @@ public final class ObserveFlightTank {
  public static final class ServerObserver {
   @SubscribeEvent public static void tick(TickEvent.ServerTickEvent event)throws Exception{
    if(!active()||event.phase!=TickEvent.Phase.END||samples>=sampleLimit()||!owned())return;
+   if(standard()&&!Files.exists(output().resolve("request-window.json")))return;
    var entity=event.getServer().overworld().getEntity(UUID.fromString("67676767-1007-4000-8000-000000000001"));
    if(!(entity instanceof SoutouGhast ghast))return;
    var control=(SoutouGhastInertialMoveControl)ghast.getMoveControl();var target=ghast.getTarget();var velocity=ghast.getDeltaMovement();
@@ -99,6 +100,7 @@ public final class ObserveFlightTank {
   private static final java.util.Set<UUID> seen=new java.util.HashSet<>();
   @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event)throws Exception{
    if(!active()||!standard()||ready||event.phase!=TickEvent.Phase.END||seen.size()>=16||!owned())return;
+   if(!Files.exists(output().resolve("request-window.json")))return;
    var mc=Minecraft.getInstance();if(mc.level==null)return;
    for(var p:mc.level.getEntitiesOfClass(StandardSoutouFireball.class,new net.minecraft.world.phys.AABB(0,224,0,52,248,52)).stream().limit(16).toList()){
     if(!seen.add(p.getUUID()))continue;

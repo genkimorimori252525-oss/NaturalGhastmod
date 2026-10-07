@@ -21,6 +21,14 @@ public final class StandardAttackTest {
         check(attack.state().face(),"charging before cancellation");
         check(attack.step(null,false).phase()==StandardAttack.Phase.IDLE,"LOS loss aborts charge");
         for(int i=0;i<30;i++)check(!attack.step(B,true).fire(),"cancellation cannot immediate refire");
+        for(String reason:new String[]{"target death","null target","target replacement"}){
+            attack.reset();for(int i=0;i<90;i++)attack.step(A,true);
+            check(attack.state().fire(),"launched before "+reason);
+            for(int i=1;i<20;i++){
+                attack.invalidateTarget();check(attack.step(reason.equals("target replacement")?B:null,false).face(),"committed recovery survives "+reason);
+            }
+            attack.invalidateTarget();check(!attack.step(null,false).face(),"recovery still ends on time after "+reason);
+        }
         RallyReaction rally=new RallyReaction();
         check(!rally.begin(1,A,0.95),"fallible choice declines");
         check(rally.begin(1,A,.1),"reaction starts");

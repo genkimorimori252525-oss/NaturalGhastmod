@@ -27,8 +27,14 @@ public final class SoutouGhastStandardAttack {
     public boolean engaged(){return attack.state().face()||rally.state().face();}
     public void reset(){attack.reset();rally.reset();incoming=null;targetUuid=null;ghast.setCharging(false);}
     public Vec3 tick(LivingEntity target,boolean visible,boolean movementFeint){
-        if(target==null||!target.isAlive()){reset();return null;}
-        if(!target.getUUID().equals(targetUuid)){reset();targetUuid=target.getUUID();}
+        boolean present=target!=null&&target.isAlive();
+        if(!present||!target.getUUID().equals(targetUuid)){
+            attack.invalidateTarget();rally.reset();incoming=null;targetUuid=present?target.getUUID():null;
+        }
+        if(!present){
+            var committed=attack.step(null,false);ghast.setCharging(committed.face());
+            return committed.face()?to(committed.direction()):null;
+        }
         Vec3 aim=null;
         if(visible){
             Vec3 offset=target.getEyePosition().subtract(ghast.getEyePosition());

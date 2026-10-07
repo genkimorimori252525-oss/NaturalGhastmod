@@ -22,7 +22,10 @@ export function analyzeStandard(rows,clients,subjectUuid){
  fail(Array.isArray(clients)&&clients.some(c=>shots.some(p=>p.uuid===c.uuid)&&c.type==='soutou_ghast:standard_fireball'&&c.renderer==='net.minecraft.client.renderer.entity.ThrownItemRenderer'&&Math.abs(c.powerMagnitude-.1)<1e-6&&c.speed>0),'ACTUAL_CLIENT_SPAWN_RENDERER_POWER');
  const movement=rows.filter(r=>r.regionGeneration!==undefined);
  fail(movement.length>=100&&new Set(movement.map(r=>r.regionGeneration)).size===1,'RETAINED_REGION');
- fail(movement.every(r=>r.inCombatRegion),'WITHIN_REGION');
+ const entry=movement.findIndex(r=>r.inCombatRegion);
+ fail(entry>=0&&entry<=20&&movement.slice(entry).every(r=>r.inCombatRegion),'BOUNDED_ENTRY_THEN_WITHIN_REGION');
+ fail(movement.every(r=>r.collisionFree),'COLLISION_FREE');
+ fail(movement.length>0&&movement.every(r=>r.regionX===movement[0].regionX&&r.regionY===movement[0].regionY&&r.regionZ===movement[0].regionZ&&r.radiusX===20&&r.radiusY===8&&r.radiusZ===20),'RETAINED_BROAD_REGION_GEOMETRY');
  fail(movement.filter(r=>r.tacticalAction==='DRIFT'&&r.speed>.02).length>=100,'ORDINARY_SWIMMING');
  const span=movement.length?Math.hypot(Math.max(...movement.map(r=>r.x))-Math.min(...movement.map(r=>r.x)),Math.max(...movement.map(r=>r.z))-Math.min(...movement.map(r=>r.z))):0;
  fail(span>=4,'MEASURED_SWIMMING_SPAN');

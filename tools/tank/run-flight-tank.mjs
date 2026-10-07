@@ -205,6 +205,7 @@ try {
             assert.equal(receipt.reportedStatus,'VERIFIED');report.actions.push({actionId:action.action_id,status:receipt.reportedStatus});
         }
         const derived=path.join(current.runDir,'evidence/derived/naturalghast-flight');await fs.mkdir(derived,{recursive:true});
+        if(standard)await write(path.join(derived,'request-window.json'),{scope:'ONE_EXPLICIT_180_TICK_NATURAL_SHOT_WINDOW',sourceRevision,requestHash});
         await write(path.join(derived,'request-frame.json'),{scope:'ONE_EXPLICIT_SUPPLEMENTARY_FRAME',sourceRevision,requestHash});
         const deadline = Date.now() + 65000;
         let retainedObservations = [];

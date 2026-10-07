@@ -9,6 +9,7 @@ public final class StandardAttack {
     private FlightVector direction=FlightVector.ZERO;
     private State state=new State(Phase.IDLE,0,FlightVector.ZERO,false,false);
     public State state(){return state;}
+    public void invalidateTarget(){if(phase!=Phase.RECOVER)reset();}
     public void reset(){phase=Phase.IDLE;ticks=0;quiet=60;direction=FlightVector.ZERO;publish(false);}
     public State step(FlightVector observedAim,boolean eligible){
         boolean valid=eligible&&observedAim!=null&&observedAim.length()>1e-9;
