@@ -90,8 +90,9 @@ try {
         arena: {arena_id: experiment, baseline_hash: fixture.baselineHash, bounds: {min: [7,224,7], max: [13,229,13]}, preset: 'original-tank-active-idle'},
         subjects: [{subject_id: 'ghast', entity_type: 'soutou_ghast:soutou_ghast', uuid: fixture.subjectUuid}], initial_state: [], actions: [],
         observation_scopes: [{kind: 'ENTITY_UUID', lanes: ['SERVER_ENTITY_STATE'], level: 'L1', subject_id: 'ghast'}],
-        visual_rig: {mode: 'none'}, assertions: [], budgets: {time_budget_ms: 120000, max_actions: 0, max_captures: 0}};
-    await write(path.join(inputs, 'request.json'), request); await write(path.join(inputs, 'assertions.json'), []);
+        visual_rig: {mode: 'none'}, assertions: [{assertion_id: 'idle-health', expected: 10, field: 'health', kind: 'structured', operator: 'equals', subject_id: 'ghast'}],
+        budgets: {time_budget_ms: 120000, max_actions: 0, max_captures: 0}};
+    await write(path.join(inputs, 'request.json'), request); await write(path.join(inputs, 'assertions.json'), request.assertions);
     const requestHash = sha(await fs.readFile(path.join(inputs, 'request.json')));
     const binding = {schema_version: 1, experiment_id: experiment, generation: 1, request_hash: requestHash, target,
         arena_id: experiment, arena_baseline_hash: fixture.baselineHash, assertions_hash: sha(await fs.readFile(path.join(inputs, 'assertions.json')))};
