@@ -18,7 +18,7 @@ RED: old camera reversal moved the anchor; old geometry allocated60552 cells; re
 
 Logs and execution rulings are retained under `.superpowers/sdd/2026-10-08-combat-region-swimming/`. Pure simulations establish math/lifecycle behavior, not client appearance or native camera/LOS scenarios.
 
-## Bounded native result
+## Initial pre-review bounded native result
 
 Trial `build/tank/flight-e3CRdb`; source `e91fcbf02173d9db558a5f1a1e077ab1b647a672`; target JAR SHA256 `cd86f7c0ee8b4e8b21de3320d466b0b1554006a4b295b0bdf40e290519d1e1d8`.
 
@@ -37,8 +37,18 @@ Fresh-context review found Critical0/Important2/Minor0. Both reproduced RED and 
 
 Declined judgments: native camera/moving-Player/LOS/subjective appearance await the user; attacks/Ground Combat/full navigation/multiplayer/performance are later scope; unchanged over-cap external-impulse stopping-horizon tuning is not newly certified. Rulings: preserve these limits and existing physical safety checks; verify the changed fallback by regression and rerun the finite native pilot with the reviewed artifact. No deferred minors. Earlier native receipt remains tied to its exact pre-review source; a final replay is recorded separately.
 
+## Final reviewed artifact: preserved failures and measured scope
+
+Source `182fcb7ee88084c5dc1aecaba6cfa870cefa13b0`. `flight-kPfHZB` failed before movement acceptance with `OWNER_OUTCOME_UNKNOWN:AccessDeniedException:null` (Tech Hub AF-0013); target build/load succeeded, clean stop/EVIDENCE_COMPLETE/original85 preserved. No uncertain command replay or gate override.
+
+`flight-5jC8dG` target JAR SHA256 `6c5d2156e9ad83d437d3106721221c13e5221531c1518a069274564364ab3bca` failed its static-look condition: `Static player fixture changed`. All600 Player positions remained `(9.5,224,3.5)`; observed yaw/pitch spans12.3000036/16.799961. The user subsequently confirms occasionally moving the camera. Preserve formal FAIL and canonical/finalized bytes; no additional static replay is needed for this user-confirmed intervention.
+
+Separate read-only `.superpowers/sdd/2026-10-08-combat-region-swimming/final-measured-audit.json`: `PASS_MEASURED_MOTION_ONLY`, not replacement static-fixture acceptance.600 samples,374 visible acquisition,565 region,560 swimming; one retained generation; horizontal span24.67963799/vertical6.43613320; stopped swimming0 and settled369/rest0;maxspeed0.44.386 canonical observations; clean/EVIDENCE_COMPLETE/original85 unchanged. Report SHA256 `cf883c17884cf0c13f8a76f60adf138aa1301869313ce2c0b0f46f68575ed5c5`; trace SHA256 `af64a87382441802d9ce1e12cf9919dbd584cdadae0912b4aaa58a36495c10d3`. Audit records input cause as not inferred at creation; later human confirmation is recorded here without rewriting it. Controlled180-degree turn, moving Player, deliberate LOS and subjective smoothness remain unverified.
+
 ## Manual inspection fixture
 
-Fresh private `build/tank/manual-swimming-20261008-beb1755b`, same exact verified JAR.52×24×52 room; observation wall omitted offline; small raised Player platform permits the full vertical region plus body clearance. Player `(26.5,228,3.5)`, Ghast `(26.5,234,30.85)`, survival mode, night vision. No observer JAR; runtime `KNEEKURA_DEBUG_ENABLED=0`; ordinary game logs are not camera recording. New-copy readback verifies Reimu1 removed/other root NBT3 preserved/active Ghast1, and original85 hashes unchanged. This save is manual-only, not canonical acceptance.
+Fresh private `build/tank/manual-swimming-20261008-beb1755b`, exact reviewed-source/latest measured JAR `inputs/naturalghast-final-observed-dev.jar`, SHA256 `6c5d2156e9ad83d437d3106721221c13e5221531c1518a069274564364ab3bca`. `manual-final-manifest.json` binds source182fcb7/artifact/geometry/limits; `launch-final.ps1` launches this copy.52×24×52 room; observation wall omitted offline; small raised Player platform permits the full vertical region plus body clearance. Initial saved Player `(26.5,228,3.5)`, Ghast `(26.5,234,30.85)`, survival mode, night vision. No observer JAR; runtime `KNEEKURA_DEBUG_ENABLED=0`; ordinary game logs are not camera recording. New-copy readback verifies Reimu1 removed/other root NBT3 preserved/active Ghast1, and original85 hashes unchanged. Actual integrated game launched; visual acceptance remains PENDING_USER. This save is manual-only, not canonical acceptance.
+
+Observation limits: prior native motion is selected-Ghast server telemetry, not full-room roster coverage. Supplemental raw images use the Player presentation; no cardinal four-view capture was used. Current manual session has no live telemetry roster. Room interior cells `[0,224,0]`..`[52,248,52)` give local `(x,y-224,z)`; body containment also needs AABB. Do not treat initial NBT poses as current positions. Tech Hub guide/AF-0017 distinguish existing selected-subject spatial maps, frozen cardinal snapshots and opt-in mob POV from an unimplemented on-demand whole-room roster.
 
 Next manual checks: turn yaw/pitch while staying still, walk/fall from the platform, observe sustained floating/swimming, approach region boundaries/obstacles, and report visible jerks or repeated repositioning. Treat new bugs as higher priority than further NaturalGhast features. Prior failure/recovery of original-save inspection padding remains recorded in Tech Hub AF-0016; original NBT is now inspected only through a disposable baseline copy.
