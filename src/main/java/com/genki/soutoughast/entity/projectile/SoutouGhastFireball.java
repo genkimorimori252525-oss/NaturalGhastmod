@@ -9,7 +9,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.LargeFireball;
-import net.minecraft.world.level.BaseFireBlock;
+import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -38,6 +38,8 @@ public class SoutouGhastFireball extends LargeFireball {
     private Vec3 splitTarget = Vec3.ZERO;
     private int lifeTicks;
     private boolean hasSplit;
+    // Mirror LargeFireball's private power through its constructor/NBT contract.
+    private int childExplosionPower = 1;
 
     public SoutouGhastFireball(EntityType<? extends LargeFireball> type, Level level) {
         super(type, level);
@@ -45,6 +47,7 @@ public class SoutouGhastFireball extends LargeFireball {
 
     public SoutouGhastFireball(Level level, LivingEntity owner, double dx, double dy, double dz, int explosionPower) {
         super(level, owner, dx, dy, dz, explosionPower);
+        this.childExplosionPower = explosionPower;
     }
 
     public SoutouGhastFireball configure(Variant variant, Vec3 targetPos) {
@@ -122,7 +125,7 @@ public class SoutouGhastFireball extends LargeFireball {
 
         for (int i = -1; i <= 1; ++i) {
             Vec3 dir = baseDir.add(side.scale(i * 0.35D)).add(0.0D, i == 0 ? 0.08D : 0.02D, 0.0D).normalize();
-            SoutouGhastFireball child = new SoutouGhastFireball(this.level(), owner, dir.x, dir.y, dir.z, Math.max(1, this.explosionPower - 1))
+            SoutouGhastFireball child = new SoutouGhastFireball(this.level(), owner, dir.x, dir.y, dir.z, Math.max(1, this.childExplosionPower - 1))
                     .configure(Variant.FAST_SMALL, this.splitTarget);
             child.setPos(this.getX(), this.getY(), this.getZ());
             child.setDeltaMovement(dir.scale(0.9D));
@@ -169,7 +172,7 @@ public class SoutouGhastFireball extends LargeFireball {
 
         for (Vec3 dir : dirs) {
             Vec3 n = dir.normalize();
-            SoutouGhastFireball child = new SoutouGhastFireball(this.level(), owner, n.x, n.y, n.z, Math.max(1, this.explosionPower - 1))
+            SoutouGhastFireball child = new SoutouGhastFireball(this.level(), owner, n.x, n.y, n.z, Math.max(1, this.childExplosionPower - 1))
                     .configure(Variant.FAST_SMALL, origin.add(n.scale(8.0D)));
             child.setPos(origin.x, origin.y, origin.z);
             child.setDeltaMovement(n.scale(0.85D));
@@ -203,6 +206,9 @@ public class SoutouGhastFireball extends LargeFireball {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        if (tag.contains("ExplosionPower", 99)) {
+            this.childExplosionPower = tag.getByte("ExplosionPower");
+        }
         this.variant = Variant.byName(tag.getString("Variant"));
         this.lifeTicks = tag.getInt("LifeTicks");
         this.hasSplit = tag.getBoolean("HasSplit");

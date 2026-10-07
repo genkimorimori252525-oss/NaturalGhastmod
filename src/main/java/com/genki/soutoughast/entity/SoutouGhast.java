@@ -1,10 +1,7 @@
 package com.genki.soutoughast.entity;
 
-import com.genki.soutoughast.entity.ai.SoutouGhastCombatMoveGoal;
-import com.genki.soutoughast.entity.ai.SoutouGhastLookGoal;
-import com.genki.soutoughast.entity.ai.SoutouGhastMoveControl;
-import com.genki.soutoughast.entity.ai.SoutouGhastRandomFloatGoal;
-import com.genki.soutoughast.entity.ai.SoutouGhastShootGoal;
+import com.genki.soutoughast.entity.ai.SoutouGhastAnchorGoal;
+import com.genki.soutoughast.entity.ai.SoutouGhastInertialMoveControl;
 import com.genki.soutoughast.sound.ModSounds;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvent;
@@ -14,6 +11,7 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -67,7 +65,7 @@ public class SoutouGhast extends Ghast {
 
     public SoutouGhast(EntityType<? extends Ghast> type, Level level) {
         super(type, level);
-        this.moveControl = new SoutouGhastMoveControl(this);
+        this.moveControl = new SoutouGhastInertialMoveControl(this);
         this.randomizeBehaviorProfile();
     }
 
@@ -77,10 +75,7 @@ public class SoutouGhast extends Ghast {
 
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(4, new SoutouGhastCombatMoveGoal(this));
-        this.goalSelector.addGoal(5, new SoutouGhastRandomFloatGoal(this));
-        this.goalSelector.addGoal(7, new SoutouGhastLookGoal(this));
-        this.goalSelector.addGoal(7, new SoutouGhastShootGoal(this));
+        this.goalSelector.addGoal(4, new SoutouGhastAnchorGoal(this));
 
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
                 entity -> Math.abs(entity.getY() - this.getY()) <= 24.0D));
@@ -98,47 +93,18 @@ public class SoutouGhast extends Ghast {
     @Override
     public void aiStep() {
         super.aiStep();
-        if (this.level().isClientSide) {
-            return;
-        }
+        // Legacy phase/terrain/attack helpers below are retained for source compatibility,
+        // but are not part of the active foundation behavior.
+    }
 
-        if (this.terrainRefreshCooldown-- <= 0) {
-            this.terrainRefreshCooldown = 20;
-            this.refreshTerrainCache();
+    @Override
+    public void travel(Vec3 input) {
+        // FlyingMob.travel adds input thrust and 0.91/0.8/0.5 drag. The controller
+        // already owns thrust and braking; apply its actual velocity exactly once.
+        if (this.isControlledByLocalInstance()) {
+            this.move(MoverType.SELF, this.getDeltaMovement());
         }
-
-        if (this.orbitChangeCooldown > 0) {
-            --this.orbitChangeCooldown;
-        }
-        if (this.feintCooldown > 0) {
-            --this.feintCooldown;
-        }
-
-        if (this.horizontalCollision && this.orbitChangeCooldown <= 0) {
-            this.flipOrbitDirection();
-            this.orbitChangeCooldown = 30;
-        }
-
-        if (this.random.nextInt(240) == 0 && this.orbitChangeCooldown <= 0) {
-            this.flipOrbitDirection();
-            this.orbitChangeCooldown = 80;
-        }
-
-        if (this.lastSeenTicks > 0) {
-            --this.lastSeenTicks;
-            if (this.lastSeenTicks <= 0) {
-                this.lastSeenPos = null;
-            }
-        }
-
-        if (this.getTarget() != null) {
-            if (this.hasLineOfSight(this.getTarget())) {
-                this.rememberTargetPosition(this.getTarget().position());
-            }
-            this.updateCombatPhase();
-        } else {
-            this.combatPhase = CombatPhase.SCOUTING;
-        }
+        this.calculateEntityAnimation(false);
     }
 
     private void updateCombatPhase() {
