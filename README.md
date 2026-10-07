@@ -5,6 +5,15 @@ Minecraft **1.20.1 / Forge 47.4.10 / Java 17** 向けの未完成MODです。
 
 **現在のソースにはコンパイルを妨げる問題があります。実機受入・マルチプレイ検証は未実施です。**
 
+## 再設計・Codex実装の入口
+
+現在の**目標仕様はv0.02の既存実装ではなく、全面再設計側**です。
+
+- [Natural Ghast redesign — current design](docs/design/NATURAL-GHAST-REDESIGN-v0.1.md)
+- [Codex implementation handoff — 2026-10-07](docs/CODEX-HANDOFF-2026-10-07.md)
+
+特に、**Grand Danmakuの最終弾幕パターンはまだ未制作**です。Draft PR #1やTECH-HUB上のScoreはruntime / authoring経路を検証するためのテスト資産であり、完成した弾幕デザインではありません。
+
 ## 現在の実装
 
 - `SCOUTING / CHASING / BOMBARDMENT / ENRAGED / RETREATING` の5段階AI。
