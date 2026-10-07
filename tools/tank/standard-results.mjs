@@ -1,5 +1,6 @@
 /** Finite natural shot acceptance, deliberately excluding actual melee/rally/explosion balance. */
-export function analyzeStandard(rows,clients,subjectUuid){
+export function analyzeStandard(rows,clients,subjectUuid,{profile=false}={}){
+ const type=profile?'soutou_ghast:committed_fireball':'soutou_ghast:standard_fireball',power=profile?0:.1;
  const failures=[];const fail=(condition,name)=>{if(!condition)failures.push(name);};
  fail(Array.isArray(rows)&&rows.length===180,'FINITE_180_WINDOW');
  if(!Array.isArray(rows)||rows.length===0)return {status:'FAIL',failures};
@@ -18,8 +19,8 @@ export function analyzeStandard(rows,clients,subjectUuid){
   fail(recovery.length===20&&recovery.every((r,i)=>r.attackPhase==='RECOVER'&&r.attackTicks===i&&r.firingFace)&&rows[launch+20]?.firingFace===false,'20_TICK_FIRING_FACE');
  }
  const shots=rows.flatMap(r=>r.projectiles??[]);
- fail(shots.length>0&&shots.every(p=>p.type==='soutou_ghast:standard_fireball'&&p.width===1&&p.height===1&&p.pickRadius===1.5&&p.origin===subjectUuid&&p.savedOrigin===subjectUuid&&p.owner===subjectUuid&&p.returns===0&&!p.playerDeflected&&p.speed>0),'REGISTERED_MOVING_PROJECTILE');
- fail(Array.isArray(clients)&&clients.some(c=>shots.some(p=>p.uuid===c.uuid)&&c.type==='soutou_ghast:standard_fireball'&&c.renderer==='net.minecraft.client.renderer.entity.ThrownItemRenderer'&&Math.abs(c.powerMagnitude-.1)<1e-6&&c.speed>0),'ACTUAL_CLIENT_SPAWN_RENDERER_POWER');
+ fail(shots.length>0&&shots.every(p=>p.type===type&&p.width===1&&p.height===1&&p.pickRadius===1.5&&p.origin===subjectUuid&&p.savedOrigin===subjectUuid&&p.owner===subjectUuid&&p.returns===0&&!p.playerDeflected&&p.speed>0),'REGISTERED_MOVING_PROJECTILE');
+ fail(Array.isArray(clients)&&clients.some(c=>shots.some(p=>p.uuid===c.uuid)&&c.type===type&&c.renderer==='net.minecraft.client.renderer.entity.ThrownItemRenderer'&&Math.abs(c.powerMagnitude-power)<1e-6&&c.speed>0),'ACTUAL_CLIENT_SPAWN_RENDERER_POWER');
  const movement=rows.filter(r=>r.regionGeneration!==undefined);
  fail(movement.length>=100&&new Set(movement.map(r=>r.regionGeneration)).size===1,'RETAINED_REGION');
  const entry=movement.findIndex(r=>r.inCombatRegion);
@@ -30,5 +31,5 @@ export function analyzeStandard(rows,clients,subjectUuid){
  const span=movement.length?Math.hypot(Math.max(...movement.map(r=>r.x))-Math.min(...movement.map(r=>r.x)),Math.max(...movement.map(r=>r.z))-Math.min(...movement.map(r=>r.z))):0;
  fail(span>=4,'MEASURED_SWIMMING_SPAN');
  return {status:failures.length?'FAIL':'PASS',failures,samples:rows.length,launches:launches.map(i=>rows[i].tick),horizontalSpan:span,
-  realMelee:'NOT_RUN',fullRallyAcceptance:'NOT_RUN',returnedDamagePipeline:'NOT_RUN',explosionBalance:'NOT_RUN',terrainDestruction:'NOT_RUN',scope:'DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY'};
+  realMelee:'NOT_RUN',fullRallyAcceptance:'NOT_RUN',returnedDamagePipeline:'NOT_RUN',explosionBalance:'NOT_RUN',terrainDestruction:'NOT_RUN',scope:profile?'DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY':'DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY'};
 }

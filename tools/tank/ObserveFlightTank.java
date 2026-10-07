@@ -3,6 +3,7 @@ package com.genki.soutoughast.tank;
 import com.genki.soutoughast.entity.SoutouGhast;
 import com.genki.soutoughast.entity.ai.SoutouGhastInertialMoveControl;
 import com.genki.soutoughast.entity.projectile.StandardSoutouFireball;
+import com.genki.soutoughast.entity.projectile.CommittedSoutouFireball;
 import com.google.gson.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -19,6 +20,7 @@ import java.util.UUID;
 @Mod("naturalghast_tank_observer")
 public final class ObserveFlightTank {
  private static int samples;
+ private static final java.util.Set<UUID> serverSeen=new java.util.HashSet<>();
  private static boolean standard(){return "1".equals(System.getenv("KNEEKURA_DEBUG_NATURAL_STANDARD"));}
  private static int sampleLimit(){return standard()?180:900;}
  private static volatile boolean ready;
@@ -79,6 +81,7 @@ public final class ObserveFlightTank {
     row.addProperty("attackPhase",state.phase().name());row.addProperty("attackTicks",state.ticks());row.addProperty("attackFire",state.fire());row.addProperty("firingFace",ghast.isCharging());row.addProperty("firedCount",attack.firedCount());
     row.addProperty("aimX",state.direction().x());row.addProperty("aimY",state.direction().y());row.addProperty("aimZ",state.direction().z());
     row.addProperty("rallyFace",attack.rallyState().face());
+    row.addProperty("lastFiredProfile",attack.lastFiredProfile().name());
     JsonArray projectiles=new JsonArray();var all=ghast.level().getEntitiesOfClass(StandardSoutouFireball.class,new net.minecraft.world.phys.AABB(0,224,0,52,248,52));
     row.addProperty("projectileCoverage",all.size()>16?"PARTIAL":"LOADED_ROOM_SELECTED_TYPE");
     for(var p:all.stream().limit(16).toList()){
@@ -87,7 +90,23 @@ public final class ObserveFlightTank {
      shot.addProperty("width",p.getBbWidth());shot.addProperty("height",p.getBbHeight());shot.addProperty("pickRadius",p.getPickRadius());
      shot.addProperty("origin",p.originUuid()==null?null:p.originUuid().toString());shot.addProperty("owner",p.getOwner()==null?null:p.getOwner().getUUID().toString());
      shot.addProperty("playerDeflected",p.isPlayerDeflected());shot.addProperty("returns",p.bossReturns());
-     shot.addProperty("savedOrigin",p.saveWithoutId(new net.minecraft.nbt.CompoundTag()).getUUID("StandardOrigin").toString());projectiles.add(shot);
+     shot.addProperty("savedOrigin",p.saveWithoutId(new net.minecraft.nbt.CompoundTag()).getUUID("StandardOrigin").toString());
+     if(p instanceof CommittedSoutouFireball special&&special.flight()!=null){
+      var flight=special.flight();var point=flight.path().points().get(flight.index());
+      shot.addProperty("kind",flight.path().kind().name());shot.addProperty("phase",special.phase());shot.addProperty("index",flight.index());shot.addProperty("normalized",flight.normalized());
+      shot.addProperty("expectedX",point.x());shot.addProperty("expectedY",point.y());shot.addProperty("expectedZ",point.z());
+      if(serverSeen.size()<16&&serverSeen.add(p.getUUID())){
+       JsonObject snapshot=shot.deepCopy();JsonArray points=new JsonArray();for(var pos:flight.path().points()){
+        JsonArray xyz=new JsonArray();xyz.add(pos.x());xyz.add(pos.y());xyz.add(pos.z());points.add(xyz);
+       }
+       snapshot.add("path",points);var proof=special.preflight();snapshot.addProperty("preflightScope",proof.getString("Scope"));snapshot.addProperty("preflightGameTime",proof.getLong("GameTime"));snapshot.addProperty("preflightSegments",proof.getInt("Segments"));
+       JsonArray terminal=new JsonArray();for(var raw:proof.getList("Terminal",10)){
+        var tag=(net.minecraft.nbt.CompoundTag)raw;JsonObject cell=new JsonObject();cell.addProperty("x",tag.getInt("X"));cell.addProperty("y",tag.getInt("Y"));cell.addProperty("z",tag.getInt("Z"));cell.addProperty("state",tag.getString("State"));terminal.add(cell);
+       }
+       snapshot.add("terminal",terminal);Files.createDirectories(output());Files.writeString(output().resolve("profile-paths.jsonl"),snapshot+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);
+      }
+     }
+     projectiles.add(shot);
     }
     row.add("projectiles",projectiles);
    }
@@ -107,6 +126,7 @@ public final class ObserveFlightTank {
     JsonObject row=new JsonObject();row.addProperty("tick",mc.level.getGameTime());row.addProperty("uuid",p.getUUID().toString());row.addProperty("type",BuiltInRegistries.ENTITY_TYPE.getKey(p.getType()).toString());
     row.addProperty("renderer",mc.getEntityRenderDispatcher().getRenderer(p).getClass().getName());
     row.addProperty("powerMagnitude",Math.sqrt(p.xPower*p.xPower+p.yPower*p.yPower+p.zPower*p.zPower));row.addProperty("speed",p.getDeltaMovement().length());
+    if(p instanceof CommittedSoutouFireball special&&special.flight()!=null){row.addProperty("kind",special.flight().path().kind().name());row.addProperty("phase",special.phase());row.addProperty("index",special.flight().index());}
     Files.createDirectories(output());Files.writeString(output().resolve("client-projectiles.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);
    }
   }

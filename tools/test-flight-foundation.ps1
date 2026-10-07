@@ -14,6 +14,8 @@ $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/Movement
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/CombatRegionSwimmingTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ObservedTacticsTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/StandardAttackTest.java"
+$sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/CommittedTrajectoryTest.java"
+$sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ProjectileSelectionTest.java"
 & "$JavaHome/bin/javac.exe" --release 17 -encoding UTF-8 -d $output @sources
 if ($LASTEXITCODE -ne 0) { throw 'Flight foundation compilation failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.CombatRegionSwimmingTest
@@ -26,3 +28,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Movement/mobility assertions failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Observed tactics assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.StandardAttackTest
 if ($LASTEXITCODE -ne 0) { throw 'Standard charge/rally assertions failed.' }
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.CommittedTrajectoryTest
+if ($LASTEXITCODE -ne 0) { throw 'Committed trajectory assertions failed.' }
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.ProjectileSelectionTest
+if ($LASTEXITCODE -ne 0) { throw 'Projectile selection/validation assertions failed.' }

@@ -9,13 +9,15 @@ import {analyzeTactics} from './tactics-results.mjs';
 import {waitForFlightAction} from './flight-owner.mjs';
 import {privateFlightLaunchArgs} from './flight-launch.mjs';
 import {analyzeStandard} from './standard-results.mjs';
+import {analyzeProfiles} from './profile-results.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
 const option = name => { const i = process.argv.indexOf('--' + name); if (i < 0 || !process.argv[i + 1]) throw Error('Missing --' + name); return path.resolve(process.argv[i + 1]); };
 const lab = option('lab'), templateFile = option('template'), original = option('original'), classpathFile = option('classpath-file');
 const javaHome = option('java-home');
 const singleCellSeal=process.argv.includes('--single-cell-seal');
-const standard=process.argv.includes('--standard-fireball');
+const profiles=process.argv.includes('--profile-fireball');
+const standard=profiles||process.argv.includes('--standard-fireball');
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const template = JSON.parse(await fs.readFile(templateFile));
 assert.equal(template.launch.env.KNEEKURA_DEBUG_MOD_PROFILE, 'TANK_CORE');
@@ -45,9 +47,10 @@ const report = {schema: 'naturalghast.tactics-tank/v1', trial, profile: 'TANK_CO
     limitations: ['Static real survival Player fixture; moving/facing-change/target-change/LOS-loss/ground/multiplayer NOT_RUN.',
         'Canonical LAB evidence and supplementary flight/frame observations have different producers.',
         'Class-resource/container linkage is not resident transformed-definition attestation.']};
-if(standard)report.limitations=['180tick natural Standard shot with real20HP survival Player; natural injury/death is recorded, not prevented.',
+if(standard)report.limitations=[`180tick natural ${profiles?'committed-profile':'Standard'} shot with real20HP survival Player; natural injury/death is recorded, not prevented.`,
     'Actual melee, rally, returned-damage pipeline and balanced explosion comparison NOT_RUN; mobGriefing=false excludes terrain destruction.',
     'Two canonical room roster samples; supplementary selected-subject/frame/client telemetry is not fixed-cardinal coverage or transformed-definition attestation.'];
+if(profiles)report.limitations.push('Only naturally exercised profile kinds are accepted; particle readability, late client tracking and instantiated reload NOT_RUN.');
 console.log('TRIAL ' + trial);
 let originalRows = [], current, runtime;
 async function inventory(root, relative = '') {
@@ -232,7 +235,8 @@ try {
         assert(rows.every(row=>row.playerUuid===fixture.playerUuid),'Real Player identity changed');
         if(standard){
             const clients=(await fs.readFile(path.join(derived,'client-projectiles.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
-            report.standard=analyzeStandard(rows,clients,fixture.subjectUuid);await write(path.join(derived,'standard-summary.json'),report.standard);
+            report.standard=profiles?analyzeProfiles(rows,clients,fixture.subjectUuid,(await fs.readFile(path.join(derived,'profile-paths.jsonl'),'utf8')).trim().split('\n').map(JSON.parse)):analyzeStandard(rows,clients,fixture.subjectUuid);
+            await write(path.join(derived,profiles?'profile-summary.json':'standard-summary.json'),report.standard);
             report.playerOutcome={initialHealth:rows[0].playerHealth,finalHealth:rows.at(-1).playerHealth,finalPosition:[rows.at(-1).playerX,rows.at(-1).playerY,rows.at(-1).playerZ]};
             assert.equal(report.standard.status,'PASS',report.standard.failures.join(','));
             report.finalRoster=await roster(1);
@@ -254,7 +258,7 @@ try {
             report.cleanup=finish.stopped.cleanup;report.shutdown=finish.shutdown;report.finalization=finish.finalization;
             report.nativeFinalizationReason=finish.reason;
             assert.equal(finish.status,'PASS',finish.reason);
-            if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope=standard?'PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY':'PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
+            if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope=profiles?'PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY':standard?'PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY':'PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
         }
     }
 } catch (error) {
@@ -263,7 +267,7 @@ try {
     console.log('FAIL ' + error.message.split('\n')[0]);
 } finally {
     if (originalRows.length) { try { await verifyOriginal(); report.originalFilesVerified = originalRows.length; } catch (error) { report.failures.push(error.message); } }
-    report.status=report.failures.length||!['PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT','PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY'].includes(report.nativeScope)?'FAIL':'PASS';
+    report.status=report.failures.length||!['PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT','PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY','PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY'].includes(report.nativeScope)?'FAIL':'PASS';
     await write(path.join(trial, 'report.json'), report);
 }
 process.exitCode = report.failures.length ? 1 : 0;

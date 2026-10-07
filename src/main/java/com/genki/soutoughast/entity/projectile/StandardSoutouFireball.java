@@ -26,7 +26,7 @@ import net.minecraftforge.network.NetworkHooks;
 import java.util.UUID;
 
 /** Dedicated baseline; deliberately outside vanilla LargeFireball's1000-damage branch. */
-public final class StandardSoutouFireball extends Fireball implements IEntityAdditionalSpawnData {
+public class StandardSoutouFireball extends Fireball implements IEntityAdditionalSpawnData {
     public static final float VISUAL_SCALE=1.5F, PICK_RADIUS=1.5F, EXPLOSION_RADIUS=1.5F;
     public static final float DIRECT_DAMAGE=9, RETURN_DAMAGE=20;
     private static final EntityDataAccessor<CompoundTag> FLIGHT=SynchedEntityData.defineId(StandardSoutouFireball.class,EntityDataSerializers.COMPOUND_TAG);
@@ -36,7 +36,10 @@ public final class StandardSoutouFireball extends Fireball implements IEntityAdd
 
     public StandardSoutouFireball(EntityType<? extends StandardSoutouFireball> type,Level level){super(type,level);}
     public StandardSoutouFireball(SoutouGhast owner,Vec3 position,Vec3 direction){
-        this(ModEntities.STANDARD_FIREBALL.get(),owner.level());
+        this(ModEntities.STANDARD_FIREBALL.get(),owner,position,direction);
+    }
+    protected StandardSoutouFireball(EntityType<? extends StandardSoutouFireball> type,SoutouGhast owner,Vec3 position,Vec3 direction){
+        this(type,owner.level());
         origin=owner.getUUID();setPos(position);redirect(owner,direction,.5);
     }
     @Override protected void defineSynchedData(){super.defineSynchedData();entityData.define(FLIGHT,new CompoundTag());}
@@ -59,14 +62,14 @@ public final class StandardSoutouFireball extends Fireball implements IEntityAdd
     }
     public boolean returnByBoss(SoutouGhast boss,Vec3 lockedDirection){
         if(level().isClientSide||!isOwnReturn(boss)||returns!=0||lockedDirection.lengthSqr()<1e-9)return false;
-        returns=1;bossAttempted=true;playerDeflected=false;redirect(boss,lockedDirection,1.15);return true;
+        onDeflected();returns=1;bossAttempted=true;playerDeflected=false;redirect(boss,lockedDirection,1.15);return true;
     }
     @Override public boolean hurt(DamageSource source,float amount){
         if(isInvulnerableTo(source)||amount<=0||!source.is(DamageTypes.PLAYER_ATTACK)
                 ||!(source.getEntity() instanceof Player player)||source.getDirectEntity()!=player
                 ||!player.isAlive()||player.isSpectator())return false;
         if(!level().isClientSide){
-            deflector=player.getUUID();playerDeflected=true;markHurt();redirect(player,player.getLookAngle(),1.0+returns*.15);
+            onDeflected();deflector=player.getUUID();playerDeflected=true;markHurt();redirect(player,player.getLookAngle(),1.0+returns*.15);
         }
         return true;
     }
@@ -101,6 +104,8 @@ public final class StandardSoutouFireball extends Fireball implements IEntityAdd
         Entity owner=level().getEntity(data.getInt("owner"));if(owner!=null)setOwner(owner);
     }
     private void syncFlight(){entityData.set(FLIGHT,flightData());}
+    protected final void refreshFlightSync(){syncFlight();}
+    protected void onDeflected() {}
     @Override public void onSyncedDataUpdated(EntityDataAccessor<?> key){
         super.onSyncedDataUpdated(key);if(FLIGHT.equals(key)&&level().isClientSide)applyFlight(entityData.get(FLIGHT));
     }

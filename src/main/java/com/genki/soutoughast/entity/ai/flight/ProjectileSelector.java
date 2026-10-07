@@ -1,0 +1,21 @@
+package com.genki.soutoughast.entity.ai.flight;
+
+/** Observable combat problem and bounded repetition memory, not a random rotation. */
+public final class ProjectileSelector {
+    public enum Choice { STANDARD, BURST, CURVE, LOB }
+    private final int[] recent=new int[Choice.values().length];
+    public void tick(){for(int i=0;i<recent.length;i++)if(recent[i]>0)recent[i]--;}
+    public void reset(){java.util.Arrays.fill(recent,0);}
+    public void record(Choice choice){recent[choice.ordinal()]=600;}
+    public Choice choose(MobilityContext.Kind context,double range,FlightVector observedVelocity,int stationaryTicks,double variation){
+        if(context==MobilityContext.Kind.GROUND_FORCED||observedVelocity==null||range<12)return Choice.STANDARD;
+        double[] weights={1,range>=47&&context!=MobilityContext.Kind.CONFINED?1.7:0,Math.hypot(observedVelocity.x(),observedVelocity.z())>.08?1.5:.35,stationaryTicks>=40?1.4:.3};
+        Choice best=Choice.STANDARD;double bestScore=1;
+        for(Choice candidate:Choice.values()){
+            if(candidate==Choice.STANDARD)continue;
+            double score=weights[candidate.ordinal()]*(1-.75*recent[candidate.ordinal()]/600.0)+.12*Math.sin(variation*6.28+candidate.ordinal()*2);
+            if(score>bestScore){best=candidate;bestScore=score;}
+        }
+        return best;
+    }
+}
