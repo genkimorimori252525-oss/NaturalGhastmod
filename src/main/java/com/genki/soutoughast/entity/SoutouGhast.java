@@ -5,6 +5,7 @@ import com.genki.soutoughast.entity.ai.SoutouGhastInertialMoveControl;
 import com.genki.soutoughast.entity.ai.SoutouGhastFlightLookControl;
 import com.genki.soutoughast.entity.ai.SoutouGhastStandardAttack;
 import com.genki.soutoughast.entity.ai.SoutouGhastOverheadAttack;
+import com.genki.soutoughast.entity.ai.SoutouGhastGroundCombat;
 import com.genki.soutoughast.entity.projectile.StandardSoutouFireball;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.tags.DamageTypeTags;
@@ -60,11 +61,15 @@ public class SoutouGhast extends Ghast {
     public SoutouGhastStandardAttack getStandardAttack(){return standardAttack;}
     private final SoutouGhastOverheadAttack overheadAttack=new SoutouGhastOverheadAttack(this);
     public SoutouGhastOverheadAttack getOverheadAttack(){return overheadAttack;}
+    private final SoutouGhastGroundCombat groundCombat=new SoutouGhastGroundCombat(this);
+    public SoutouGhastGroundCombat getGroundCombat(){return groundCombat;}
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> GROUNDED=net.minecraft.network.syncher.SynchedEntityData.defineId(SoutouGhast.class,net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
+    public boolean groundPresentation(){return entityData.get(GROUNDED);}
     private static final net.minecraft.network.syncher.EntityDataAccessor<Float> MAJOR_PITCH=net.minecraft.network.syncher.SynchedEntityData.defineId(SoutouGhast.class,net.minecraft.network.syncher.EntityDataSerializers.FLOAT);
     private float previousMajorPitch,displayedMajorPitch;
     public float majorRenderPitch(float partialTick){return Mth.lerp(partialTick,previousMajorPitch,displayedMajorPitch);}
     public float majorPitch(){return entityData.get(MAJOR_PITCH);}
-    @Override protected void defineSynchedData(){super.defineSynchedData();entityData.define(MAJOR_PITCH,0f);}
+    @Override protected void defineSynchedData(){super.defineSynchedData();entityData.define(MAJOR_PITCH,0f);entityData.define(GROUNDED,false);}
     @Override public void tick(){
         previousMajorPitch=displayedMajorPitch;super.tick();
         displayedMajorPitch=level().isClientSide?Mth.approach(displayedMajorPitch,majorPitch(),3):majorPitch();
@@ -128,6 +133,7 @@ public class SoutouGhast extends Ghast {
     public void aiStep() {
         super.aiStep();
         if(!level().isClientSide){
+            entityData.set(GROUNDED,groundCombat.grounded());
             float desired=overheadAttack.state().downward()?Mth.clamp(getXRot(),0,90):0;
             entityData.set(MAJOR_PITCH,Mth.approach(majorPitch(),desired,3));
         }

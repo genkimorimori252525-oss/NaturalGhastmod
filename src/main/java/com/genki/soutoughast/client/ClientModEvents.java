@@ -24,5 +24,6 @@ public class ClientModEvents {
         event.registerEntityRenderer(ModEntities.SOUTOU_GHAST.get(), SoutouGhastRenderer::new);
         event.registerEntityRenderer(ModEntities.STANDARD_FIREBALL.get(), context -> new ThrownItemRenderer<>(context,StandardSoutouFireball.VISUAL_SCALE,true));
         event.registerEntityRenderer(ModEntities.PROFILE_FIREBALL.get(), context -> new ThrownItemRenderer<>(context,StandardSoutouFireball.VISUAL_SCALE,true));
+        event.registerEntityRenderer(ModEntities.GROUND_FIREBALL.get(), context -> new ThrownItemRenderer<>(context,StandardSoutouFireball.VISUAL_SCALE,true));
     }
 }

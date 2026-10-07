@@ -4,6 +4,7 @@ import com.genki.soutoughast.SoutouGhastMod;
 import com.genki.soutoughast.entity.projectile.SoutouGhastFireball;
 import com.genki.soutoughast.entity.projectile.StandardSoutouFireball;
 import com.genki.soutoughast.entity.projectile.CommittedSoutouFireball;
+import com.genki.soutoughast.entity.projectile.GroundSoutouFireball;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraftforge.registries.DeferredRegister;
@@ -24,6 +25,12 @@ public class ModEntities {
                     EntityType.Builder.<CommittedSoutouFireball>of(CommittedSoutouFireball::new, MobCategory.MISC)
                             .sized(1.0F,1.0F).clientTrackingRange(8).updateInterval(2)
                             .fireImmune().build("committed_fireball"));
+
+    public static final RegistryObject<EntityType<GroundSoutouFireball>> GROUND_FIREBALL =
+            ENTITY_TYPES.register("ground_fireball", () ->
+                    EntityType.Builder.<GroundSoutouFireball>of(GroundSoutouFireball::new, MobCategory.MISC)
+                            .sized(1.0F,1.0F).clientTrackingRange(8).updateInterval(2)
+                            .fireImmune().build("ground_fireball"));
 
     public static final RegistryObject<EntityType<SoutouGhast>> SOUTOU_GHAST =
             ENTITY_TYPES.register("soutou_ghast", () ->

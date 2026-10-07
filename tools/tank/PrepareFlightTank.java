@@ -16,10 +16,13 @@ public final class PrepareFlightTank {
  private static boolean allocated(int x,int y,int z){return x>=-1&&x<=SIZE&&z>=-1&&z<=SIZE&&y>=Y-1&&y<=Y+HEIGHT;}
  private static String fixtureBlock(int x,int y,int z){return fixtureBlock(x,y,z,false);}
  private static String fixtureBlock(int x,int y,int z,boolean singleCellSeal){
+  return fixtureBlock(x,y,z,singleCellSeal,false);
+ }
+ private static String fixtureBlock(int x,int y,int z,boolean singleCellSeal,boolean ground){
   boolean shell=x==-1||x==SIZE||z==-1||z==SIZE||y==Y-1||y==Y+HEIGHT;
   boolean wall=z==6&&x>=7&&x<=12&&y>=224&&y<=237;
   boolean aperture=z==6&&x>=8&&x<=10&&y>=225&&y<=231&&!(x==9&&y==228);
-  return shell?"minecraft:black_concrete":(singleCellSeal?x==9&&y==228&&z==6:wall&&!aperture)?"minecraft:stone":"minecraft:air";
+  return shell||ground&&y==230?"minecraft:black_concrete":(singleCellSeal?x==9&&y==(ground?226:228)&&z==6:wall&&!aperture)?"minecraft:stone":"minecraft:air";
  }
  private static CompoundTag state(String name){CompoundTag s=new CompoundTag();s.putString("Name",name);return s;}
  private static CompoundTag cell(CompoundTag section,int x,int y,int z){
@@ -34,14 +37,18 @@ public final class PrepareFlightTank {
  public static String block(CompoundTag section,int x,int y,int z){return cell(section,x,y,z).getString("Name");}
  public static CompoundTag section(int sectionY,int chunkX,int chunkZ){return section(new CompoundTag(),sectionY,chunkX,chunkZ);}
  public static CompoundTag section(int sectionY,int chunkX,int chunkZ,boolean singleCellSeal){return section(new CompoundTag(),sectionY,chunkX,chunkZ,singleCellSeal);}
+ public static CompoundTag section(int sectionY,int chunkX,int chunkZ,boolean singleCellSeal,boolean ground){return section(new CompoundTag(),sectionY,chunkX,chunkZ,singleCellSeal,ground);}
  private static CompoundTag section(CompoundTag previous,int sectionY,int chunkX,int chunkZ){
   return section(previous,sectionY,chunkX,chunkZ,false);
  }
  private static CompoundTag section(CompoundTag previous,int sectionY,int chunkX,int chunkZ,boolean singleCellSeal){
+  return section(previous,sectionY,chunkX,chunkZ,singleCellSeal,false);
+ }
+ private static CompoundTag section(CompoundTag previous,int sectionY,int chunkX,int chunkZ,boolean singleCellSeal,boolean ground){
   ListTag palette=new ListTag();Map<String,Integer> indices=new LinkedHashMap<>();int[] cells=new int[4096];
   for(int y=0;y<16;y++)for(int z=0;z<16;z++)for(int x=0;x<16;x++){
    int wx=chunkX*16+x,wy=sectionY*16+y,wz=chunkZ*16+z;
-   CompoundTag value=allocated(wx,wy,wz)?state(fixtureBlock(wx,wy,wz,singleCellSeal)):cell(previous,x,y,z);
+   CompoundTag value=allocated(wx,wy,wz)?state(fixtureBlock(wx,wy,wz,singleCellSeal,ground)):cell(previous,x,y,z);
    String key=value.toString();Integer index=indices.get(key);if(index==null){index=palette.size();indices.put(key,index);palette.add(value);}
    cells[(y<<8)|(z<<4)|x]=index;
   }
@@ -55,8 +62,8 @@ public final class PrepareFlightTank {
  private static ListTag vector(double... values){ListTag t=new ListTag();for(double v:values)t.add(DoubleTag.valueOf(v));return t;}
  private static ListTag rotation(float yaw,float pitch){ListTag t=new ListTag();t.add(FloatTag.valueOf(yaw));t.add(FloatTag.valueOf(pitch));return t;}
  public static void main(String[] args)throws Exception{
-  if(args.length!=2&&(args.length!=3||!Set.of("SINGLE_CELL_SEAL","STANDARD_FIREBALL","OVERHEAD_BOMBING").contains(args[2])))throw new IllegalArgumentException("PRIVATE_FIXTURE_VARIANT_REQUIRED");
-  boolean singleCellSeal=args.length==3,overhead=args.length==3&&args[2].equals("OVERHEAD_BOMBING"),standard=args.length==3&&(args[2].equals("STANDARD_FIREBALL")||overhead);
+  if(args.length!=2&&(args.length!=3||!Set.of("SINGLE_CELL_SEAL","STANDARD_FIREBALL","OVERHEAD_BOMBING","GROUND_COMBAT").contains(args[2])))throw new IllegalArgumentException("PRIVATE_FIXTURE_VARIANT_REQUIRED");
+  boolean singleCellSeal=args.length==3,overhead=args.length==3&&args[2].equals("OVERHEAD_BOMBING"),ground=args.length==3&&args[2].equals("GROUND_COMBAT"),standard=args.length==3&&(args[2].equals("STANDARD_FIREBALL")||overhead||ground);
   net.minecraft.SharedConstants.tryDetectVersion();net.minecraft.server.Bootstrap.bootStrap();
   Path root=Path.of(args[0]).toRealPath(),allowed=Path.of(args[1]).toRealPath();
   if(!root.startsWith(allowed)||root.equals(allowed)||Files.exists(root.resolve("fixture.json")))throw new IllegalStateException("NEW_PRIVATE_COPY_REQUIRED");
@@ -82,7 +89,7 @@ public final class PrepareFlightTank {
      for(int sy=13;sy<=15;sy++){
       CompoundTag previous=new CompoundTag();int found=-1;
       for(int i=0;i<sections.size();i++)if(sections.getCompound(i).getByte("Y")==sy){previous=sections.getCompound(i);found=i;break;}
-      CompoundTag replacement=section(previous,sy,cx,cz,singleCellSeal);if(found<0)sections.add(replacement);else sections.set(found,replacement);
+      CompoundTag replacement=section(previous,sy,cx,cz,singleCellSeal,ground);if(found<0)sections.add(replacement);else sections.set(found,replacement);
      }
      chunk.put("sections",sections);chunk.remove("Heightmaps");chunk.putBoolean("isLightOn",false);
      try(var output=region.getChunkDataOutputStream(pos)){NbtIo.write(chunk,output);}region.flush();
@@ -93,15 +100,16 @@ public final class PrepareFlightTank {
    try(RegionFile region=new RegionFile(entities.resolve("r.0.0.mca"),entities,true)){
     ChunkPos pos=new ChunkPos(0,0);CompoundTag chunk;try(var input=region.getChunkDataInputStream(pos)){if(input==null)throw new IllegalStateException("ENTITY_CHUNK_MISSING");chunk=NbtIo.read(input);}
     ListTag rows=chunk.getList("Entities",Tag.TAG_COMPOUND);for(Tag t:rows){CompoundTag e=(CompoundTag)t;if(e.hasUUID("UUID")&&e.getUUID("UUID").equals(SUBJECT))throw new IllegalStateException("DUPLICATE_SUBJECT");}
-    CompoundTag ghast=new CompoundTag();ghast.putString("id","soutou_ghast:soutou_ghast");ghast.putUUID("UUID",SUBJECT);ghast.put("Pos",vector(9.5,230,9.5));ghast.put("Motion",vector(0,0,0));ghast.put("Rotation",rotation(0,0));ghast.putFloat("Health",100);ghast.putBoolean("PersistenceRequired",true);ghast.putBoolean("NoAI",false);rows.add(ghast);chunk.put("Entities",rows);
+    CompoundTag ghast=new CompoundTag();ghast.putString("id","soutou_ghast:soutou_ghast");ghast.putUUID("UUID",SUBJECT);ghast.put("Pos",vector(9.5,ground?225:230,9.5));ghast.put("Motion",vector(0,0,0));ghast.put("Rotation",rotation(0,0));ghast.putFloat("Health",100);ghast.putBoolean("PersistenceRequired",true);ghast.putBoolean("NoAI",false);rows.add(ghast);chunk.put("Entities",rows);
     try(var output=region.getChunkDataOutputStream(pos)){NbtIo.write(chunk,output);}region.flush();
    }
    JsonObject scope=new JsonObject();scope.addProperty("scope",KneekuraDebugArenaController.SCOPE);scope.addProperty("dimension","minecraft:overworld");JsonArray blocks=new JsonArray();
-   for(int x=7;x<13;x++)for(int y=224;y<235;y++)for(int z=6;z<13;z++){JsonArray b=new JsonArray();b.add(x);b.add(y);b.add(z);b.add(fixtureBlock(x,y,z,singleCellSeal));blocks.add(b);}scope.add("blocks",blocks);
-   JsonObject poses=new JsonObject(),pose=new JsonObject();pose.addProperty("x",9.5d);pose.addProperty("y",230d);pose.addProperty("z",9.5d);pose.addProperty("yaw",0f);pose.addProperty("pitch",0f);for(String key:new String[]{"vx","vy","vz"})pose.addProperty(key,0d);poses.add(SUBJECT.toString(),pose);scope.add("subjectPoses",poses);
+   for(int x=7;x<13;x++)for(int y=224;y<235;y++)for(int z=6;z<13;z++){JsonArray b=new JsonArray();b.add(x);b.add(y);b.add(z);b.add(fixtureBlock(x,y,z,singleCellSeal,ground));blocks.add(b);}scope.add("blocks",blocks);
+   JsonObject poses=new JsonObject(),pose=new JsonObject();pose.addProperty("x",9.5d);pose.addProperty("y",ground?225d:230d);pose.addProperty("z",9.5d);pose.addProperty("yaw",0f);pose.addProperty("pitch",0f);for(String key:new String[]{"vx","vy","vz"})pose.addProperty(key,0d);poses.add(SUBJECT.toString(),pose);scope.add("subjectPoses",poses);
    JsonObject fixture=new JsonObject();fixture.add("scope",scope);fixture.addProperty("baselineHash",KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(scope)));fixture.addProperty("subjectUuid",SUBJECT.toString());fixture.addProperty("playerUuid",player.getUUID("UUID").toString());
    fixture.addProperty("seedReimuRemoved",seedReimuRemoved);
-   fixture.addProperty("variant",overhead?"OVERHEAD_BOMBING":standard?"STANDARD_FIREBALL":singleCellSeal?"SINGLE_CELL_SEAL":"OPAQUE_LOS_WALL");
+   fixture.addProperty("variant",ground?"GROUND_COMBAT":overhead?"OVERHEAD_BOMBING":standard?"STANDARD_FIREBALL":singleCellSeal?"SINGLE_CELL_SEAL":"OPAQUE_LOS_WALL");
+   if(ground){fixture.addProperty("groundFloorY",224);fixture.addProperty("groundCeilingY",230);fixture.addProperty("subjectInitialY",225);}
    fixture.addProperty("offlinePlayerCameraPitch",overhead?-90:-18);
    fixture.addProperty("subjectHealth",100);fixture.addProperty("playerHealth",20);fixture.addProperty("mobGriefingDisabled",standard);
    fixture.addProperty("changes","PRIVATE_ONLY: offline52x24x52 bounded Tank shell, survival Player observation fixture, "+(singleCellSeal?"single-cell initial seal":"opaque LOS wall")+", active ghast; seed Reimu excluded from room chunks. Runtime window opening only through registered owner block actions.");

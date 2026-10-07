@@ -81,7 +81,7 @@ public class StandardSoutouFireball extends Fireball implements IEntityAdditiona
         super.onHitEntity(hit);
         if(!level().isClientSide){
             Entity victim=hit.getEntity();directVictim=victim.getUUID();
-            float damage=victim instanceof SoutouGhast&&isOwnReturn(victim)?RETURN_DAMAGE:DIRECT_DAMAGE;
+            float damage=victim instanceof SoutouGhast&&isOwnReturn(victim)?RETURN_DAMAGE:directDamage();
             victim.hurt(damageSources().fireball(this,getOwner()),damage);
         }
     }
@@ -89,10 +89,12 @@ public class StandardSoutouFireball extends Fireball implements IEntityAdditiona
         super.onHit(hit);
         if(!level().isClientSide){
             boolean grief=ForgeEventFactory.getMobGriefingEvent(level(),getOwner());
-            level().explode(this,getX(),getY(),getZ(),EXPLOSION_RADIUS,grief,Level.ExplosionInteraction.MOB);
+            level().explode(this,getX(),getY(),getZ(),explosionRadius(),grief,Level.ExplosionInteraction.MOB);
             discard();
         }
     }
+    protected float directDamage(){return DIRECT_DAMAGE;}
+    protected float explosionRadius(){return EXPLOSION_RADIUS;}
     private CompoundTag flightData(){
         CompoundTag data=new CompoundTag();data.putDouble("px",xPower);data.putDouble("py",yPower);data.putDouble("pz",zPower);
         Vec3 v=getDeltaMovement();data.putDouble("vx",v.x);data.putDouble("vy",v.y);data.putDouble("vz",v.z);

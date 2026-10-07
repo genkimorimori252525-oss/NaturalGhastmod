@@ -36,6 +36,9 @@ public final class SoutouGhastAnchorGoal extends Goal {
         boolean present=target!=null&&target.isAlive();
         boolean visible=present&&ghast.getSensing().hasLineOfSight(target);
         FlightVector boss=SoutouGhastInertialMoveControl.from(ghast.position());
+        if(ghast.getGroundCombat().active()){
+            applyGround(target,visible,control().sampleMobility());return;
+        }
         if(ghast.getOverheadAttack().active()){
             control().sampleMobility();applyMajor(target,visible);return;
         }
@@ -54,6 +57,10 @@ public final class SoutouGhastAnchorGoal extends Goal {
             planner.reset();brain.reset();ghast.getStandardAttack().reset();control().setTacticalState(brain.state());control().setIntent(FlightController.Intent.hold());return;
         }
         var sample = control().sampleMobility();
+        boolean groundBusy=ghast.getStandardAttack().engaged()||brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT;
+        if(ghast.getGroundCombat().tryBegin(sample,groundBusy)){
+            brain.reset();planner.reset();ghast.getStandardAttack().reset();applyGround(target,visible,sample);return;
+        }
         ghast.getOverheadAttack().ordinaryTick(visible);
         boolean busy=ghast.getStandardAttack().engaged()||brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT;
         if(ghast.getOverheadAttack().tryBegin(target,visible,anchor.region(),busy)){
@@ -74,6 +81,13 @@ public final class SoutouGhastAnchorGoal extends Goal {
         }
         Vec3 attackLook=ghast.getStandardAttack().tick(target,visible,brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT);
         if(attackLook!=null)((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(attackLook);
+    }
+
+    private void applyGround(LivingEntity target,boolean visible,com.genki.soutoughast.entity.ai.flight.MobilityContext.Sample sample){
+        var state=ghast.getGroundCombat().tick(target,visible,anchor.region(),sample);
+        control().setCombatRegion(anchor.region());control().setTacticalState(TacticalBrain.State.idle());
+        control().setMajorIntent(state.intent(),state.intent().mode()==FlightController.Mode.MOVE?
+                com.genki.soutoughast.entity.ai.flight.MovementPrimitive.APPROACH:com.genki.soutoughast.entity.ai.flight.MovementPrimitive.BRAKE);
     }
 
     private void applyMajor(LivingEntity target,boolean visible){
@@ -100,6 +114,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
         brain.reset();control().setTacticalState(brain.state());
         ghast.getStandardAttack().reset();
         ghast.getOverheadAttack().reset();
+        ghast.getGroundCombat().reset();
         control().resetMobility();
         control().setIntent(FlightController.Intent.hold());
         ((SoutouGhastFlightLookControl)ghast.getLookControl()).clearIntent();

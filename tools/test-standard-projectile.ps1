@@ -10,6 +10,7 @@ $arguments=@('--release','17','-encoding','UTF-8','-proc:none','-cp',$classpath,
     "$root/src/main/java/com/genki/soutoughast/entity/projectile/CommittedTrajectoryCodec.java",
     "$root/src/main/java/com/genki/soutoughast/entity/ai/CommittedPathClearance.java",
     "$root/src/test/java/com/genki/soutoughast/entity/projectile/StandardProjectileTest.java",
+    "$root/src/test/java/com/genki/soutoughast/entity/projectile/GroundProjectileTest.java",
     "$root/src/test/java/com/genki/soutoughast/entity/projectile/CommittedProjectileTest.java")
 $arguments+=@(Get-ChildItem -LiteralPath "$root/src/main/java/com/genki/soutoughast/entity/ai/flight" -Filter '*.java'|ForEach-Object FullName)
 $file=Join-Path $output 'compile.args'
@@ -25,3 +26,7 @@ $profileRun=Join-Path $output 'profile-run.args'
 [IO.File]::WriteAllLines($profileRun,@('-ea','-cp',$runClasspath,'com.genki.soutoughast.entity.projectile.CommittedProjectileTest'))
 & "$JavaHome/bin/java.exe" "@$profileRun"
 if($LASTEXITCODE){throw 'Committed mapped assertions failed'}
+$groundRun=Join-Path $output 'ground-run.args'
+[IO.File]::WriteAllLines($groundRun,@('-ea','-cp',$runClasspath,'com.genki.soutoughast.entity.projectile.GroundProjectileTest'))
+& "$JavaHome/bin/java.exe" "@$groundRun"
+if($LASTEXITCODE){throw 'Ground mapped assertions failed'}

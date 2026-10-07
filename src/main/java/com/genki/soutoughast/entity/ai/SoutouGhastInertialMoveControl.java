@@ -68,8 +68,9 @@ public final class SoutouGhastInertialMoveControl extends MoveControl {
         double horizon = Math.min(FlightController.MAX_SPEED / FlightController.BRAKING + 2,
                 actual.length() / FlightController.BRAKING + 2);
         Vec3 sweep = to(next.scale(horizon * 0.5 + 1));
-        clearanceBlocked = next.length() > 1e-9 && !ghast.level().noCollision(ghast,
-                clearanceBox(ghast.getBoundingBox(), sweep));
+        clearanceBlocked = next.length() > 1e-9 && (!ghast.level().noCollision(ghast,
+                clearanceBox(ghast.getBoundingBox(), sweep))
+                ||ghast.getGroundCombat().active()&&!ghast.getGroundCombat().safeMotion(sweep));
         if (clearanceBlocked) next = controller.step(actual, FlightController.Intent.brake());
         ghast.setDeltaMovement(to(next));
     }
