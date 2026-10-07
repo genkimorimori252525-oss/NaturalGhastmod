@@ -28,27 +28,27 @@ public final class MovementMobilityTest {
         MovementPlanner planner=new MovementPlanner();
         var correction=planner.step(anchor,FlightVector.ZERO,new FlightVector(0,6,8),FORWARD,
                 MobilityContext.Kind.OPEN_AIR,open,0.1);
-        check(correction.primitive()==MovementPrimitive.WITHDRAW&&correction.intent().mode()==FlightController.Mode.MOVE,
-                "too-close correction opens range without replacing the anchor");
+        check(correction.inRegion()&&correction.intent().mode()==FlightController.Mode.MOVE,
+                "soft close range does not evict an in-region swimmer");
         var blocked=planner.step(anchor,FlightVector.ZERO,new FlightVector(0,6,8),FORWARD,
                 MobilityContext.Kind.CONFINED,ground,0.9);
         check(blocked.intent().mode()!=FlightController.Mode.MOVE,"unavailable correction does not issue blind thrust");
         planner.reset();
         var hold=planner.step(anchor,FlightVector.ZERO,INSIDE,FORWARD,MobilityContext.Kind.OPEN_AIR,open,0.1);
-        check(hold.primitive()==MovementPrimitive.HOLD,"quiet movement remains common");
+        check(hold.primitive()==MovementPrimitive.HOLD&&hold.intent().mode()==FlightController.Mode.MOVE,"quiet intent includes gentle floating");
         int quiet=0;
-        for(int i=0;i<20;i++) if(planner.step(anchor,FlightVector.ZERO,INSIDE,FORWARD,MobilityContext.Kind.OPEN_AIR,open,0.99).intent().mode()!=FlightController.Mode.MOVE) quiet++;
+        for(int i=0;i<20;i++) if(planner.step(anchor,FlightVector.ZERO,INSIDE,FORWARD,MobilityContext.Kind.OPEN_AIR,open,0.99).primitive()==MovementPrimitive.HOLD) quiet++;
         check(quiet==20,"new variation cannot cancel committed quiet interval every tick");
         planner.reset();
         var drift=planner.step(anchor,FlightVector.ZERO,INSIDE,FORWARD,MobilityContext.Kind.OPEN_AIR,open,0.7);
         check(drift.intent().mode()==FlightController.Mode.MOVE,"feasible drift can leave stillness");
-        check(drift.waypoint().subtract(INSIDE).length()<=4.00001,"drift is bounded around the current region");
-        check(anchor.evaluate(FlightVector.ZERO,FORWARD,drift.waypoint()).inRegion(),"drift endpoint remains frontal and in range");
+        check(drift.waypoint().subtract(INSIDE).length()>10,"open drift has broad freedom");
+        check(anchor.evaluate(FlightVector.ZERO,FORWARD,drift.waypoint()).inRegion(),"drift endpoint remains inside the retained region");
         var shifted=planner.step(anchor,new FlightVector(0,0,50),INSIDE,FORWARD,MobilityContext.Kind.OPEN_AIR,open,0.7);
-        check(shifted.primitive()==MovementPrimitive.RETURN,"target displacement abandons stale drift and restores frontal region");
+        check(shifted.waypoint().equals(drift.waypoint()),"ordinary target displacement preserves committed swimming");
         planner.reset();
         var confined=planner.step(anchor,FlightVector.ZERO,INSIDE,FORWARD,MobilityContext.Kind.CONFINED,open,0.7);
-        check(confined.waypoint().subtract(INSIDE).length()<=1.50001,"confinement uses compact positive movement");
+        check(confined.waypoint().subtract(INSIDE).length()<=3.2,"explicit confinement limits routes, not the retained region");
         var groundPlan=planner.step(anchor,FlightVector.ZERO,INSIDE,FORWARD,MobilityContext.Kind.GROUND_FORCED,open,0.7);
         check(groundPlan.intent().mode()!=FlightController.Mode.MOVE,"ground constraint suppresses airborne maneuvers");
         planner.reset();
@@ -61,7 +61,7 @@ public final class MovementMobilityTest {
         var tangentDrift=planner.step(anchor,FlightVector.ZERO,tangent,FORWARD,MobilityContext.Kind.OPEN_AIR,open,.85);
         FlightVector firstVelocity=new FlightController().step(FlightVector.ZERO,tangentDrift.intent());
         check(anchor.evaluate(FlightVector.ZERO,FORWARD,tangent.add(firstVelocity)).inRegion(),
-                "drift chord cannot cross the inner range hole");
+                "soft range does not create an inner radius hole");
         check(!new MobilityContext.Sample(769).allows(new FlightVector(3,0,8)),
                 "one clear cardinal ray cannot certify an unsampled diagonal");
         planner.reset();

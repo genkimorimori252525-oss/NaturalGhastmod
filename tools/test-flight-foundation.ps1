@@ -11,8 +11,11 @@ if (Test-Path -LiteralPath $core) {
 }
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/FlightFoundationTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/MovementMobilityTest.java"
+$sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/CombatRegionSwimmingTest.java"
 & "$JavaHome/bin/javac.exe" --release 17 -encoding UTF-8 -d $output @sources
 if ($LASTEXITCODE -ne 0) { throw 'Flight foundation compilation failed.' }
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.CombatRegionSwimmingTest
+if ($LASTEXITCODE -ne 0) { throw 'Combat region/swimming assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.FlightFoundationTest
 if ($LASTEXITCODE -ne 0) { throw 'Flight foundation assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.MovementMobilityTest

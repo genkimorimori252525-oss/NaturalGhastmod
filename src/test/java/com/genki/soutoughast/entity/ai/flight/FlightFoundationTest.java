@@ -35,14 +35,14 @@ public final class FlightFoundationTest {
         CombatAnchor anchor = new CombatAnchor();
         FlightVector player = new FlightVector(10, 20, 30);
         CombatAnchor.Evaluation e = anchor.evaluate(player, FORWARD, player.add(new FlightVector(0, 6, 28)));
-        check(e.range() == CombatAnchor.Range.COMFORTABLE && e.inRegion(), "frontal range and altitude band");
+        check(e.range() == CombatAnchor.Range.COMFORTABLE && e.inRegion(), "initial observed combat geometry");
         check(anchor.evaluate(player, FORWARD, player.add(FORWARD.scale(21))).range() == CombatAnchor.Range.TOO_CLOSE, "near boundary");
         check(anchor.evaluate(player, FORWARD, player.add(FORWARD.scale(35))).range() == CombatAnchor.Range.TOO_FAR, "far boundary");
-        check(!anchor.evaluate(player, FORWARD, player.add(new FlightVector(0, 6, -28))).inRegion(), "rear requires recovery");
+        check(!anchor.evaluate(player, FORWARD, player.add(new FlightVector(0, 6, -28))).inRegion(), "outside retained region requires recovery");
         check(anchor.evaluate(player, FORWARD, player.add(new FlightVector(0, 6, 28))).intent().mode() == FlightController.Mode.HOLD, "comfortable region avoids exact point chasing");
         FlightVector shift = new FlightVector(5, -2, 7);
-        check(anchor.evaluate(player.add(shift), FORWARD, player).point().subtract(e.point()).subtract(shift).length() < 1e-9, "anchor follows world translation");
-        check(anchor.evaluate(player, FORWARD, player.add(FORWARD.scale(70))).point().equals(e.point()), "maneuver position cannot replace anchor");
+        check(anchor.evaluate(player.add(shift), FORWARD, player.add(new FlightVector(0,6,28))).point().equals(e.point()), "ordinary Player translation preserves anchor");
+        check(anchor.region().center().equals(e.point()), "maneuver position cannot replace anchor");
         FlightVector far = player.add(FORWARD.scale(70));
         for (int i = 0; i < 350; i++) {
             CombatAnchor.Evaluation recovery = anchor.evaluate(player, FORWARD, far);
