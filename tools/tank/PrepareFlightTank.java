@@ -55,8 +55,8 @@ public final class PrepareFlightTank {
  private static ListTag vector(double... values){ListTag t=new ListTag();for(double v:values)t.add(DoubleTag.valueOf(v));return t;}
  private static ListTag rotation(float yaw,float pitch){ListTag t=new ListTag();t.add(FloatTag.valueOf(yaw));t.add(FloatTag.valueOf(pitch));return t;}
  public static void main(String[] args)throws Exception{
-  if(args.length!=2&&(args.length!=3||!args[2].equals("SINGLE_CELL_SEAL")))throw new IllegalArgumentException("PRIVATE_FIXTURE_VARIANT_REQUIRED");
-  boolean singleCellSeal=args.length==3;
+  if(args.length!=2&&(args.length!=3||!Set.of("SINGLE_CELL_SEAL","STANDARD_FIREBALL").contains(args[2])))throw new IllegalArgumentException("PRIVATE_FIXTURE_VARIANT_REQUIRED");
+  boolean singleCellSeal=args.length==3,standard=args.length==3&&args[2].equals("STANDARD_FIREBALL");
   net.minecraft.SharedConstants.tryDetectVersion();net.minecraft.server.Bootstrap.bootStrap();
   Path root=Path.of(args[0]).toRealPath(),allowed=Path.of(args[1]).toRealPath();
   if(!root.startsWith(allowed)||root.equals(allowed)||Files.exists(root.resolve("fixture.json")))throw new IllegalStateException("NEW_PRIVATE_COPY_REQUIRED");
@@ -66,6 +66,7 @@ public final class PrepareFlightTank {
    if(lock==null)throw new IllegalStateException("WORLD_RUNNING");
    CompoundTag level=NbtIo.readCompressed(world.resolve("level.dat").toFile()),data=level.getCompound("Data"),player=data.getCompound("Player");
    data.putBoolean("confirmedExperimentalSettings",true);data.putByte("Difficulty",(byte)2);data.putInt("GameType",0);
+   if(standard)data.getCompound("GameRules").putString("mobGriefing","false");
    player.put("Pos",vector(9.5,224,3.5));player.put("Motion",vector(0,0,0));player.put("Rotation",rotation(0,-18));player.putInt("playerGameType",0);player.putFloat("Health",20);
    CompoundTag abilities=player.getCompound("abilities");for(String key:new String[]{"flying","mayfly","invulnerable","instabuild"})abilities.putBoolean(key,false);
    NbtIo.writeCompressed(level,world.resolve("level.dat").toFile());Path playerFile=world.resolve("playerdata/"+player.getUUID("UUID")+".dat");if(Files.exists(playerFile))NbtIo.writeCompressed(player,playerFile.toFile());
@@ -92,7 +93,7 @@ public final class PrepareFlightTank {
    try(RegionFile region=new RegionFile(entities.resolve("r.0.0.mca"),entities,true)){
     ChunkPos pos=new ChunkPos(0,0);CompoundTag chunk;try(var input=region.getChunkDataInputStream(pos)){if(input==null)throw new IllegalStateException("ENTITY_CHUNK_MISSING");chunk=NbtIo.read(input);}
     ListTag rows=chunk.getList("Entities",Tag.TAG_COMPOUND);for(Tag t:rows){CompoundTag e=(CompoundTag)t;if(e.hasUUID("UUID")&&e.getUUID("UUID").equals(SUBJECT))throw new IllegalStateException("DUPLICATE_SUBJECT");}
-    CompoundTag ghast=new CompoundTag();ghast.putString("id","soutou_ghast:soutou_ghast");ghast.putUUID("UUID",SUBJECT);ghast.put("Pos",vector(9.5,230,9.5));ghast.put("Motion",vector(0,0,0));ghast.put("Rotation",rotation(0,0));ghast.putFloat("Health",10);ghast.putBoolean("PersistenceRequired",true);ghast.putBoolean("NoAI",false);rows.add(ghast);chunk.put("Entities",rows);
+    CompoundTag ghast=new CompoundTag();ghast.putString("id","soutou_ghast:soutou_ghast");ghast.putUUID("UUID",SUBJECT);ghast.put("Pos",vector(9.5,230,9.5));ghast.put("Motion",vector(0,0,0));ghast.put("Rotation",rotation(0,0));ghast.putFloat("Health",100);ghast.putBoolean("PersistenceRequired",true);ghast.putBoolean("NoAI",false);rows.add(ghast);chunk.put("Entities",rows);
     try(var output=region.getChunkDataOutputStream(pos)){NbtIo.write(chunk,output);}region.flush();
    }
    JsonObject scope=new JsonObject();scope.addProperty("scope",KneekuraDebugArenaController.SCOPE);scope.addProperty("dimension","minecraft:overworld");JsonArray blocks=new JsonArray();
@@ -100,7 +101,8 @@ public final class PrepareFlightTank {
    JsonObject poses=new JsonObject(),pose=new JsonObject();pose.addProperty("x",9.5d);pose.addProperty("y",230d);pose.addProperty("z",9.5d);pose.addProperty("yaw",0f);pose.addProperty("pitch",0f);for(String key:new String[]{"vx","vy","vz"})pose.addProperty(key,0d);poses.add(SUBJECT.toString(),pose);scope.add("subjectPoses",poses);
    JsonObject fixture=new JsonObject();fixture.add("scope",scope);fixture.addProperty("baselineHash",KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(scope)));fixture.addProperty("subjectUuid",SUBJECT.toString());fixture.addProperty("playerUuid",player.getUUID("UUID").toString());
    fixture.addProperty("seedReimuRemoved",seedReimuRemoved);
-   fixture.addProperty("variant",singleCellSeal?"SINGLE_CELL_SEAL":"OPAQUE_LOS_WALL");
+   fixture.addProperty("variant",standard?"STANDARD_FIREBALL":singleCellSeal?"SINGLE_CELL_SEAL":"OPAQUE_LOS_WALL");
+   fixture.addProperty("subjectHealth",100);fixture.addProperty("playerHealth",20);fixture.addProperty("mobGriefingDisabled",standard);
    fixture.addProperty("changes","PRIVATE_ONLY: offline52x24x52 bounded Tank shell, survival Player observation fixture, "+(singleCellSeal?"single-cell initial seal":"opaque LOS wall")+", active ghast; seed Reimu excluded from room chunks. Runtime window opening only through registered owner block actions.");
    Files.writeString(root.resolve("fixture.json"),fixture+"\n",StandardOpenOption.CREATE_NEW);
    JsonObject owner=JsonParser.parseString(Files.readString(world.resolve("kneekura-tank-owner.json"))).getAsJsonObject(),recipe=owner.getAsJsonObject("recipe");

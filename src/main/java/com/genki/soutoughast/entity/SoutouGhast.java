@@ -3,6 +3,11 @@ package com.genki.soutoughast.entity;
 import com.genki.soutoughast.entity.ai.SoutouGhastAnchorGoal;
 import com.genki.soutoughast.entity.ai.SoutouGhastInertialMoveControl;
 import com.genki.soutoughast.entity.ai.SoutouGhastFlightLookControl;
+import com.genki.soutoughast.entity.ai.SoutouGhastStandardAttack;
+import com.genki.soutoughast.entity.projectile.StandardSoutouFireball;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageTypes;
 import com.genki.soutoughast.sound.ModSounds;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvent;
@@ -50,6 +55,8 @@ public class SoutouGhast extends Ghast {
     }
 
     private static final int LAST_SEEN_MEMORY_TICKS = 80;
+    private final SoutouGhastStandardAttack standardAttack=new SoutouGhastStandardAttack(this);
+    public SoutouGhastStandardAttack getStandardAttack(){return standardAttack;}
 
     private CombatPhase combatPhase = CombatPhase.SCOUTING;
     private Temperament temperament = Temperament.BALANCED;
@@ -72,7 +79,20 @@ public class SoutouGhast extends Ghast {
     }
 
     public static AttributeSupplier.Builder createAttributes() {
-        return Ghast.createAttributes();
+        return Ghast.createAttributes().add(Attributes.MAX_HEALTH,100).add(Attributes.ARMOR,0);
+    }
+
+    @Override public boolean isInvulnerableTo(DamageSource source){
+        if(source.is(DamageTypes.FIREBALL)&&source.getDirectEntity() instanceof StandardSoutouFireball shot&&shot.isAttributedOwnReturn(source,this)){
+            return isRemoved()||isInvulnerable()&&!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)&&!source.isCreativePlayer();
+        }
+        return super.isInvulnerableTo(source);
+    }
+    @Override public boolean hurt(DamageSource source,float amount){
+        // A returned direct impact deals20 once. Its following explosion cannot add a second health hit.
+        if(source.is(DamageTypeTags.IS_EXPLOSION)&&source.getDirectEntity() instanceof StandardSoutouFireball shot
+                &&shot.isAttributedOwnReturn(source,this)&&shot.wasDirectVictim(this))return false;
+        return super.hurt(source,amount);
     }
 
     @Override

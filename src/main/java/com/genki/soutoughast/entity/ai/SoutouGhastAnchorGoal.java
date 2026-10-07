@@ -48,12 +48,12 @@ public final class SoutouGhastAnchorGoal extends Goal {
         }
         control().setCombatRegion(anchor.region());
         if(anchor.region()==null||lastObservedPosition==null){
-            planner.reset();brain.reset();control().setTacticalState(brain.state());control().setIntent(FlightController.Intent.hold());return;
+            planner.reset();brain.reset();ghast.getStandardAttack().reset();control().setTacticalState(brain.state());control().setIntent(FlightController.Intent.hold());return;
         }
         var sample = control().sampleMobility();
         // No live geometry or velocity is read after LOS loss. Committed recipes use locked waypoints.
         FlightVector observedVelocity=visible?SoutouGhastInertialMoveControl.from(target.getDeltaMovement()):null;
-        double variation=ghast.getRandom().nextDouble();
+        double variation=ghast.getStandardAttack().engaged()?0:ghast.getRandom().nextDouble();
         var plan = brain.step(anchor,visible?lastObservedPosition:null,observedVelocity,boss,visible,
                 control().getMobilityContext(),sample,variation,control()::hasDirectionalClearance,
                 ()->planner.step(anchor,lastObservedPosition,boss,FlightVector.ZERO,
@@ -64,6 +64,8 @@ public final class SoutouGhastAnchorGoal extends Goal {
             Vec3 look=target.getEyePosition().subtract(ghast.getEyePosition());
             ((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(look);
         }
+        Vec3 attackLook=ghast.getStandardAttack().tick(target,visible,brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT);
+        if(attackLook!=null)((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(attackLook);
     }
 
     @Override
@@ -73,6 +75,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
         anchor.clear();control().setCombatRegion(null);
         planner.reset();
         brain.reset();control().setTacticalState(brain.state());
+        ghast.getStandardAttack().reset();
         control().resetMobility();
         control().setIntent(FlightController.Intent.hold());
         ((SoutouGhastFlightLookControl)ghast.getLookControl()).clearIntent();

@@ -8,12 +8,14 @@ import {analyzeSwimming} from './swimming-results.mjs';
 import {analyzeTactics} from './tactics-results.mjs';
 import {waitForFlightAction} from './flight-owner.mjs';
 import {privateFlightLaunchArgs} from './flight-launch.mjs';
+import {analyzeStandard} from './standard-results.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
 const option = name => { const i = process.argv.indexOf('--' + name); if (i < 0 || !process.argv[i + 1]) throw Error('Missing --' + name); return path.resolve(process.argv[i + 1]); };
 const lab = option('lab'), templateFile = option('template'), original = option('original'), classpathFile = option('classpath-file');
 const javaHome = option('java-home');
 const singleCellSeal=process.argv.includes('--single-cell-seal');
+const standard=process.argv.includes('--standard-fireball');
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const template = JSON.parse(await fs.readFile(templateFile));
 assert.equal(template.launch.env.KNEEKURA_DEBUG_MOD_PROFILE, 'TANK_CORE');
@@ -36,12 +38,16 @@ const {submitSelectedAction,inspectSelectedAction,readInstalledControl} = await 
 const {prepareTankResourceFile} = await load('tank-cli.mjs');
 const {verifyCompiledClasses} = await load('bridge/native/class-readiness.mjs');
 const {finalizeNativeTrial} = await load('bridge/native/trial-finalization.mjs');
+const {publishTankRoster,inspectTankRoster}=await load('bridge/tank-roster.mjs');
 const hashJson = value => sha(Buffer.from(stableJson(value)));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const report = {schema: 'naturalghast.tactics-tank/v1', trial, profile: 'TANK_CORE', failures: [],
     limitations: ['Static real survival Player fixture; moving/facing-change/target-change/LOS-loss/ground/multiplayer NOT_RUN.',
         'Canonical LAB evidence and supplementary flight/frame observations have different producers.',
         'Class-resource/container linkage is not resident transformed-definition attestation.']};
+if(standard)report.limitations=['180tick natural Standard shot with real20HP survival Player; natural injury/death is recorded, not prevented.',
+    'Actual melee, rally, returned-damage pipeline and balanced explosion comparison NOT_RUN; mobGriefing=false excludes terrain destruction.',
+    'Two canonical room roster samples; supplementary selected-subject/frame/client telemetry is not fixed-cardinal coverage or transformed-definition attestation.'];
 console.log('TRIAL ' + trial);
 let originalRows = [], current, runtime;
 async function inventory(root, relative = '') {
@@ -92,7 +98,7 @@ try {
     await fs.writeFile(compileArgs, ['--release', '17', '-encoding', 'UTF-8', '-cp', compileCp, '-d', classes, ...sources].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('javac', ['@' + compileArgs]);
     const prepareArgs = path.join(trial, 'java.args');
-    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFlightTank', trial, privateParent,...(singleCellSeal?['SINGLE_CELL_SEAL']:[])].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
+    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFlightTank', trial, privateParent,...(standard?['STANDARD_FIREBALL']:singleCellSeal?['SINGLE_CELL_SEAL']:[])].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('java', ['@' + prepareArgs]);
     const inputs = path.join(trial, 'inputs'), privateDir = path.join(trial, 'private');
     await fs.mkdir(inputs); await fs.mkdir(privateDir);
@@ -125,7 +131,7 @@ try {
         arena: {arena_id: experiment, baseline_hash: fixture.baselineHash, bounds: {min: [7,224,6], max: [13,235,13]}, preset: 'private-flight-mobility'},
         subjects: [{subject_id: 'ghast', entity_type: 'soutou_ghast:soutou_ghast', uuid: fixture.subjectUuid}], initial_state: [], actions,
         observation_scopes: [{kind: 'ENTITY_UUID', lanes: ['SERVER_ENTITY_STATE'], level: 'L1', subject_id: 'ghast'}],
-        visual_rig: {mode: 'none'}, assertions: [{assertion_id: 'idle-health', expected: 10, field: 'health', kind: 'structured', operator: 'equals', subject_id: 'ghast'}],
+        visual_rig: {mode: 'none'}, assertions: [{assertion_id: 'idle-health', expected: fixture.subjectHealth, field: 'health', kind: 'structured', operator: 'equals', subject_id: 'ghast'}],
         budgets: {time_budget_ms: 120000, max_actions: 1, max_captures: 0}};
     await write(path.join(inputs, 'request.json'), request); await write(path.join(inputs, 'assertions.json'), request.assertions);
     const requestHash = sha(await fs.readFile(path.join(inputs, 'request.json')));
@@ -143,6 +149,11 @@ try {
         selection: {grantId: experiment, leaseId: experiment + '-120s', arenaEpoch: 8, expectedArenaRevision: 0, allowedActions: ['set_block']},
         worldRegistration: {schemaVersion: 1, registrationId: experiment, canonicalWorldRoot: world, worldName: 'KNEEKURA_DEBUG_WORLD',
             dimensionId: 'minecraft:overworld', permissions: ['BOUNDED_DIAGNOSTIC_CONTROL']}};
+    if(standard){
+        const tank=await json(path.join(trial,'tank-owner.json'));
+        operator.worldRegistration.permissions.push('TANK_OBSERVATION_READ');
+        operator.tankObservation={schemaVersion:1,scope:'TANK_OBSERVATION_READ',dimensionId:'minecraft:overworld',min:[0,224,0],max:[52,248,52],recipeHash:tank.recipeHash.replace(/^sha256:/,''),maxEntities:64,maxSamples:2};
+    }
     const operatorFile = path.join(privateDir, 'operator.json'); await write(operatorFile, operator);
     const initScript = path.join(trial, 'native.init.gradle');
     await fs.writeFile(initScript, `gradle.beforeProject { p ->\n p.plugins.withId('net.minecraftforge.gradle') {\n  p.dependencies.add('runtimeOnly', p.files('${artifact.replaceAll('\\','/')}','${observer.replaceAll('\\','/')}'))\n  p.afterEvaluate {\n   p.minecraft.runs.client.workingDirectory p.file('${path.join(trial, 'game').replaceAll('\\','/')}')\n   p.tasks.matching { it.name == 'runClient' }.configureEach { task -> task.environment System.getenv().findAll { k,v -> k.startsWith('KNEEKURA_DEBUG_') } }\n  }\n }\n}\n`, {flag: 'wx'});
@@ -155,6 +166,7 @@ try {
     config.launch.command = path.resolve(host, template.launch.command);
     config.launch.args = privateFlightLaunchArgs(template.launch.args,host,initScript);
     config.launch.env = {JAVA_HOME: javaHome, KNEEKURA_DEBUG_MOD_PROFILE: 'TANK_CORE', NATURALGHAST_PRIVATE_GAME_DIR: path.join(trial, 'game')};
+    if(standard)config.launch.env.KNEEKURA_DEBUG_NATURAL_STANDARD='1';
     config.ownerControl = {requestHash, operatorRegistration: {trustedRoot: privateDir, relativePath: 'operator.json', sha256: sha(await fs.readFile(operatorFile))}};
     await write(path.join(trial, 'config.json'), config);
     await registerBridgeRequest({runtimeRoot: config.runtimeRoot, registration: {schemaVersion: 1, trustedRoot: inputs,
@@ -175,6 +187,15 @@ try {
         do{owner=await json(path.join(current.runDir,'control/owner-status.json')).catch(()=>null);if(owner?.status==='ACTIVE_SCOPED_CONTROL')break;await sleep(100);}while(Date.now()<ownerDeadline);
         assert.equal(owner?.status,'ACTIVE_SCOPED_CONTROL');
         const options={runDir:current.runDir,envelopeHash:owner.ownerEnvelopeHash};
+        async function roster(index){
+            await publishTankRoster({...options,sampleIndex:index});
+            const deadline=Date.now()+15000;let result;
+            do{await runtime.ingestAvailable();result=await inspectTankRoster({...options,sampleIndex:index});if(['COMPLETE','PARTIAL','REJECTED'].includes(result.status))break;await sleep(150);}while(Date.now()<deadline);
+            assert.equal(result?.status,'COMPLETE','ROOM_ROSTER_INCOMPLETE');
+            assert(!result.roster.entities.some(e=>e.entityType==='touhou_little_maid:reimu'),'UNEXPECTED_REIMU');
+            assert(result.roster.entities.some(e=>e.uuid===fixture.subjectUuid),'ROOM_SUBJECT_MISSING');return result;
+        }
+        if(standard)report.initialRoster=await roster(0);
         report.actions=[];
         for(const action of actions){
             await waitForFlightAction({inspect:async()=>{const value=await readInstalledControl({...options,allowBusyObservation:true});return {...value.control,idle:value.status.idle};},selectedActionId:action.action_id});
@@ -206,12 +227,21 @@ try {
         }
         assert.equal(report.preflight?.status, 'READY'); assert(report.frame, 'Native frame missing');
         const rows=(await fs.readFile(path.join(derived,'flight.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
-        assert(rows.every(row=>row.width===4&&row.height===4&&row.health===10));
-        assert(rows.every(row=>row.playerUuid===fixture.playerUuid&&Math.abs(row.playerX-9.5)<.001&&Math.abs(row.playerY-224)<.001&&Math.abs(row.playerZ-3.5)<.001&&Math.abs(row.playerYaw)<.001&&Math.abs(row.playerPitch+18)<.001),'Static player fixture changed');
-        report.flight=analyzeSwimming(rows,fixture.playerUuid);await write(path.join(derived,'flight-summary.json'),report.flight);
-        assert.equal(report.flight.status,'PASS',report.flight.failures.join(','));
-        report.tactics=analyzeTactics(rows);await write(path.join(derived,'tactics-summary.json'),report.tactics);
-        assert.equal(report.tactics.status,'PASS',report.tactics.failures.join(','));
+        assert(rows.every(row=>row.width===4&&row.height===4&&row.health===fixture.subjectHealth));
+        assert(rows.every(row=>row.playerUuid===fixture.playerUuid),'Real Player identity changed');
+        if(standard){
+            const clients=(await fs.readFile(path.join(derived,'client-projectiles.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
+            report.standard=analyzeStandard(rows,clients,fixture.subjectUuid);await write(path.join(derived,'standard-summary.json'),report.standard);
+            report.playerOutcome={initialHealth:rows[0].playerHealth,finalHealth:rows.at(-1).playerHealth,finalPosition:[rows.at(-1).playerX,rows.at(-1).playerY,rows.at(-1).playerZ]};
+            assert.equal(report.standard.status,'PASS',report.standard.failures.join(','));
+            report.finalRoster=await roster(1);
+        }else{
+            assert(rows.every(row=>Math.abs(row.playerX-9.5)<.001&&Math.abs(row.playerY-224)<.001&&Math.abs(row.playerZ-3.5)<.001&&Math.abs(row.playerYaw)<.001&&Math.abs(row.playerPitch+18)<.001),'Static player fixture changed');
+            report.flight=analyzeSwimming(rows,fixture.playerUuid);await write(path.join(derived,'flight-summary.json'),report.flight);
+            assert.equal(report.flight.status,'PASS',report.flight.failures.join(','));
+            report.tactics=analyzeTactics(rows);await write(path.join(derived,'tactics-summary.json'),report.tactics);
+            assert.equal(report.tactics.status,'PASS',report.tactics.failures.join(','));
+        }
         report.nativeScope = 'CHECKS_PASSED_FINALIZATION_PENDING';
     } catch(error) {
         report.failures.push('native checks: '+error.message);
@@ -223,7 +253,7 @@ try {
             report.cleanup=finish.stopped.cleanup;report.shutdown=finish.shutdown;report.finalization=finish.finalization;
             report.nativeFinalizationReason=finish.reason;
             assert.equal(finish.status,'PASS',finish.reason);
-            if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope='PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
+            if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope=standard?'PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY':'PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
         }
     }
 } catch (error) {
@@ -232,7 +262,7 @@ try {
     console.log('FAIL ' + error.message.split('\n')[0]);
 } finally {
     if (originalRows.length) { try { await verifyOriginal(); report.originalFilesVerified = originalRows.length; } catch (error) { report.failures.push(error.message); } }
-    report.status=report.failures.length||report.nativeScope!=='PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT'?'FAIL':'PASS';
+    report.status=report.failures.length||!['PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT','PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY'].includes(report.nativeScope)?'FAIL':'PASS';
     await write(path.join(trial, 'report.json'), report);
 }
 process.exitCode = report.failures.length ? 1 : 0;

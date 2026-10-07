@@ -2,6 +2,7 @@ package com.genki.soutoughast.tank;
 
 import com.genki.soutoughast.entity.SoutouGhast;
 import com.genki.soutoughast.entity.ai.SoutouGhastInertialMoveControl;
+import com.genki.soutoughast.entity.projectile.StandardSoutouFireball;
 import com.google.gson.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -18,6 +19,8 @@ import java.util.UUID;
 @Mod("naturalghast_tank_observer")
 public final class ObserveFlightTank {
  private static int samples;
+ private static boolean standard(){return "1".equals(System.getenv("KNEEKURA_DEBUG_NATURAL_STANDARD"));}
+ private static int sampleLimit(){return standard()?180:900;}
  private static volatile boolean ready;
  private static Path output(){return Path.of(System.getenv("KNEEKURA_DEBUG_RUN_DIR")).resolve("evidence/derived/naturalghast-flight");}
  private static boolean active(){return "1".equals(System.getenv("KNEEKURA_DEBUG_ENABLED"));}
@@ -32,7 +35,7 @@ public final class ObserveFlightTank {
  @Mod.EventBusSubscriber(modid="naturalghast_tank_observer")
  public static final class ServerObserver {
   @SubscribeEvent public static void tick(TickEvent.ServerTickEvent event)throws Exception{
-   if(!active()||event.phase!=TickEvent.Phase.END||samples>=900||!owned())return;
+   if(!active()||event.phase!=TickEvent.Phase.END||samples>=sampleLimit()||!owned())return;
    var entity=event.getServer().overworld().getEntity(UUID.fromString("67676767-1007-4000-8000-000000000001"));
    if(!(entity instanceof SoutouGhast ghast))return;
    var control=(SoutouGhastInertialMoveControl)ghast.getMoveControl();var target=ghast.getTarget();var velocity=ghast.getDeltaMovement();
@@ -54,6 +57,7 @@ public final class ObserveFlightTank {
    if(player!=null){
     row.addProperty("playerUuid",player.getUUID().toString());row.addProperty("playerX",player.getX());row.addProperty("playerY",player.getY());row.addProperty("playerZ",player.getZ());
     row.addProperty("playerYaw",player.getYRot());row.addProperty("playerPitch",player.getXRot());
+    row.addProperty("playerHealth",player.getHealth());row.addProperty("playerMode",player.gameMode.getGameModeForPlayer().getName());
    }
    row.addProperty("intent",control.getIntent().mode().name());row.addProperty("primitive",control.getPrimitive().name());row.addProperty("context",control.getMobilityContext().name());
    row.addProperty("clearanceBlocked",control.isClearanceBlocked());row.addProperty("collisionFree",ghast.level().noCollision(ghast,ghast.getBoundingBox()));
@@ -68,12 +72,42 @@ public final class ObserveFlightTank {
     row.addProperty("inCombatRegion",region.contains(SoutouGhastInertialMoveControl.from(ghast.position())));
    }
    row.addProperty("width",ghast.getBbWidth());row.addProperty("height",ghast.getBbHeight());row.addProperty("health",ghast.getHealth());
-   Files.createDirectories(output());Files.writeString(output().resolve("flight.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);ready=++samples>=900;
+   if(standard()){
+    var attack=ghast.getStandardAttack();var state=attack.state();
+    row.addProperty("mobGriefing",ghast.level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING));
+    row.addProperty("attackPhase",state.phase().name());row.addProperty("attackTicks",state.ticks());row.addProperty("attackFire",state.fire());row.addProperty("firingFace",ghast.isCharging());row.addProperty("firedCount",attack.firedCount());
+    row.addProperty("aimX",state.direction().x());row.addProperty("aimY",state.direction().y());row.addProperty("aimZ",state.direction().z());
+    row.addProperty("rallyFace",attack.rallyState().face());
+    JsonArray projectiles=new JsonArray();var all=ghast.level().getEntitiesOfClass(StandardSoutouFireball.class,new net.minecraft.world.phys.AABB(0,224,0,52,248,52));
+    row.addProperty("projectileCoverage",all.size()>16?"PARTIAL":"LOADED_ROOM_SELECTED_TYPE");
+    for(var p:all.stream().limit(16).toList()){
+     JsonObject shot=new JsonObject();shot.addProperty("uuid",p.getUUID().toString());shot.addProperty("type",BuiltInRegistries.ENTITY_TYPE.getKey(p.getType()).toString());
+     shot.addProperty("x",p.getX());shot.addProperty("y",p.getY());shot.addProperty("z",p.getZ());shot.addProperty("speed",p.getDeltaMovement().length());
+     shot.addProperty("width",p.getBbWidth());shot.addProperty("height",p.getBbHeight());shot.addProperty("pickRadius",p.getPickRadius());
+     shot.addProperty("origin",p.originUuid()==null?null:p.originUuid().toString());shot.addProperty("owner",p.getOwner()==null?null:p.getOwner().getUUID().toString());
+     shot.addProperty("playerDeflected",p.isPlayerDeflected());shot.addProperty("returns",p.bossReturns());
+     shot.addProperty("savedOrigin",p.saveWithoutId(new net.minecraft.nbt.CompoundTag()).getUUID("StandardOrigin").toString());projectiles.add(shot);
+    }
+    row.add("projectiles",projectiles);
+   }
+   Files.createDirectories(output());Files.writeString(output().resolve("flight.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);ready=++samples>=sampleLimit();
   }
  }
  @Mod.EventBusSubscriber(modid="naturalghast_tank_observer",value=Dist.CLIENT)
  public static final class ClientObserver {
   private static boolean captured;
+  private static final java.util.Set<UUID> seen=new java.util.HashSet<>();
+  @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event)throws Exception{
+   if(!active()||!standard()||ready||event.phase!=TickEvent.Phase.END||seen.size()>=16||!owned())return;
+   var mc=Minecraft.getInstance();if(mc.level==null)return;
+   for(var p:mc.level.getEntitiesOfClass(StandardSoutouFireball.class,new net.minecraft.world.phys.AABB(0,224,0,52,248,52)).stream().limit(16).toList()){
+    if(!seen.add(p.getUUID()))continue;
+    JsonObject row=new JsonObject();row.addProperty("tick",mc.level.getGameTime());row.addProperty("uuid",p.getUUID().toString());row.addProperty("type",BuiltInRegistries.ENTITY_TYPE.getKey(p.getType()).toString());
+    row.addProperty("renderer",mc.getEntityRenderDispatcher().getRenderer(p).getClass().getName());
+    row.addProperty("powerMagnitude",Math.sqrt(p.xPower*p.xPower+p.yPower*p.yPower+p.zPower*p.zPower));row.addProperty("speed",p.getDeltaMovement().length());
+    Files.createDirectories(output());Files.writeString(output().resolve("client-projectiles.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);
+   }
+  }
   @SubscribeEvent public static void frame(RenderLevelStageEvent event)throws Exception{
    if(!active()||!ready||captured||event.getStage()!=RenderLevelStageEvent.Stage.AFTER_LEVEL||!owned())return;
    // The opt-in pilot creates a single explicit request; default observer writes no frame.
