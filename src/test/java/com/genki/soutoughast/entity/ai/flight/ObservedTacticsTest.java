@@ -6,7 +6,7 @@ public final class ObservedTacticsTest {
     private static final MobilityContext.Sample OPEN=new MobilityContext.Sample(1023);
     private static final FlightVector TARGET=FlightVector.ZERO,START=new FlightVector(0,6,28);
     public static void main(String[] args){
-        selection();composition();brain();
+        selection();composition();brain();repeatAcrossRecovery();
         System.out.println("PASS: "+checks+" observed tactics assertions");
     }
     private static void selection(){
@@ -17,7 +17,7 @@ public final class ObservedTacticsTest {
         check(far==TacticalEvaluator.Action.FALSE_APPROACH,"range informs a soft tactical preference");
         memory.record(far);
         check(evaluator.choose(MobilityContext.Kind.OPEN_AIR,CombatAnchor.Range.TOO_FAR,FlightVector.ZERO,.99,memory)!=far,"recent maneuver cannot dominate again immediately");
-        for(int i=0;i<300;i++)memory.tick();
+        for(int i=0;i<600;i++)memory.tick();
         check(evaluator.choose(MobilityContext.Kind.OPEN_AIR,CombatAnchor.Range.TOO_FAR,FlightVector.ZERO,.99,memory)==far,"bounded memory decays");
     }
     private static void composition(){
@@ -70,6 +70,20 @@ public final class ObservedTacticsTest {
         check((brain.state().phase()!=ManeuverComposer.Phase.IDLE)==committed,"LOS loss cancels before commit, preserves locked movement afterward");
         brain.step(anchor,null,null,START,false,MobilityContext.Kind.GROUND_FORCED,OPEN,.99,d->true,()->normal);
         check(brain.state().phase()==ManeuverComposer.Phase.IDLE,"safety context overrides committed action");
+    }
+    private static void repeatAcrossRecovery(){
+        var anchor=new CombatAnchor();anchor.evaluate(TARGET,FlightVector.ZERO,START);var brain=new TacticalBrain();
+        var ordinary=new MovementPlanner.Plan(MovementPrimitive.DRIFT,FlightController.Intent.move(new FlightVector(1,0,0),.1),START,CombatAnchor.Range.COMFORTABLE,true);
+        var actions=new java.util.ArrayList<TacticalEvaluator.Action>();
+        var previous=ManeuverComposer.Phase.IDLE;
+        for(int tick=0;tick<1000&&actions.size()<2;tick++){
+            brain.step(anchor,TARGET,FlightVector.ZERO,START,true,MobilityContext.Kind.OPEN_AIR,OPEN,.99,d->true,()->ordinary);
+            var state=brain.state();
+            if(state.phase()==ManeuverComposer.Phase.TELEGRAPH&&previous==ManeuverComposer.Phase.IDLE)actions.add(state.action());
+            previous=state.phase();
+        }
+        check(actions.size()==2,"integration reaches two completed-selection cycles");
+        check(actions.get(0)!=actions.get(1),"repetition penalty survives recipe plus quiet recovery");
     }
     private static void check(boolean value,String message){checks++;if(!value)throw new AssertionError(message);}
 }
