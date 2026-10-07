@@ -13,7 +13,10 @@ public final class FlightFixtureTest {
   if(!PrepareFlightTank.block(section,9,5,6).equals("minecraft:air"))throw new AssertionError("aperture must be prepared before runtime activation");
   if(!PrepareFlightTank.block(section,9,2,6).equals("minecraft:air"))throw new AssertionError("distant target eye ray needs the low aperture cells");
   if(!PrepareFlightTank.block(section,9,6,9).equals("minecraft:air"))throw new AssertionError("ghast initial body obstructed");
-  if(PrepareFlightTank.allocatedCells()!=60552)throw new AssertionError("geometry allocation changed");
-  System.out.println("PASS: 8 mapped flight fixture assertions");
+  if(PrepareFlightTank.allocatedCells()!=75816)throw new AssertionError("swimming fixture must allocate52x24x52 with shell");
+  CompoundTag ceiling=PrepareFlightTank.section(15,0,0);
+  if(!PrepareFlightTank.block(ceiling,9,7,9).equals("minecraft:air"))throw new AssertionError("vertical swimming and body clearance missing");
+  if(!PrepareFlightTank.block(ceiling,9,8,9).equals("minecraft:black_concrete"))throw new AssertionError("new ceiling missing");
+  System.out.println("PASS: 10 mapped flight fixture assertions");
  }
 }

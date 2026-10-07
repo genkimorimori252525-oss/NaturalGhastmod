@@ -11,7 +11,7 @@ import java.util.*;
 /** Offline bounded fixture in an exclusively created save copy. No runtime mutation API. */
 public final class PrepareFlightTank {
  public static final UUID SUBJECT=UUID.fromString("67676767-1007-4000-8000-000000000001");
- private static final int SIZE=56,Y=224,HEIGHT=16;
+ private static final int SIZE=52,Y=224,HEIGHT=24;
  public static int allocatedCells(){return (SIZE+2)*(SIZE+2)*(HEIGHT+2);}
  private static boolean allocated(int x,int y,int z){return x>=-1&&x<=SIZE&&z>=-1&&z<=SIZE&&y>=Y-1&&y<=Y+HEIGHT;}
  private static String fixtureBlock(int x,int y,int z){
@@ -93,7 +93,7 @@ public final class PrepareFlightTank {
    JsonObject poses=new JsonObject(),pose=new JsonObject();pose.addProperty("x",9.5d);pose.addProperty("y",230d);pose.addProperty("z",9.5d);pose.addProperty("yaw",0f);pose.addProperty("pitch",0f);for(String key:new String[]{"vx","vy","vz"})pose.addProperty(key,0d);poses.add(SUBJECT.toString(),pose);scope.add("subjectPoses",poses);
    JsonObject fixture=new JsonObject();fixture.add("scope",scope);fixture.addProperty("baselineHash",KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(scope)));fixture.addProperty("subjectUuid",SUBJECT.toString());fixture.addProperty("playerUuid",player.getUUID("UUID").toString());
    fixture.addProperty("seedReimuRemoved",seedReimuRemoved);
-   fixture.addProperty("changes","PRIVATE_ONLY: offline56x16x56 bounded Tank shell, survival Player observation fixture, opaque wall, active ghast; seed Reimu excluded from room chunks. Runtime window opening only through registered owner block actions.");
+   fixture.addProperty("changes","PRIVATE_ONLY: offline52x24x52 bounded Tank shell, survival Player observation fixture, opaque wall, active ghast; seed Reimu excluded from room chunks. Runtime window opening only through registered owner block actions.");
    Files.writeString(root.resolve("fixture.json"),fixture+"\n",StandardOpenOption.CREATE_NEW);
    JsonObject owner=JsonParser.parseString(Files.readString(world.resolve("kneekura-tank-owner.json"))).getAsJsonObject(),recipe=owner.getAsJsonObject("recipe");
    recipe.addProperty("preset","custom");JsonObject sizes=recipe.getAsJsonObject("dimensions");sizes.addProperty("width",SIZE);sizes.addProperty("height",HEIGHT);sizes.addProperty("depth",SIZE);owner.addProperty("recipeHash","sha256:"+KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(recipe)));

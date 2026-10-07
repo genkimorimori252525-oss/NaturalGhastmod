@@ -57,6 +57,13 @@ public final class ObserveFlightTank {
    }
    row.addProperty("intent",control.getIntent().mode().name());row.addProperty("primitive",control.getPrimitive().name());row.addProperty("context",control.getMobilityContext().name());
    row.addProperty("clearanceBlocked",control.isClearanceBlocked());row.addProperty("collisionFree",ghast.level().noCollision(ghast,ghast.getBoundingBox()));
+   var region=control.getCombatRegion();
+   if(region!=null){
+    row.addProperty("regionGeneration",region.generation());row.addProperty("regionReason",region.reason().name());
+    row.addProperty("regionX",region.center().x());row.addProperty("regionY",region.center().y());row.addProperty("regionZ",region.center().z());
+    row.addProperty("radiusX",region.radii().x());row.addProperty("radiusY",region.radii().y());row.addProperty("radiusZ",region.radii().z());
+    row.addProperty("inCombatRegion",region.contains(SoutouGhastInertialMoveControl.from(ghast.position())));
+   }
    row.addProperty("width",ghast.getBbWidth());row.addProperty("height",ghast.getBbHeight());row.addProperty("health",ghast.getHealth());
    Files.createDirectories(output());Files.writeString(output().resolve("flight.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);ready=++samples>=600;
   }
@@ -69,7 +76,7 @@ public final class ObserveFlightTank {
    // The opt-in pilot creates a single explicit request; default observer writes no frame.
    if(!Files.exists(output().resolve("request-frame.json")))return;
    var mc=Minecraft.getInstance();if(mc.level==null)return;
-   var entity=mc.level.getEntitiesOfClass(SoutouGhast.class,new net.minecraft.world.phys.AABB(0,224,0,56,240,56));if(entity.size()!=1)return;
+   var entity=mc.level.getEntitiesOfClass(SoutouGhast.class,new net.minecraft.world.phys.AABB(0,224,0,52,248,52));if(entity.size()!=1)return;
    captured=true;
    try(var image=Screenshot.takeScreenshot(mc.getMainRenderTarget())){image.writeToFile(output().resolve("frame.png"));}
    JsonObject frame=new JsonObject();frame.addProperty("renderer",mc.getEntityRenderDispatcher().getRenderer(entity.get(0)).getClass().getName());

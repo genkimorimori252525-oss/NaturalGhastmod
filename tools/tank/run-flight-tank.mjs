@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL, fileURLToPath} from 'node:url';
-import {analyzeFlight} from './flight-results.mjs';
+import {analyzeSwimming} from './swimming-results.mjs';
 import {waitForFlightAction} from './flight-owner.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
@@ -32,7 +32,7 @@ const {submitSelectedAction,inspectSelectedAction,readInstalledControl} = await 
 const {prepareTankResourceFile} = await load('tank-cli.mjs');
 const hashJson = value => sha(Buffer.from(stableJson(value)));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-const report = {schema: 'naturalghast.flight-tank/v1', trial, profile: 'TANK_CORE', failures: [],
+const report = {schema: 'naturalghast.swimming-tank/v1', trial, profile: 'TANK_CORE', failures: [],
     limitations: ['Static real survival Player fixture; moving/facing-change/target-change/LOS-loss/ground/multiplayer NOT_RUN.',
         'Canonical LAB evidence and supplementary flight/frame observations have different producers.',
         'Class-resource/container linkage is not resident transformed-definition attestation.']};
@@ -200,9 +200,9 @@ try {
         const rows=(await fs.readFile(path.join(derived,'flight.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
         assert(rows.every(row=>row.width===4&&row.height===4&&row.health===10));
         assert(rows.every(row=>row.playerUuid===fixture.playerUuid&&Math.abs(row.playerX-9.5)<.001&&Math.abs(row.playerY-224)<.001&&Math.abs(row.playerZ-3.5)<.001&&Math.abs(row.playerYaw)<.001&&Math.abs(row.playerPitch+18)<.001),'Static player fixture changed');
-        report.flight=analyzeFlight(rows,fixture.playerUuid);await write(path.join(derived,'flight-summary.json'),report.flight);
+        report.flight=analyzeSwimming(rows,fixture.playerUuid);await write(path.join(derived,'flight-summary.json'),report.flight);
         assert.equal(report.flight.status,'PASS',report.flight.failures.join(','));
-        report.nativeScope = 'PASS_STATIC_PLAYER_ACQUISITION_FLIGHT_MOBILITY';
+        report.nativeScope = 'PASS_STATIC_PLAYER_PERSISTENT_REGION_PHYSICAL_SWIMMING';
         console.log(report.nativeScope);
     } finally {
         current ??= await readCurrent(config, lab).catch(() => null);
