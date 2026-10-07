@@ -79,7 +79,7 @@ try {
     await fs.writeFile(compileArgs, ['--release', '17', '-encoding', 'UTF-8', '-cp', compileCp, '-d', classes, ...sources].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('javac', ['@' + compileArgs]);
     const prepareArgs = path.join(trial, 'java.args');
-    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.genki.soutoughast.tank.PrepareFoundationTank', trial, privateParent].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
+    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFoundationTank', trial, privateParent].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('java', ['@' + prepareArgs]);
     const inputs = path.join(trial, 'inputs'), privateDir = path.join(trial, 'private');
     await fs.mkdir(inputs); await fs.mkdir(privateDir);
@@ -99,7 +99,7 @@ try {
     assert.equal(dirty.length, 0, 'Commit the source before binding runtime identity');
     assert.equal(execFileSync('git', ['status', '--porcelain'], {cwd: repository, encoding: 'utf8', windowsHide: true}).trim(), '', 'Runtime requires a clean source checkout');
     const fixture = await json(path.join(trial, 'fixture.json'));
-    fixture.baselineHash = hashJson(fixture.scope);
+    assert.match(fixture.baselineHash, /^[a-f0-9]{64}$/);
     const buildHash = sha(await fs.readFile(artifact)), resourceHash = sha(await fs.readFile(path.join(inputs, 'resources.zip')));
     const target = {profile_id: hashJson({profile: 'TANK_CORE', observer: 'OBSERVE_GRID'}), index_snapshot_id: hashJson({sourceRevision}),
         build_artifact_hash: buildHash, source_revision: sourceRevision, dirty_hash: sha(dirty), config_hash: sha(configMaterial), resource_hash: resourceHash};
