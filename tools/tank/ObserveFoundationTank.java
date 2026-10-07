@@ -40,6 +40,7 @@ public final class ObserveFoundationTank {
             row.addProperty("intent", control.getIntent().mode().name()); row.addProperty("clearanceBlocked", control.isClearanceBlocked());
             row.addProperty("collisionFree", ghast.level().noCollision(ghast, ghast.getBoundingBox()));
             row.addProperty("width", ghast.getBbWidth()); row.addProperty("height", ghast.getBbHeight());
+            row.addProperty("health", ghast.getHealth());
             Files.createDirectories(output());
             Files.writeString(output().resolve("idle.jsonl"), row + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
             ready = ++samples >= 40;

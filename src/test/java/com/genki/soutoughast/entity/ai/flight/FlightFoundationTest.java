@@ -29,6 +29,9 @@ public final class FlightFoundationTest {
         check(facing.direction().dot(FORWARD) < -0.99, "sustained 180 degree turn converges");
         facing.reset(new FlightVector(1, 0, 0));
         check(facing.direction().x() == 1, "subject change resets facing");
+        check(Math.abs(FlightOrientation.approachDegrees(0, 180, 4)) <= 4, "body cannot snap through a 180 degree turn");
+        check(Math.abs(FlightOrientation.approachDegrees(179, -179, 1) - 180) < 1e-6, "body turns across yaw seam by shortest path");
+        check(FlightOrientation.approachDegrees(0, 2, 4) == 2, "small body turns finish rather than stopping within the limit");
         CombatAnchor anchor = new CombatAnchor();
         FlightVector player = new FlightVector(10, 20, 30);
         CombatAnchor.Evaluation e = anchor.evaluate(player, FORWARD, player.add(new FlightVector(0, 6, 28)));
@@ -49,7 +52,7 @@ public final class FlightFoundationTest {
         check(anchor.evaluate(player, FORWARD, far).inRegion() && v.length() < 0.01, "soft arrival settles in region");
         try { new FlightVector(Double.NaN, 0, 0); throw new AssertionError("nonfinite accepted"); }
         catch (IllegalArgumentException expected) { }
-        System.out.println("PASS: 19 flight/facing/anchor regression assertions");
+        System.out.println("PASS: 22 flight/facing/anchor/orientation regression assertions");
     }
 
     private static void check(boolean value, String message) {

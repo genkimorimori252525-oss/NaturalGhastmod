@@ -2,6 +2,7 @@ package com.genki.soutoughast.entity;
 
 import com.genki.soutoughast.entity.ai.SoutouGhastAnchorGoal;
 import com.genki.soutoughast.entity.ai.SoutouGhastInertialMoveControl;
+import com.genki.soutoughast.entity.ai.SoutouGhastFlightLookControl;
 import com.genki.soutoughast.sound.ModSounds;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvent;
@@ -66,6 +67,7 @@ public class SoutouGhast extends Ghast {
     public SoutouGhast(EntityType<? extends Ghast> type, Level level) {
         super(type, level);
         this.moveControl = new SoutouGhastInertialMoveControl(this);
+        this.lookControl = new SoutouGhastFlightLookControl(this);
         this.randomizeBehaviorProfile();
     }
 

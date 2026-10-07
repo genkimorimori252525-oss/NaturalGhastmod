@@ -45,6 +45,22 @@ async function inventory(root, relative = '') {
 }
 async function verifyOriginal() { assert.deepEqual(await inventory(original), originalRows, 'Original world changed'); }
 try {
+    // Build the exact clean target source once for this coherent native verification unit.
+    const targetRevision = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: repository, encoding: 'utf8', windowsHide: true}).trim();
+    assert.equal(execFileSync('git', ['status', '--porcelain'], {cwd: repository, encoding: 'utf8', windowsHide: true}).trim(), '', 'Commit source before verification');
+    let targetBuild;
+    try {
+        targetBuild = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+            '& $env:NATURALGHAST_VERIFY_WRAPPER compileJava build --no-daemon --console=plain; exit $LASTEXITCODE'],
+            {cwd: repository, windowsHide: true, maxBuffer: 16 * 1024 * 1024,
+                env: {...process.env, JAVA_HOME: javaHome, NATURALGHAST_VERIFY_WRAPPER: path.join(repository, 'gradlew.bat')}});
+    } catch (error) {
+        await fs.writeFile(path.join(trial, 'target-build.log'), error.stdout ?? error.message, {flag: 'wx'});
+        throw error;
+    }
+    await fs.writeFile(path.join(trial, 'target-build.log'), targetBuild, {flag: 'wx'});
+    assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], {cwd: repository, encoding: 'utf8', windowsHide: true}).trim(), targetRevision, 'Target revision changed during build');
+    report.targetBuild = {status: 'PASS', sourceRevision: targetRevision};
     originalRows = await inventory(original); await write(path.join(trial, 'original-hashes.json'), originalRows);
     const world = path.join(trial, 'game/saves/KNEEKURA_DEBUG_WORLD');
     await fs.mkdir(path.dirname(world), {recursive: true}); await fs.cp(original, world, {recursive: true, errorOnExist: true, force: false});
@@ -114,7 +130,8 @@ try {
     config.runtimeRoot = path.join(trial, 'runtime'); config.gameDir = path.join(trial, 'game');
     config.readyTimeoutMs = 180000;
     config.launch.command = path.join(template.workspaceDir, template.launch.command);
-    config.launch.args = ['--project-dir', template.workspaceDir, ...template.launch.args.slice(0, -2), '--init-script', initScript];
+    config.launch.args = ['--project-dir', template.workspaceDir, '-Pforge_version=1.20.1-47.4.10',
+        ...template.launch.args.slice(0, -2).filter(arg => arg !== '--offline'), '--init-script', initScript];
     config.launch.env = {JAVA_HOME: javaHome, KNEEKURA_DEBUG_MOD_PROFILE: 'TANK_CORE'};
     config.ownerControl = {requestHash, operatorRegistration: {trustedRoot: privateDir, relativePath: 'operator.json', sha256: sha(await fs.readFile(operatorFile))}};
     await write(path.join(trial, 'config.json'), config);
@@ -144,7 +161,7 @@ try {
         }
         assert.equal(report.preflight?.status, 'READY'); assert(report.frame, 'Native frame missing');
         const idle = (await fs.readFile(path.join(current.runDir, 'evidence/derived/naturalghast-foundation/idle.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);
-        assert.equal(idle.length, 40); assert(idle.every(row => !row.noAI && !row.targetPresent && row.intent === 'HOLD' && row.speed < 1e-6 && row.collisionFree && row.width === 4 && row.height === 4));
+        assert.equal(idle.length, 40); assert(idle.every(row => !row.noAI && !row.targetPresent && row.intent === 'HOLD' && row.speed < 1e-6 && row.collisionFree && row.width === 4 && row.height === 4 && row.health === 10));
         assert(report.frame.loadedModIds.includes('soutou_ghast')); assert(report.frame.loadedModIds.includes('embeddium'));
         report.idleSamples = idle.length; report.nativeScope = 'PASS_ACTIVE_IDLE_4X4_CLEARANCE_RENDER';
         console.log(report.nativeScope);
