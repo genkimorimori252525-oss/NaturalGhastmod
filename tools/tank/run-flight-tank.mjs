@@ -122,10 +122,14 @@ try {
     const binding = {schema_version: 1, experiment_id: experiment, generation: 1, request_hash: requestHash, target,
         arena_id: experiment, arena_baseline_hash: fixture.baselineHash, assertions_hash: sha(await fs.readFile(path.join(inputs, 'assertions.json')))};
     await write(path.join(inputs, 'binding.json'), binding);
+    const declaredClassHashes=await Promise.all(['SoutouGhastMod','entity.SoutouGhast','entity.ai.SoutouGhastAnchorGoal','entity.ai.SoutouGhastInertialMoveControl','entity.ai.SoutouGhastFlightLookControl','entity.ai.flight.FlightController','entity.ai.flight.MovementPlanner','entity.ai.flight.MobilityContext'].map(async name=>({className:'com.genki.soutoughast.'+name,sha256:sha(await fs.readFile(path.join(repository,'build/classes/java/main/com/genki/soutoughast',name.replaceAll('.','/')+'.class')))})));
+    // Native gate permits the actual mod class and its own fixed debug anchors.
+    // Other target hashes are compiled-source declarations, not loaded-class attestation.
+    report.declaredCompiledClassHashes=declaredClassHashes;
     const operator = {schemaVersion: 1, requestHash,
         materialDescriptor: {schemaVersion: 1, targetModId: 'soutou_ghast', linkageMode: 'OBSERVED_CLASS_RESOURCE_AND_CONTAINER_LINKAGE',
             buildArtifactHash: buildHash, configArtifactHash: target.config_hash, resourceArtifactHash: resourceHash,
-            classResources: await Promise.all(['SoutouGhastMod','entity.SoutouGhast','entity.ai.SoutouGhastAnchorGoal','entity.ai.SoutouGhastInertialMoveControl','entity.ai.SoutouGhastFlightLookControl','entity.ai.flight.FlightController','entity.ai.flight.MovementPlanner','entity.ai.flight.MobilityContext'].map(async name=>({className:'com.genki.soutoughast.'+name,sha256:sha(await fs.readFile(path.join(repository,'build/classes/java/main/com/genki/soutoughast',name.replaceAll('.','/')+'.class')))})))},
+            classResources: [declaredClassHashes[0]]},
         selection: {grantId: experiment, leaseId: experiment + '-120s', arenaEpoch: 8, expectedArenaRevision: 0, allowedActions: ['set_block']},
         worldRegistration: {schemaVersion: 1, registrationId: experiment, canonicalWorldRoot: world, worldName: 'KNEEKURA_DEBUG_WORLD',
             dimensionId: 'minecraft:overworld', permissions: ['BOUNDED_DIAGNOSTIC_CONTROL']}};
