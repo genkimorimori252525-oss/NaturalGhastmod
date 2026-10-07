@@ -21,15 +21,19 @@ export function analyzeSwimming(rows,playerUuid){
   if(previous&&center.some((v,i)=>v!==previous[i]))stable=false;centers.set(row.regionGeneration,center);
  }
  require(stable,'REGION_MOVED_WITHOUT_RESELECTION');
+ require(centers.size===1,'REGION_NOT_RETAINED');
  const swimming=regions.filter(r=>r.inCombatRegion===true&&r.intent==='MOVE'&&['DRIFT','HOLD'].includes(r.primitive));
  require(swimming.length>=100,'SUSTAINED_SWIMMING_NOT_OBSERVED');
  const span=key=>swimming.length?Math.max(...swimming.map(r=>r[key]))-Math.min(...swimming.map(r=>r[key])):0;
  const horizontalSpan=Math.max(span('x'),span('z')),verticalSpan=span('y');
  require(horizontalSpan>10,'SWIMMING_SPAN_INSUFFICIENT');require(verticalSpan>.5,'VERTICAL_SWIMMING_NOT_OBSERVED');
  const stopped=swimming.filter(r=>r.speed<.005).length;
- require(swimming.length>0&&stopped/swimming.length<.1,'REPEATED_STOPPING');
+ const firstSwim=swimming[0]?.tick??Infinity;
+ const settled=acquired.filter(r=>Number.isSafeInteger(r.regionGeneration)&&r.tick>=firstSwim);
+ const stoppedSettled=settled.filter(r=>r.speed<.005).length;
+ require(settled.length>=100&&stoppedSettled/settled.length<.1,'REPEATED_STOPPING');
  return {status:failures.length?'FAIL':'PASS',failures,samples:rows.length,acquiredSamples:acquired.length,regionSamples:regions.length,
-  swimmingSamples:swimming.length,horizontalSpan,verticalSpan,stoppedSwimmingSamples:stopped,regionGenerations:[...centers.keys()],
+  swimmingSamples:swimming.length,horizontalSpan,verticalSpan,stoppedSwimmingSamples:stopped,settledSamples:settled.length,stoppedSettledSamples:stoppedSettled,regionGenerations:[...centers.keys()],
   maximumSpeed:finite?Math.max(...rows.map(r=>r.speed)):null,scope:'STATIC_PLAYER_PERSISTENT_REGION_PHYSICAL_SWIMMING',
   limitations:['Camera-turn/moving-player/LOS-native cases and visual smoothness require separate user inspection; no attacks, multiplayer or performance acceptance.']};
 }

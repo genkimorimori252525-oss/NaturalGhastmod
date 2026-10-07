@@ -16,6 +16,7 @@ public final class CombatRegionSwimmingTest {
         check(!anchor.evaluate(target,FORWARD,boss.add(new FlightVector(21,0,0))).inRegion(),"region has a finite boundary");
         check(anchor.evaluate(boss,FORWARD,boss).inRegion(),"soft range cannot evict an in-region swimmer");
         lifecycle();
+        blockedReturn();
         MovementPlanner planner=new MovementPlanner();FlightController controller=new FlightController();
         FlightVector position=boss,velocity=FlightVector.ZERO;double minX=position.x(),maxX=minX,minY=position.y(),maxY=minY,minZ=position.z(),maxZ=minZ;
         int rest=0;FlightVector firstWaypoint=null;
@@ -72,6 +73,20 @@ public final class CombatRegionSwimmingTest {
         check(anchor.region().equals(reacquired),"blocked retries cannot reset an identical region");
         for(int i=0;i<100;i++)anchor.observe(first,FlightVector.ZERO,new FlightVector(15,6,28),true);
         check(anchor.region().reason()==CombatAnchor.Reason.SPACE_BLOCKED&&anchor.region().generation()==reacquired.generation()+1,"sustained obstruction can select a different region");
+    }
+    private static void blockedReturn(){
+        var anchor=new CombatAnchor();var planner=new MovementPlanner();var controller=new FlightController();
+        var identity=new java.util.UUID(3,3);FlightVector boss=new FlightVector(0,6,4),initial=boss,velocity=FlightVector.ZERO;
+        boolean blocked=false;int moving=0;
+        for(int tick=0;tick<500;tick++){
+            anchor.observe(identity,FlightVector.ZERO,boss,blocked);
+            var plan=planner.step(anchor,FlightVector.ZERO,boss,FORWARD,MobilityContext.Kind.OPEN_AIR,OPEN,.8,d->d.z()<=0);
+            blocked=plan.primitive()==MovementPrimitive.BRAKE;
+            if(plan.intent().mode()==FlightController.Mode.MOVE)moving++;
+            velocity=controller.step(velocity,plan.intent());boss=boss.add(velocity);
+        }
+        check(moving>100&&boss.subtract(initial).length()>2,"blocked RETURN must recover through feasible local swimming instead of permanent braking");
+        check(anchor.region().reason()==CombatAnchor.Reason.SPACE_BLOCKED&&anchor.region().contains(boss),"blocked fallback retains a feasible boss-owned region");
     }
     private static void check(boolean condition,String message){checks++;if(!condition)throw new AssertionError(message);}
 }

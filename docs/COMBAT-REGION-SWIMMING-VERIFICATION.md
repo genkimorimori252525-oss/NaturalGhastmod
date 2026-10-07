@@ -10,10 +10,10 @@ RED: old camera reversal moved the anchor; old geometry allocated60552 cells; re
 
 ## Grouped verification
 
-- `tools/test-flight-foundation.ps1`:12034 region/swimming checks,22 controller/facing/orientation and25mobility checks PASS.4000 integrated physical ticks span31.0258526 horizontal/10.4786735 vertical blocks, rest0. Camera-invariant region, replacement, dwell/cooldown, temporary LOS/targetless lifecycle, query budgets and safety constraints covered.
+- `tools/test-flight-foundation.ps1`:12036 region/swimming checks,22 controller/facing/orientation and25mobility checks PASS.4000 integrated physical ticks span31.0258526 horizontal/10.4786735 vertical blocks, rest0. Camera-invariant region, replacement, dwell/cooldown, temporary LOS/targetless lifecycle, blocked-return recovery, query budgets and safety constraints covered.
 - `tools/test-forge-clearance.ps1`:5 actual mapped swept-AABB regressions PASS.
 - `tools/test-tank-fixture.ps1`:5 seed-policy and10 mapped fixture checks PASS;52×24×52 interior64896 cells, shell allocation75816, within existing budgets.
-- Node owner/historical analyzer/new swimming analyzer:13 tests PASS. Legacy v0.5 analyzer and finalized receipts remain unchanged; new `naturalghast.swimming-tank/v1` has a separate measured-motion scope.
+- Node owner/historical analyzer/new swimming analyzer:15 tests PASS. Legacy v0.5 analyzer and finalized receipts remain unchanged; new `naturalghast.swimming-tank/v1` has a separate measured-motion scope.
 - `compileJava build`:BUILD SUCCESSFUL. Native runner builds its exact clean source. Observer/preparation classes stay outside the production JAR.
 
 Logs and execution rulings are retained under `.superpowers/sdd/2026-10-08-combat-region-swimming/`. Pure simulations establish math/lifecycle behavior, not client appearance or native camera/LOS scenarios.
@@ -24,12 +24,18 @@ Trial `build/tank/flight-e3CRdb`; source `e91fcbf02173d9db558a5f1a1e077ab1b647a6
 
 LAB `17bed2d161824f3e1b682ea3f1ff9e5714f1d684`; host `7f14960999bc2955d85ae9d3619090ad37817c38`, Minecraft1.20.1/Forge47.4.10. Scoped `PASS_STATIC_PLAYER_PERSISTENT_REGION_PHYSICAL_SWIMMING`:
 
--600 contiguous server samples;389 visible real-Player acquisition samples;513 region samples;508 swimming samples.
+- 600 contiguous server samples;389 visible real-Player acquisition samples;513 region samples;508 swimming samples.
 - Region generation1 retained; horizontal span19.3075919, vertical8.7663369; stopped swimming0; maximum speed0.44.
 - All samples active4×4 body, health10, collision-free. Fresh fixture removes1 exact saved Reimu; other root NBT retained.
--391 canonical observations; clean stop, EVIDENCE_COMPLETE, original85 file hashes/count unchanged. One explicitly requested supplemental PNG; no default product recording. Class-resource linkage is not resident transformed-class attestation.
+- 391 canonical observations; clean stop, EVIDENCE_COMPLETE, original85 file hashes/count unchanged. One explicitly requested supplemental PNG; no default product recording. Class-resource linkage is not resident transformed-class attestation.
 
 Camera-turn, moving Player, deliberate LOS interruption and subjective smoothness remain native NOT_RUN for this automated static fixture. The user's forthcoming manual inspection supplies visual judgment; do not promote this result into those scopes.
+
+## One whole-change review and fix pass
+
+Fresh-context review found Critical0/Important2/Minor0. Both reproduced RED and fixed GREEN: an obstructed RETURN could permanently brake outside an unreachable projected region; sustained SPACE_BLOCKED now selects a bounded local region at the boss's existing feasible position, retaining the same broad radii. A500-tick obstructed-return simulation now resumes swimming. The analyzer could ignore long BRAKE/HOLD tails and per-tick region generation changes; its static-player scope now counts stopped samples across the acquired settled interval and requires one retained generation. Two adversarial traces fail as intended. No second reviewer or navigation subsystem added.
+
+Declined judgments: native camera/moving-Player/LOS/subjective appearance await the user; attacks/Ground Combat/full navigation/multiplayer/performance are later scope; unchanged over-cap external-impulse stopping-horizon tuning is not newly certified. Rulings: preserve these limits and existing physical safety checks; verify the changed fallback by regression and rerun the finite native pilot with the reviewed artifact. No deferred minors. Earlier native receipt remains tied to its exact pre-review source; a final replay is recorded separately.
 
 ## Manual inspection fixture
 

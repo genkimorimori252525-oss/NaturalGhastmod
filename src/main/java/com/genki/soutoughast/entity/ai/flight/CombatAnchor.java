@@ -33,8 +33,11 @@ public final class CombatAnchor {
         disengaged=target.subtract(region.center()).length()>60?disengaged+1:0;
         blocked=noUsableRoute?blocked+1:0;
         if(cooldown==0&&(disengaged>=40||blocked>=40)){
-            if(centerFor(target,boss).subtract(region.center()).length()>=2)
-                select(identity,target,boss,disengaged>=40?Reason.DISENGAGED:Reason.SPACE_BLOCKED);
+            Reason reason=disengaged>=40?Reason.DISENGAGED:Reason.SPACE_BLOCKED;
+            // A blocked return needs a locally feasible fallback, not the same unreachable projection.
+            FlightVector candidate=reason==Reason.SPACE_BLOCKED?boss:centerFor(target,boss);
+            if(candidate.subtract(region.center()).length()>=2)
+                selectAt(identity,candidate,reason);
             else{cooldown=100;disengaged=blocked=0;}
         }
     }
@@ -44,7 +47,10 @@ public final class CombatAnchor {
         if(targetless>=200){region=null;subject=null;}
     }
     private void select(UUID identity,FlightVector target,FlightVector boss,Reason reason){
-        region=new Region(centerFor(target,boss),RADII,++generation,reason);subject=identity;
+        selectAt(identity,centerFor(target,boss),reason);
+    }
+    private void selectAt(UUID identity,FlightVector center,Reason reason){
+        region=new Region(center,RADII,++generation,reason);subject=identity;
         cooldown=100;disengaged=blocked=targetless=0;
     }
     private static FlightVector centerFor(FlightVector target,FlightVector boss){

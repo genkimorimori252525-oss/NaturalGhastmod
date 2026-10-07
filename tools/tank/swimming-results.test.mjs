@@ -29,3 +29,12 @@ test('missing target or region cannot pass',()=>{
  assert.equal(analyzeSwimming(trace().map(r=>({...r,targetUuid:null})),'player').status,'FAIL');
  assert.equal(analyzeSwimming(trace().map(r=>({...r,regionGeneration:undefined})),'player').status,'FAIL');
 });
+test('a long stopped tail cannot hide behind BRAKE labels',()=>{
+ const rows=trace();const position=rows[299];
+ for(let i=300;i<rows.length;i++)rows[i]={...rows[i],x:position.x,y:position.y,z:position.z,vx:0,vy:0,vz:0,speed:0,intent:'HOLD',primitive:'BRAKE'};
+ assert(analyzeSwimming(rows,'player').failures.includes('REPEATED_STOPPING'));
+});
+test('per-tick generation changes cannot disguise a moving anchor',()=>{
+ const rows=trace().map((r,i)=>({...r,regionGeneration:i+1,regionX:i*.01}));
+ assert(analyzeSwimming(rows,'player').failures.includes('REGION_NOT_RETAINED'));
+});
