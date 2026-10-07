@@ -43,7 +43,7 @@ public final class CommittedPathClearance {
                 for(int cz=Mth.floor(sweep.minZ-2)>>4;cz<=(Mth.floor(sweep.maxZ+2)>>4);cz++)
                     if(!level.hasChunk(cx,cz))return TrajectoryValidation.Segment.UNLOADED;
             if(sweep.minY<level.getMinBuildHeight()||sweep.maxY>=level.getMaxBuildHeight())return TrajectoryValidation.Segment.BLOCKED;
-            if(last&&path.kind()==CommittedTrajectory.Kind.LOB){
+            if(last&&path.kind().terminalImpact()){
                 var positions=terminalFootprint(sweep,Mth.floor(to.y()));if(positions.isEmpty())return TrajectoryValidation.Segment.BLOCKED;
                 for(var pos:positions){var state=level.getBlockState(pos);if(!state.getCollisionShape(level,pos,CollisionContext.of(projectile)).isEmpty())declared.add(new Terminal(pos,state));}
                 var hit=level.clip(new ClipContext(vec(from),vec(to),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,projectile));
@@ -57,7 +57,7 @@ public final class CommittedPathClearance {
                     if(!last||declared.stream().noneMatch(t->t.position().equals(pos)&&t.state()==state))return TrajectoryValidation.Segment.BLOCKED;
                 }
             }
-            return last&&path.kind()==CommittedTrajectory.Kind.LOB?TrajectoryValidation.Segment.EXPECTED_TERMINAL:TrajectoryValidation.Segment.CLEAR;
+            return last&&path.kind().terminalImpact()?TrajectoryValidation.Segment.EXPECTED_TERMINAL:TrajectoryValidation.Segment.CLEAR;
         });
         return new Proof(result,List.copyOf(declared));
     }

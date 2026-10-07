@@ -5,7 +5,7 @@ public record CommittedProfile(CommittedTrajectory.Kind kind,CommittedTrajectory
     public CommittedProfile {
         if(kind==null||endpoint==null)throw new IllegalArgumentException("COMMITTED_RECIPE_REQUIRED");
         boolean valid=switch(kind){
-            case BURST -> strength==null&&side==0&&lobHeight==0;
+            case BURST, BOMB -> strength==null&&side==0&&lobHeight==0;
             case CURVE -> strength!=null&&(side==1||side==-1)&&lobHeight==0;
             case LOB -> strength==null&&side==0&&lobHeight>=4&&lobHeight<=12;
         };
@@ -15,5 +15,6 @@ public record CommittedProfile(CommittedTrajectory.Kind kind,CommittedTrajectory
         case BURST -> CommittedTrajectory.burst(muzzle,endpoint);
         case CURVE -> CommittedTrajectory.curve(muzzle,endpoint,strength,side);
         case LOB -> CommittedTrajectory.lob(muzzle,endpoint,lobHeight);
+        case BOMB -> CommittedTrajectory.bomb(muzzle,endpoint);
     };}
 }

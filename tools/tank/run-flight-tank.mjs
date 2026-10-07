@@ -10,6 +10,8 @@ import {waitForFlightAction} from './flight-owner.mjs';
 import {privateFlightLaunchArgs} from './flight-launch.mjs';
 import {analyzeStandard} from './standard-results.mjs';
 import {analyzeProfiles,readShotRows} from './profile-results.mjs';
+import {analyzeOverhead} from './major-results.mjs';
+import {planOverheadWindow,remainingWindowBudget} from './window-budget.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
 const option = name => { const i = process.argv.indexOf('--' + name); if (i < 0 || !process.argv[i + 1]) throw Error('Missing --' + name); return path.resolve(process.argv[i + 1]); };
@@ -17,7 +19,8 @@ const lab = option('lab'), templateFile = option('template'), original = option(
 const javaHome = option('java-home');
 const singleCellSeal=process.argv.includes('--single-cell-seal');
 const profiles=process.argv.includes('--profile-fireball');
-const standard=profiles||process.argv.includes('--standard-fireball');
+const overhead=process.argv.includes('--overhead-bombing');
+const standard=overhead||profiles||process.argv.includes('--standard-fireball');
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const template = JSON.parse(await fs.readFile(templateFile));
 assert.equal(template.launch.env.KNEEKURA_DEBUG_MOD_PROFILE, 'TANK_CORE');
@@ -51,6 +54,9 @@ if(standard)report.limitations=[`180tick natural ${profiles?'committed-profile':
     'Actual melee, rally, returned-damage pipeline and balanced explosion comparison NOT_RUN; mobGriefing=false excludes terrain destruction.',
     'Two canonical room roster samples; supplementary selected-subject/frame/client telemetry is not fixed-cardinal coverage or transformed-definition attestation.'];
 if(profiles)report.limitations.push('Only naturally exercised profile kinds are accepted; particle readability, late client tracking and instantiated reload NOT_RUN.');
+if(overhead)report.limitations=['Explicit max900tick AND50second static20HP survival Player observation, offline initial camera pitch-90; at most two requested frames; no input/camera takeover or healing.',
+ 'Player death ends combat coverage; at most200ticks of recovery safety evidence within the same deadline. Moving-Player avoidance, full damage balance, cue readability and real counterattack NOT_RUN.',
+ 'Impact listener records native pre-damage collision hooks, not final listener decisions or applied damage. Canonical rosters and supplementary observations have distinct producers.'];
 console.log('TRIAL ' + trial);
 let originalRows = [], current, runtime;
 async function inventory(root, relative = '') {
@@ -101,7 +107,7 @@ try {
     await fs.writeFile(compileArgs, ['--release', '17', '-encoding', 'UTF-8', '-cp', compileCp, '-d', classes, ...sources].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('javac', ['@' + compileArgs]);
     const prepareArgs = path.join(trial, 'java.args');
-    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFlightTank', trial, privateParent,...(standard?['STANDARD_FIREBALL']:singleCellSeal?['SINGLE_CELL_SEAL']:[])].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
+    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFlightTank', trial, privateParent,...(overhead?['OVERHEAD_BOMBING']:standard?['STANDARD_FIREBALL']:singleCellSeal?['SINGLE_CELL_SEAL']:[])].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('java', ['@' + prepareArgs]);
     const inputs = path.join(trial, 'inputs'), privateDir = path.join(trial, 'private');
     await fs.mkdir(inputs); await fs.mkdir(privateDir);
@@ -170,6 +176,7 @@ try {
     config.launch.args = privateFlightLaunchArgs(template.launch.args,host,initScript);
     config.launch.env = {JAVA_HOME: javaHome, KNEEKURA_DEBUG_MOD_PROFILE: 'TANK_CORE', NATURALGHAST_PRIVATE_GAME_DIR: path.join(trial, 'game')};
     if(standard)config.launch.env.KNEEKURA_DEBUG_NATURAL_STANDARD='1';
+    if(overhead)config.launch.env.KNEEKURA_DEBUG_NATURAL_OVERHEAD='1';
     config.ownerControl = {requestHash, operatorRegistration: {trustedRoot: privateDir, relativePath: 'operator.json', sha256: sha(await fs.readFile(operatorFile))}};
     await write(path.join(trial, 'config.json'), config);
     await registerBridgeRequest({runtimeRoot: config.runtimeRoot, registration: {schemaVersion: 1, trustedRoot: inputs,
@@ -192,7 +199,7 @@ try {
         const options={runDir:current.runDir,envelopeHash:owner.ownerEnvelopeHash};
         async function roster(index){
             await publishTankRoster({...options,sampleIndex:index});
-            const deadline=Date.now()+15000;let result;
+            const deadline=Date.now()+(overhead&&index===1?5000:15000);let result;
             do{await runtime.ingestAvailable();result=await inspectTankRoster({...options,sampleIndex:index});if(['COMPLETE','PARTIAL','REJECTED'].includes(result.status))break;await sleep(150);}while(Date.now()<deadline);
             assert.equal(result?.status,'COMPLETE','ROOM_ROSTER_INCOMPLETE');
             assert(!result.roster.entities.some(e=>e.entityType==='touhou_little_maid:reimu'),'UNEXPECTED_REIMU');
@@ -208,20 +215,31 @@ try {
             assert.equal(receipt.reportedStatus,'VERIFIED');report.actions.push({actionId:action.action_id,status:receipt.reportedStatus});
         }
         const derived=path.join(current.runDir,'evidence/derived/naturalghast-flight');await fs.mkdir(derived,{recursive:true});
-        if(standard)await write(path.join(derived,'request-window.json'),{scope:'ONE_EXPLICIT_180_TICK_NATURAL_SHOT_WINDOW',sourceRevision,requestHash});
+        const contextFor=observations=>({current,observations,arenaEpoch:8,
+            worldBinding:{authorityHash:hashJson(originalRows),copyBaselineHash:hashJson(originalRows),fixtureHash:hashJson(fixture),fixtureChanges:[fixture.changes]},
+            profile:{kind:'OBSERVE_GRID',grid:true,brightness:true,motion:false,decisionChannels:['SERVER_ENTITY_STATE']}});
+        let windowPlan,retainedObservations=[];
+        if(overhead){
+            const preWindowDeadline=Date.now()+10000;let preWindow;
+            do{
+                await runtime.ingestAvailable();const observations=retainedObservations;retainedObservations=await runtime.store.readObservations();
+                preWindow=await readTankContext({...contextFor(observations),timeBudget:{experimentMs:50000,finalizationMs:5000,cleanupMs:5000,marginMs:5000}});
+                if(preWindow.preflight.status==='READY')break;await sleep(250);
+            }while(Date.now()<preWindowDeadline);
+            report.windowPreflight=preWindow.preflight;windowPlan=planOverheadWindow(preWindow.preflight,Date.now());report.windowPlan=windowPlan;
+            await write(path.join(derived,'request-major-frames.json'),{scope:'TWO_EXPLICIT_FRAMES_NATURAL_DOWNWARD_AND_FINAL',maxFrames:2,sourceRevision,requestHash});
+            await write(path.join(derived,'request-window.json'),{scope:'ONE_EXPLICIT_FINITE_NATURAL_OVERHEAD_WINDOW',...windowPlan,sourceRevision,requestHash});
+        }else if(standard)await write(path.join(derived,'request-window.json'),{scope:'ONE_EXPLICIT_180_TICK_NATURAL_SHOT_WINDOW',sourceRevision,requestHash});
         await write(path.join(derived,'request-frame.json'),{scope:'ONE_EXPLICIT_SUPPLEMENTARY_FRAME',sourceRevision,requestHash});
-        const deadline = Date.now() + 65000;
-        let retainedObservations = [];
+        const deadline = overhead?windowPlan.wallDeadlineEpochMs+2000:Date.now()+65000;
         while (Date.now() < deadline) {
             await runtime.ingestAvailable();
             // Use the preceding immutable ingestion snapshot. The owner clock file
             // can lag the newest client-render sample; never rewrite either clock.
             const observations = retainedObservations;
             retainedObservations = await runtime.store.readObservations();
-            const context = await readTankContext({current, observations, arenaEpoch: 8,
-                worldBinding: {authorityHash: hashJson(originalRows), copyBaselineHash: hashJson(originalRows), fixtureHash: hashJson(fixture), fixtureChanges: [fixture.changes]},
-                profile: {kind: 'OBSERVE_GRID', grid: true, brightness: true, motion: false, decisionChannels: ['SERVER_ENTITY_STATE']},
-                timeBudget: {experimentMs: 10000, finalizationMs: 5000, cleanupMs: 5000, marginMs: 5000}});
+            const context = await readTankContext({...contextFor(observations),
+                timeBudget: overhead?remainingWindowBudget(windowPlan,Date.now()):{experimentMs:10000,finalizationMs:5000,cleanupMs:5000,marginMs:5000}});
             report.preflight = context.preflight;
             const frame = await json(path.join(derived,'frame.json')).catch(() => null);
             if (context.preflight.status === 'READY' && frame) { report.frame = frame; break; }
@@ -236,8 +254,12 @@ try {
         if(standard){
             report.finalRoster=await roster(1);
             const clients=await readShotRows(path.join(derived,'client-projectiles.jsonl'));
-            report.standard=profiles?analyzeProfiles(rows,clients,fixture.subjectUuid,await readShotRows(path.join(derived,'profile-paths.jsonl'))):analyzeStandard(rows,clients,fixture.subjectUuid);
-            await write(path.join(derived,profiles?'profile-summary.json':'standard-summary.json'),report.standard);
+            if(overhead){
+                report.standard=analyzeOverhead({rows,clients,paths:await readShotRows(path.join(derived,'profile-paths.jsonl')),impacts:await readShotRows(path.join(derived,'bomb-impacts.jsonl')),
+                    pose:await json(path.join(derived,'downward-frame.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;}),end:await json(path.join(derived,'window-end.json')),request:windowPlan,
+                    downwardFramePresent:!!await fs.stat(path.join(derived,'downward-frame.png')).catch(error=>{if(error.code==='ENOENT')return null;throw error;})},fixture.subjectUuid,fixture.playerUuid);
+            }else report.standard=profiles?analyzeProfiles(rows,clients,fixture.subjectUuid,await readShotRows(path.join(derived,'profile-paths.jsonl'))):analyzeStandard(rows,clients,fixture.subjectUuid);
+            await write(path.join(derived,overhead?'major-summary.json':profiles?'profile-summary.json':'standard-summary.json'),report.standard);
             report.playerOutcome={initialHealth:rows[0].playerHealth,finalHealth:rows.at(-1).playerHealth,finalPosition:[rows.at(-1).playerX,rows.at(-1).playerY,rows.at(-1).playerZ]};
             assert.equal(report.standard.status,'PASS',report.standard.failures.join(','));
         }else{
@@ -258,7 +280,7 @@ try {
             report.cleanup=finish.stopped.cleanup;report.shutdown=finish.shutdown;report.finalization=finish.finalization;
             report.nativeFinalizationReason=finish.reason;
             assert.equal(finish.status,'PASS',finish.reason);
-            if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope=profiles?'PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY':standard?'PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY':'PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
+            if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope=overhead?'PASS_DEVELOPMENT_STATIC_PLAYER_OVERHEAD':profiles?'PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY':standard?'PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY':'PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
         }
     }
 } catch (error) {
@@ -267,7 +289,7 @@ try {
     console.log('FAIL ' + error.message.split('\n')[0]);
 } finally {
     if (originalRows.length) { try { await verifyOriginal(); report.originalFilesVerified = originalRows.length; } catch (error) { report.failures.push(error.message); } }
-    report.status=report.failures.length||!['PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT','PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY','PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY'].includes(report.nativeScope)?'FAIL':'PASS';
+    report.status=report.failures.length||!['PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT','PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY','PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY','PASS_DEVELOPMENT_STATIC_PLAYER_OVERHEAD'].includes(report.nativeScope)?'FAIL':'PASS';
     await write(path.join(trial, 'report.json'), report);
 }
 process.exitCode = report.failures.length ? 1 : 0;

@@ -9,7 +9,7 @@ public final class TrajectoryValidation {
         int count=path.points().size()-1;
         for(int i=0;i<count;i++){
             boolean last=i==count-1;var status=probe.inspect(i,path.points().get(i),path.points().get(i+1),last);
-            boolean terminal=last&&path.kind()==CommittedTrajectory.Kind.LOB;
+            boolean terminal=last&&path.kind().terminalImpact();
             if(status!=(terminal?Segment.EXPECTED_TERMINAL:Segment.CLEAR))return new Result(false,i+1,status==Segment.CLEAR?"DECLARED_TERMINAL_MISSING":status.name());
         }
         return new Result(true,count,"COMPLETE_FINITE_PATH");

@@ -4,6 +4,7 @@ import com.genki.soutoughast.entity.ai.SoutouGhastAnchorGoal;
 import com.genki.soutoughast.entity.ai.SoutouGhastInertialMoveControl;
 import com.genki.soutoughast.entity.ai.SoutouGhastFlightLookControl;
 import com.genki.soutoughast.entity.ai.SoutouGhastStandardAttack;
+import com.genki.soutoughast.entity.ai.SoutouGhastOverheadAttack;
 import com.genki.soutoughast.entity.projectile.StandardSoutouFireball;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.tags.DamageTypeTags;
@@ -57,6 +58,17 @@ public class SoutouGhast extends Ghast {
     private static final int LAST_SEEN_MEMORY_TICKS = 80;
     private final SoutouGhastStandardAttack standardAttack=new SoutouGhastStandardAttack(this);
     public SoutouGhastStandardAttack getStandardAttack(){return standardAttack;}
+    private final SoutouGhastOverheadAttack overheadAttack=new SoutouGhastOverheadAttack(this);
+    public SoutouGhastOverheadAttack getOverheadAttack(){return overheadAttack;}
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Float> MAJOR_PITCH=net.minecraft.network.syncher.SynchedEntityData.defineId(SoutouGhast.class,net.minecraft.network.syncher.EntityDataSerializers.FLOAT);
+    private float previousMajorPitch,displayedMajorPitch;
+    public float majorRenderPitch(float partialTick){return Mth.lerp(partialTick,previousMajorPitch,displayedMajorPitch);}
+    public float majorPitch(){return entityData.get(MAJOR_PITCH);}
+    @Override protected void defineSynchedData(){super.defineSynchedData();entityData.define(MAJOR_PITCH,0f);}
+    @Override public void tick(){
+        previousMajorPitch=displayedMajorPitch;super.tick();
+        displayedMajorPitch=level().isClientSide?Mth.approach(displayedMajorPitch,majorPitch(),3):majorPitch();
+    }
 
     private CombatPhase combatPhase = CombatPhase.SCOUTING;
     private Temperament temperament = Temperament.BALANCED;
@@ -115,6 +127,10 @@ public class SoutouGhast extends Ghast {
     @Override
     public void aiStep() {
         super.aiStep();
+        if(!level().isClientSide){
+            float desired=overheadAttack.state().downward()?Mth.clamp(getXRot(),0,90):0;
+            entityData.set(MAJOR_PITCH,Mth.approach(majorPitch(),desired,3));
+        }
         // Legacy phase/terrain/attack helpers below are retained for source compatibility,
         // but are not part of the active foundation behavior.
     }

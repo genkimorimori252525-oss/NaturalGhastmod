@@ -5,7 +5,9 @@ import java.util.List;
 
 /** Complete finite world-space trajectory, never reads a target after construction. */
 public record CommittedTrajectory(Kind kind,List<FlightVector> points) {
-    public enum Kind { BURST, CURVE, LOB }
+    public enum Kind { BURST, CURVE, LOB, BOMB;
+        public boolean terminalImpact(){return this==LOB||this==BOMB;}
+    }
     public enum Phase { SLOW, WARNING, BURST, FAST, OUTWARD, SWEEP, ASCEND, DESCEND, DONE }
     public enum Strength {
         SHALLOW(2), NORMAL(4), DEEP(6);
@@ -31,6 +33,7 @@ public record CommittedTrajectory(Kind kind,List<FlightVector> points) {
             case BURST -> index<12?Phase.SLOW:index<16?Phase.WARNING:index<20?Phase.BURST:Phase.FAST;
             case CURVE -> index<(points.size()-1)/2?Phase.OUTWARD:Phase.SWEEP;
             case LOB -> velocity(index).y()>0?Phase.ASCEND:Phase.DESCEND;
+            case BOMB -> Phase.DESCEND;
         };
     }
     private static double distance(FlightVector start,FlightVector end,double min){
@@ -72,6 +75,13 @@ public record CommittedTrajectory(Kind kind,List<FlightVector> points) {
             }
         }
         return List.copyOf(candidates);
+    }
+    public static CommittedTrajectory bomb(FlightVector start,FlightVector end){
+        double distance=distance(start,end,4);var offset=end.subtract(start);
+        if(offset.y()>=0||Math.hypot(offset.x(),offset.z())>1)throw new IllegalArgumentException("VERTICAL_BOMB_CORRIDOR_REQUIRED");
+        int steps=(int)Math.ceil(distance/1.2);var points=new ArrayList<FlightVector>();
+        for(int i=0;i<=steps;i++)points.add(i==steps?end:start.add(offset.scale((double)i/steps)));
+        return new CommittedTrajectory(Kind.BOMB,points);
     }
     /** Serializable clock; normalization deliberately ends every special trajectory phase. */
     public static final class Flight {

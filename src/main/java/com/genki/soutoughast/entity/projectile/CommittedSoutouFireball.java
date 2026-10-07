@@ -54,6 +54,7 @@ public final class CommittedSoutouFireball extends StandardSoutouFireball {
             case BURST -> phase().equals("WARNING")?ParticleTypes.END_ROD:phase().equals("SLOW")?ParticleTypes.SMALL_FLAME:ParticleTypes.FLAME;
             case CURVE -> ParticleTypes.SOUL_FIRE_FLAME;
             case LOB -> phase().equals("DESCEND")?ParticleTypes.LAVA:ParticleTypes.SMOKE;
+            case BOMB -> ParticleTypes.LAVA;
         };
     }
     private void publishProfile(){

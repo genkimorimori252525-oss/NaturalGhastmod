@@ -39,6 +39,7 @@ public final class SoutouGhastInertialMoveControl extends MoveControl {
     public void setTacticalState(TacticalBrain.State state){tacticalState=state;}
     public void resetMobility() { mobility.reset(); primitive = MovementPrimitive.HOLD; }
     public void setMovementPlan(MovementPlanner.Plan plan) { intent = plan.intent(); primitive = plan.primitive(); }
+    public void setMajorIntent(FlightController.Intent next,MovementPrimitive nextPrimitive){intent=next;primitive=nextPrimitive;}
     public MobilityContext.Sample sampleMobility() {
         int mask = 0;
         // Six coarse body sweeps; diagonals require both adjacent cardinal rays.

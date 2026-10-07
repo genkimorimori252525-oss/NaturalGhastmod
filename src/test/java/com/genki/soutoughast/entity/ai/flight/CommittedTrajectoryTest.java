@@ -37,7 +37,13 @@ public final class CommittedTrajectoryTest {
         check(!TrajectoryValidation.verify(launched,(i,a,b,last)->TrajectoryValidation.Segment.BLOCKED).clear(),"invalid actual launch cancels, without alternate recipe");
         boolean immutable=false;try{launched.points().set(0,start);}catch(UnsupportedOperationException expected){immutable=true;}
         check(immutable,"complete spawned path is immutable");
-        for(var path:new CommittedTrajectory[]{burst,lob,CommittedTrajectory.curve(start,end,CommittedTrajectory.Strength.NORMAL,1)}){
+        var bomb=CommittedTrajectory.bomb(new FlightVector(0,12,0),new FlightVector(.5,-.25,0));
+        check(bomb.kind()==CommittedTrajectory.Kind.BOMB&&bomb.phase(0)==CommittedTrajectory.Phase.DESCEND,"dedicated downward bomb");
+        for(int i=0;i<bomb.points().size()-1;i++)check(bomb.velocity(i).y()<0&&bomb.velocity(i).length()<=1.2+1e-9,"finite locked near-vertical bomb");
+        check(TrajectoryValidation.verify(bomb,(i,a,b,last)->last?TrajectoryValidation.Segment.EXPECTED_TERMINAL:TrajectoryValidation.Segment.CLEAR).clear(),"bomb requires declared final ground impact");
+        boolean invalidBomb=false;try{CommittedTrajectory.bomb(start,new FlightVector(3,0,0));}catch(IllegalArgumentException expected){invalidBomb=true;}
+        check(invalidBomb,"bomb cannot become a sideways homing attack");
+        for(var path:new CommittedTrajectory[]{burst,lob,bomb,CommittedTrajectory.curve(start,end,CommittedTrajectory.Strength.NORMAL,1)}){
             var flight=new CommittedTrajectory.Flight(path);
             check(flight.next()!=null,"initial committed step");flight.normalize();check(flight.next()==null&&flight.normalized(),"deflection immediately removes all special motion");
             var miss=new CommittedTrajectory.Flight(path);for(int i=1;i<path.points().size();i++)check(miss.next()!=null,"finite travel");

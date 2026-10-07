@@ -17,4 +17,11 @@ public class SoutouGhastRenderer extends GhastRenderer {
                 context.bakeLayer(SoutouGhastArmorModel.LAYER_LOCATION));
         this.addLayer(new GhastArmorLayer(this, armorModel));
     }
+    @Override protected void setupRotations(net.minecraft.world.entity.monster.Ghast entity,com.mojang.blaze3d.vertex.PoseStack pose,float age,float bodyYaw,float partialTick){
+        super.setupRotations(entity,pose,age,bodyYaw,partialTick);
+        if(entity instanceof com.genki.soutoughast.entity.SoutouGhast boss){
+            // Root rotation precedes MobRenderer's inverted model axes: negative pitch faces downward.
+            pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-boss.majorRenderPitch(partialTick)));
+        }
+    }
 }

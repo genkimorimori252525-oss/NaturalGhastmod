@@ -22,10 +22,28 @@ public final class ObserveFlightTank {
  private static int samples;
  private static final java.util.Set<UUID> serverSeen=new java.util.HashSet<>();
  private static boolean standard(){return "1".equals(System.getenv("KNEEKURA_DEBUG_NATURAL_STANDARD"));}
- private static int sampleLimit(){return standard()?180:900;}
+ private static boolean overhead(){return "1".equals(System.getenv("KNEEKURA_DEBUG_NATURAL_OVERHEAD"));}
+ private static int sampleLimit(){return overhead()?900:standard()?180:900;}
+ private static int deathSample=-1;
+ private static int impacts;
+ private static volatile long wallDeadline=-1;
  private static volatile boolean ready;
  private static Path output(){return Path.of(System.getenv("KNEEKURA_DEBUG_RUN_DIR")).resolve("evidence/derived/naturalghast-flight");}
  private static boolean active(){return "1".equals(System.getenv("KNEEKURA_DEBUG_ENABLED"));}
+ private static boolean withinOverheadWindow()throws Exception{
+  if(!overhead())return true;
+  if(wallDeadline<0){
+   var file=output().resolve("request-window.json");if(!Files.exists(file)||Files.size(file)>4096)return false;
+   try{var request=JsonParser.parseString(Files.readString(file)).getAsJsonObject();
+    if(!request.has("wallDeadlineEpochMs")||!request.has("maxTicks")||!request.has("maxWallMs")||request.get("maxTicks").getAsInt()!=900||request.get("maxWallMs").getAsInt()!=50000)return false;
+    wallDeadline=request.get("wallDeadlineEpochMs").getAsLong();
+   }catch(JsonParseException pending){return false;}
+  }
+  return wallDeadline>0&&System.currentTimeMillis()<wallDeadline;
+ }
+ private static void endWindow(String reason,long tick)throws Exception{
+  if(ready)return;JsonObject end=new JsonObject();end.addProperty("samples",samples);end.addProperty("tick",tick);end.addProperty("reason",reason);end.addProperty("deathSample",deathSample);Files.createDirectories(output());Files.writeString(output().resolve("window-end.json"),end+"\n",StandardOpenOption.CREATE_NEW);ready=true;
+ }
  private static boolean owned()throws Exception{
   try{
    JsonObject status=JsonParser.parseString(Files.readString(Path.of(System.getenv("KNEEKURA_DEBUG_RUN_DIR")).resolve("control/owner-status.json"))).getAsJsonObject();
@@ -36,9 +54,22 @@ public final class ObserveFlightTank {
  }
  @Mod.EventBusSubscriber(modid="naturalghast_tank_observer")
  public static final class ServerObserver {
+  @SubscribeEvent(priority=net.minecraftforge.eventbus.api.EventPriority.LOWEST,receiveCanceled=true)
+  public static void impact(net.minecraftforge.event.entity.ProjectileImpactEvent event)throws Exception{
+   if(!active()||!overhead()||ready||impacts>=16||event.getProjectile().level().isClientSide||!owned()||!Files.exists(output().resolve("request-window.json"))||!withinOverheadWindow())return;
+   if(!(event.getProjectile() instanceof CommittedSoutouFireball bomb)||bomb.flight()==null||bomb.flight().path().kind()!=com.genki.soutoughast.entity.ai.flight.CommittedTrajectory.Kind.BOMB)return;
+   var hit=event.getRayTraceResult();JsonObject row=new JsonObject();row.addProperty("producer","NATIVE_PROJECTILE_IMPACT_EVENT_LOWEST_PRE_DAMAGE");row.addProperty("tick",bomb.level().getGameTime());row.addProperty("uuid",bomb.getUUID().toString());row.addProperty("index",bomb.flight().index());row.addProperty("normalized",bomb.flight().normalized());row.addProperty("hitType",hit.getType().name());row.addProperty("x",hit.getLocation().x);row.addProperty("y",hit.getLocation().y);row.addProperty("z",hit.getLocation().z);row.addProperty("canceledAtListener",event.isCanceled());row.addProperty("resultAtListener",event.getImpactResult().name());
+   if(hit instanceof net.minecraft.world.phys.EntityHitResult entityHit){var victim=entityHit.getEntity();row.addProperty("victimUuid",victim.getUUID().toString());row.addProperty("victimType",BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).toString());if(victim instanceof net.minecraft.world.entity.LivingEntity living)row.addProperty("victimHealthAtListener",living.getHealth());}
+   if(hit instanceof net.minecraft.world.phys.BlockHitResult blockHit){var pos=blockHit.getBlockPos();JsonArray block=new JsonArray();block.add(pos.getX());block.add(pos.getY());block.add(pos.getZ());row.add("block",block);}
+   impacts++;Files.createDirectories(output());Files.writeString(output().resolve("bomb-impacts.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);
+  }
   @SubscribeEvent public static void tick(TickEvent.ServerTickEvent event)throws Exception{
-   if(!active()||event.phase!=TickEvent.Phase.END||samples>=sampleLimit()||!owned())return;
+   if(!active()||ready||event.phase!=TickEvent.Phase.END||samples>=sampleLimit()||!owned())return;
    if(standard()&&!Files.exists(output().resolve("request-window.json")))return;
+   if(overhead()&&!withinOverheadWindow()){
+    if(wallDeadline>0)endWindow("WALL_CLOCK_DEADLINE",event.getServer().overworld().getGameTime());
+    return;
+   }
    var entity=event.getServer().overworld().getEntity(UUID.fromString("67676767-1007-4000-8000-000000000001"));
    if(!(entity instanceof SoutouGhast ghast))return;
    var control=(SoutouGhastInertialMoveControl)ghast.getMoveControl();var target=ghast.getTarget();var velocity=ghast.getDeltaMovement();
@@ -87,6 +118,15 @@ public final class ObserveFlightTank {
     row.addProperty("profileCueTick",attack.profileCueTick());var recipe=attack.committedProfile();if(recipe!=null){
      row.addProperty("recipe",recipe.toString());JsonArray endpoint=new JsonArray();endpoint.add(recipe.endpoint().x());endpoint.add(recipe.endpoint().y());endpoint.add(recipe.endpoint().z());row.add("recipeEndpoint",endpoint);
     }
+    if(overhead()){
+     var major=ghast.getOverheadAttack();var majorState=major.state();
+     row.addProperty("majorPhase",majorState.phase().name());row.addProperty("majorTicks",majorState.ticks());row.addProperty("majorActive",major.active());
+     row.addProperty("majorDownward",majorState.downward());row.addProperty("majorFace",majorState.face());row.addProperty("majorReleaseRequested",majorState.releaseRequested());row.addProperty("majorReason",majorState.reason());
+     row.addProperty("majorSequences",major.sequenceCount());row.addProperty("bombCount",major.bombCount());row.addProperty("majorPitch",ghast.majorPitch());row.addProperty("lookPitch",ghast.getXRot());
+     if(majorState.goal()!=null){JsonArray goal=new JsonArray();goal.add(majorState.goal().x());goal.add(majorState.goal().y());goal.add(majorState.goal().z());row.add("majorGoal",goal);}
+     if(deathSample<0&&player!=null&&!player.isAlive())deathSample=samples;
+     row.addProperty("windowStage",deathSample<0?"COMBAT":"POST_DEATH_RECOVERY");
+    }
     var candidateProof=attack.lastPreflight();if(candidateProof!=null){row.addProperty("preflightClear",candidateProof.result().clear());row.addProperty("preflightSegments",candidateProof.result().segments());}
     JsonArray projectiles=new JsonArray();var all=ghast.level().getEntitiesOfClass(StandardSoutouFireball.class,new net.minecraft.world.phys.AABB(0,224,0,52,248,52));
     row.addProperty("projectileCoverage",all.size()>16?"PARTIAL":"LOADED_ROOM_SELECTED_TYPE");
@@ -116,16 +156,25 @@ public final class ObserveFlightTank {
     }
     row.add("projectiles",projectiles);
    }
-   Files.createDirectories(output());Files.writeString(output().resolve("flight.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);ready=++samples>=sampleLimit();
+   Files.createDirectories(output());Files.writeString(output().resolve("flight.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);samples++;
+   if(overhead()&&deathSample>=0){
+    boolean recovered=!ghast.getOverheadAttack().active(),bounded=samples-deathSample>=200;
+    if(recovered||bounded)endWindow(recovered?"PLAYER_DEATH_RECOVERY_COMPLETE":"PLAYER_DEATH_RECOVERY_TIMEOUT",ghast.level().getGameTime());
+   }
+   if(samples>=sampleLimit()){
+    if(overhead())endWindow("MAX_TICKS",ghast.level().getGameTime());else ready=true;
+   }
   }
  }
  @Mod.EventBusSubscriber(modid="naturalghast_tank_observer",value=Dist.CLIENT)
  public static final class ClientObserver {
   private static boolean captured;
+  private static boolean downwardCaptured;
   private static final java.util.Set<UUID> seen=new java.util.HashSet<>();
   @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event)throws Exception{
    if(!active()||!standard()||ready||event.phase!=TickEvent.Phase.END||seen.size()>=16||!owned())return;
    if(!Files.exists(output().resolve("request-window.json")))return;
+   if(!withinOverheadWindow())return;
    var mc=Minecraft.getInstance();if(mc.level==null)return;
    for(var p:mc.level.getEntitiesOfClass(StandardSoutouFireball.class,new net.minecraft.world.phys.AABB(0,224,0,52,248,52)).stream().limit(16).toList()){
     if(!seen.add(p.getUUID()))continue;
@@ -137,7 +186,18 @@ public final class ObserveFlightTank {
    }
   }
   @SubscribeEvent public static void frame(RenderLevelStageEvent event)throws Exception{
-   if(!active()||!ready||captured||event.getStage()!=RenderLevelStageEvent.Stage.AFTER_LEVEL||!owned())return;
+   if(!active()||event.getStage()!=RenderLevelStageEvent.Stage.AFTER_LEVEL||!owned())return;
+   if(overhead()&&!ready&&!downwardCaptured&&Files.exists(output().resolve("request-major-frames.json"))&&withinOverheadWindow()){
+    var mc=Minecraft.getInstance();if(mc.level!=null){
+     var subjects=mc.level.getEntitiesOfClass(SoutouGhast.class,new net.minecraft.world.phys.AABB(0,224,0,52,248,52));
+     if(subjects.size()==1&&subjects.get(0).majorRenderPitch(1)>=80){
+      var boss=subjects.get(0);downwardCaptured=true;
+      try(var pixels=Screenshot.takeScreenshot(mc.getMainRenderTarget())){pixels.writeToFile(output().resolve("downward-frame.png"));}
+      JsonObject pose=new JsonObject();pose.addProperty("tick",mc.level.getGameTime());pose.addProperty("subjectUuid",boss.getUUID().toString());pose.addProperty("renderPitch",boss.majorRenderPitch(1));pose.addProperty("syncedPitch",boss.majorPitch());pose.addProperty("renderer",mc.getEntityRenderDispatcher().getRenderer(boss).getClass().getName());pose.addProperty("cameraUuid",mc.getCameraEntity().getUUID().toString());pose.addProperty("cameraPitch",mc.getCameraEntity().getXRot());pose.addProperty("capture","ONE_EXPLICIT_NATURALLY_OBSERVED_DOWNWARD_POSE_PLAYER_FRAME_NOT_CARDINAL");Files.writeString(output().resolve("downward-frame.json"),pose+"\n",StandardOpenOption.CREATE_NEW);
+     }
+    }
+   }
+   if(!ready||captured)return;
    // The opt-in pilot creates a single explicit request; default observer writes no frame.
    if(!Files.exists(output().resolve("request-frame.json")))return;
    var mc=Minecraft.getInstance();if(mc.level==null)return;
