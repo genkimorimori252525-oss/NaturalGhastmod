@@ -88,7 +88,9 @@ try {
     const observer = path.join(trial, 'observer.jar');
     const observerMeta = path.join(trial, 'observer-resource/META-INF'); await fs.mkdir(observerMeta, {recursive: true});
     await fs.writeFile(path.join(observerMeta, 'mods.toml'), 'modLoader="javafml"\nloaderVersion="[47,)"\nlicense="Private verification"\n[[mods]]\nmodId="naturalghast_tank_observer"\nversion="1"\ndisplayName="Finite NaturalGhast Tank observer"\n', {flag: 'wx'});
+    await write(path.join(trial, 'observer-resource/pack.mcmeta'), {pack: {pack_format: 15, description: 'Finite read-only NaturalGhast Tank observations'}});
     exec('jar', ['--create', '--file', observer, '-C', classes, 'com/genki/soutoughast/tank', '-C', path.join(trial, 'observer-resource'), '.']);
+    assert(exec('jar', ['--list', '--file', observer]).toString().split(/\r?\n/).includes('pack.mcmeta'), 'Observer resource metadata missing');
     await fs.copyFile(path.join(path.dirname(templateFile), 'inputs/resources.zip'), path.join(inputs, 'resources.zip'));
     const configMaterial = Buffer.from(stableJson({profile: 'TANK_CORE', nativeScope: 'ACTIVE_IDLE_4X4_RENDER', product: 'soutou_ghast', sourceBuilt: true}));
     await fs.writeFile(path.join(inputs, 'config.bin'), configMaterial, {flag: 'wx'});
