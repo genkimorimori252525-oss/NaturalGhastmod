@@ -1,6 +1,8 @@
 # Flight foundation
 
-Movement foundation for redesign v0.6 and the corrected handoff. This is an incomplete, non-attacking development entity. Registry, armor, renderer, sounds and existing save compatibility are retained. Legacy attack and orbit sources remain unregistered; they are not redesign implementations.
+Movement foundation for redesign v0.6 and the corrected handoff. This is an incomplete, non-attacking development entity. Registry, armor, renderer, sounds and existing save compatibility are retained. Legacy attack and orbit Goals remain unregistered; they are not redesign implementations.
+
+The isolated `codex/natural-tactics-20261008` branch adds observed tactical scoring/memory and finite feint composition over the accepted swimming. [Tactics verification](OBSERVED-TACTICS-VERIFICATION.md) records two native lateral recipes, ordinary swimming dominance, preserved original/JAR hashes, failed preparations and unverified cases. Current Grand Danmaku work is explicitly excluded. Other attacks/ground/domain units remain pending; this is not full Boss acceptance.
 
 **Correction implemented,2026-10-08:** a boss-owned world-space region is retained during combat, with actual gentle swimming. [Redesign v0.6](design/NATURAL-GHAST-REDESIGN-v0.1.md) and the [approved correction design](superpowers/specs/2026-10-08-combat-region-swimming-design.md) supersede camera-following anchors and stop/start drift. Open-space region40×16×40; visual acceptance remains the user's next check. See the [new verification receipt](COMBAT-REGION-SWIMMING-VERIFICATION.md).
 
