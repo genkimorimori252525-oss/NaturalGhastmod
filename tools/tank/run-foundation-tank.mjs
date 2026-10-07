@@ -81,6 +81,7 @@ try {
     assert.equal(dirty.length, 0, 'Commit the source before binding runtime identity');
     assert.equal(execFileSync('git', ['status', '--porcelain'], {cwd: repository, encoding: 'utf8', windowsHide: true}).trim(), '', 'Runtime requires a clean source checkout');
     const fixture = await json(path.join(trial, 'fixture.json'));
+    fixture.baselineHash = hashJson(fixture.scope);
     const buildHash = sha(await fs.readFile(artifact)), resourceHash = sha(await fs.readFile(path.join(inputs, 'resources.zip')));
     const target = {profile_id: hashJson({profile: 'TANK_CORE', observer: 'OBSERVE_GRID'}), index_snapshot_id: hashJson({sourceRevision}),
         build_artifact_hash: buildHash, source_revision: sourceRevision, dirty_hash: sha(dirty), config_hash: sha(configMaterial), resource_hash: resourceHash};

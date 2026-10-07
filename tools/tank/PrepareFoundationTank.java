@@ -2,7 +2,6 @@ package com.genki.soutoughast.tank;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.github.tartaricacid.touhoulittlemaid.sim.debug.KneekuraDebugActionJournal;
 import com.github.tartaricacid.touhoulittlemaid.sim.debug.KneekuraDebugArenaController;
 import net.minecraft.nbt.*;
 import net.minecraft.world.level.ChunkPos;
@@ -81,7 +80,7 @@ public final class PrepareFoundationTank {
             for (String key : new String[]{"vx", "vy", "vz"}) pose.addProperty(key, 0d);
             poses.add(SUBJECT.toString(), pose); scope.add("subjectPoses", poses);
             JsonObject fixture = new JsonObject();
-            fixture.addProperty("baselineHash", KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(scope)));
+            fixture.add("scope", scope);
             fixture.addProperty("certainty", "PREDICTED_SCOPE_REQUIRES_NATIVE_OWNER_MATCH");
             fixture.addProperty("subjectUuid", SUBJECT.toString());
             fixture.addProperty("changes", "PRIVATE_ONLY: spectator camera; saved Reimu moved and frozen; active NaturalGhast added. Tank geometry unchanged.");
