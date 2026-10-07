@@ -11,8 +11,9 @@ public final class FlightFixtureTest {
   if(!PrepareFlightTank.block(edge,15,0,9).equals("minecraft:black_concrete"))throw new AssertionError("negative boundary packing");
   if(!PrepareFlightTank.block(section,9,4,6).equals("minecraft:stone"))throw new AssertionError("initial LOS seal must use the registered Arena palette");
   if(!PrepareFlightTank.block(section,9,5,6).equals("minecraft:air"))throw new AssertionError("aperture must be prepared before runtime activation");
+  if(!PrepareFlightTank.block(section,9,2,6).equals("minecraft:air"))throw new AssertionError("distant target eye ray needs the low aperture cells");
   if(!PrepareFlightTank.block(section,9,6,9).equals("minecraft:air"))throw new AssertionError("ghast initial body obstructed");
   if(PrepareFlightTank.allocatedCells()!=60552)throw new AssertionError("geometry allocation changed");
-  System.out.println("PASS: 7 mapped flight fixture assertions");
+  System.out.println("PASS: 8 mapped flight fixture assertions");
  }
 }

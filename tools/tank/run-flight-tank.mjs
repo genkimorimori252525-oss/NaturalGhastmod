@@ -199,6 +199,7 @@ try {
         assert.equal(report.preflight?.status, 'READY'); assert(report.frame, 'Native frame missing');
         const rows=(await fs.readFile(path.join(derived,'flight.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
         assert(rows.every(row=>row.width===4&&row.height===4&&row.health===10));
+        assert(rows.every(row=>row.playerUuid===fixture.playerUuid&&Math.abs(row.playerX-9.5)<.001&&Math.abs(row.playerY-224)<.001&&Math.abs(row.playerZ-3.5)<.001&&Math.abs(row.playerYaw)<.001&&Math.abs(row.playerPitch+18)<.001),'Static player fixture changed');
         report.flight=analyzeFlight(rows,fixture.playerUuid);await write(path.join(derived,'flight-summary.json'),report.flight);
         assert.equal(report.flight.status,'PASS',report.flight.failures.join(','));
         report.nativeScope = 'PASS_STATIC_PLAYER_ACQUISITION_FLIGHT_MOBILITY';

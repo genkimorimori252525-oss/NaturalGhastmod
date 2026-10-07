@@ -36,6 +36,8 @@ public final class ObserveFlightTank {
    var entity=event.getServer().overworld().getEntity(UUID.fromString("67676767-1007-4000-8000-000000000001"));
    if(!(entity instanceof SoutouGhast ghast))return;
    var control=(SoutouGhastInertialMoveControl)ghast.getMoveControl();var target=ghast.getTarget();var velocity=ghast.getDeltaMovement();
+   var players=event.getServer().getPlayerList().getPlayers();
+   var player=players.size()==1?players.get(0):null;
    JsonObject row=new JsonObject();row.addProperty("tick",ghast.level().getGameTime());row.addProperty("uuid",ghast.getUUID().toString());row.addProperty("noAI",ghast.isNoAi());
    row.addProperty("x",ghast.getX());row.addProperty("y",ghast.getY());row.addProperty("z",ghast.getZ());
    row.addProperty("vx",velocity.x);row.addProperty("vy",velocity.y);row.addProperty("vz",velocity.z);row.addProperty("speed",velocity.length());
@@ -49,6 +51,10 @@ public final class ObserveFlightTank {
       &&(offset.x*look.x+offset.z*look.z)/(horizontal*lookLength)>=Math.cos(Math.toRadians(35));
    }
    row.addProperty("inFrontalVolume",frontal);
+   if(player!=null){
+    row.addProperty("playerUuid",player.getUUID().toString());row.addProperty("playerX",player.getX());row.addProperty("playerY",player.getY());row.addProperty("playerZ",player.getZ());
+    row.addProperty("playerYaw",player.getYRot());row.addProperty("playerPitch",player.getXRot());
+   }
    row.addProperty("intent",control.getIntent().mode().name());row.addProperty("primitive",control.getPrimitive().name());row.addProperty("context",control.getMobilityContext().name());
    row.addProperty("clearanceBlocked",control.isClearanceBlocked());row.addProperty("collisionFree",ghast.level().noCollision(ghast,ghast.getBoundingBox()));
    row.addProperty("width",ghast.getBbWidth());row.addProperty("height",ghast.getBbHeight());row.addProperty("health",ghast.getHealth());
