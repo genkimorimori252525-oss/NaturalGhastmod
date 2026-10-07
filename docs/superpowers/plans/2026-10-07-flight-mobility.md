@@ -49,4 +49,5 @@ Ruling: reuse the clean dedicated NaturalGhast checkout and existing local branc
 Ruling: apply the existing approved v0.5 design and explicit resume instruction without repeated planning approval — no new gameplay scope — cost: revisions remain local/reviewable.
 Ruling: use the real offline-prepared survival player as an observed target and sealed block edits for activation — tests ordinary acquisition without a Player action API — cost: moving/facing-change scenarios remain a later fixture.
 Ruling: keep ground-forced behavior safely non-attacking until ground locomotion is implemented — avoids pretending airborne braking is scuttling — cost: ground mode remains partial.
+Ruling: keep the mapped fixture test in tools/tank rather than product test sources — actual Gradle build exposed its LAB-only helper dependency — cost: explicit separate mapped-fixture test command.
 Pre-flight: planner consumes existing anchor/FlightController.Intent unchanged; Forge integration supplies actual directional clearances; private fixture consumes exact compiled unit and registered set-block transport. No API/grant conflict found.

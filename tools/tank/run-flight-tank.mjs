@@ -56,7 +56,7 @@ try {
     try {
         targetBuild = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
             '& $env:NATURALGHAST_VERIFY_WRAPPER compileJava build --no-daemon --console=plain; exit $LASTEXITCODE'],
-            {cwd: repository, windowsHide: true, maxBuffer: 16 * 1024 * 1024,
+            {cwd: repository, windowsHide: true, stdio: ['ignore','pipe','pipe'], maxBuffer: 16 * 1024 * 1024,
                 env: {...process.env, JAVA_HOME: javaHome, NATURALGHAST_VERIFY_WRAPPER: path.join(repository, 'gradlew.bat')}});
     } catch (error) {
         await fs.writeFile(path.join(trial, 'target-build.log'), error.stdout ?? error.message, {flag: 'wx'});
