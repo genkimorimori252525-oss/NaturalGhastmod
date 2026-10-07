@@ -116,7 +116,7 @@ Architecture:
 
 The Flight Controller owns momentum, acceleration, braking, turn authority, collision avoidance and arrival correction.
 
-Normal quiet/HOLD intervals include gentle actual horizontal/vertical swimming with sustained commitments; avoid repeated brief bursts followed by complete stops. Safety braking remains authoritative. See the [correction design and grouped acceptance](superpowers/specs/2026-10-08-combat-region-swimming-design.md); product changes are pending written-design review.
+Normal quiet/HOLD intervals include gentle actual horizontal/vertical swimming with sustained commitments; avoid repeated brief bursts followed by complete stops. Safety braking remains authoritative. The approved [correction design](superpowers/specs/2026-10-08-combat-region-swimming-design.md) is implemented on the local flight branch; [static-player physical acceptance](COMBAT-REGION-SWIMMING-VERIFICATION.md) is separate from pending user visual acceptance.
 
 ### Feints
 
@@ -322,7 +322,7 @@ Follow the KNEEKURA / TECH-HUB evidence discipline:
 - isolated Grand Danmaku pure-Java runtime scaffold in Draft PR #1;
 - JavaFX Score authoring technology in TECH-HUB.
 
-Local flight-foundation branch also contains a non-attacking inertia/clearance scaffold and a bounded static-player native receipt (`FLIGHT-MOBILITY-VERIFICATION.md`). Its camera-relative anchor and stop/start drift require the2026-10-08 correction before further tactics. NaturalGhast Tank preparation excludes unintended seed Reimu; explicit subject experiments remain separate.
+Local flight-foundation branch contains a non-attacking inertia/clearance scaffold and the2026-10-08 persistent-region/swimming correction (`COMBAT-REGION-SWIMMING-VERIFICATION.md`). The earlier camera-relative static-player receipt stays historical. User visual acceptance precedes further tactics. NaturalGhast Tank preparation excludes unintended seed Reimu; explicit subject experiments remain separate.
 
 ### Not implemented / not finished
 

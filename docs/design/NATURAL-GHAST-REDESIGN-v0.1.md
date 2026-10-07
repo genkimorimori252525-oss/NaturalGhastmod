@@ -3,7 +3,7 @@
 Revision: v0.6
 Date: 2026-10-08
 
-The user's 2026-10-08 clarification supersedes v0.5's player-camera-relative anchor. A combat anchor is a broad, boss-owned world-space region, retained during combat and reselected only when necessary. The initial flight implementation still follows v0.5; its static-player acceptance does not verify this correction. See [the correction design](../superpowers/specs/2026-10-08-combat-region-swimming-design.md).
+The user's2026-10-08 clarification supersedes v0.5's player-camera-relative anchor. A combat anchor is a broad, boss-owned world-space region, retained during combat and reselected only when necessary. The local flight branch implements that correction and has separate static-player physical-swimming acceptance; user visual acceptance is pending. See [the correction design](../superpowers/specs/2026-10-08-combat-region-swimming-design.md) and [verification receipt](../COMBAT-REGION-SWIMMING-VERIFICATION.md).
 
 ## Core identity
 

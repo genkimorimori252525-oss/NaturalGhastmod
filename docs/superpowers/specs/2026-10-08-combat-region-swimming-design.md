@@ -1,6 +1,6 @@
 # Persistent combat region and Ghast swimming
 
-Status: proposed behavior rewrite; written design awaiting review. User-confirmed semantics: retain the region during combat and reselect only when necessary; give the boss broad freedom, not a roughly10-block region. Numerical tuning is delegated. No product movement code changes are included in this document.
+Status: approved2026-10-08 and implemented; user visual acceptance pending. User-confirmed semantics: retain the region during combat and reselect only when necessary; give the boss broad freedom, not a roughly10-block region. Numerical tuning is delegated. See [the implementation/native receipt](../../COMBAT-REGION-SWIMMING-VERIFICATION.md); historical diagnosis below describes the superseded implementation.
 
 ## Evidence and scope
 
