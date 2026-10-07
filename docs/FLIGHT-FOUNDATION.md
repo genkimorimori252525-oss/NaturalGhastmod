@@ -37,3 +37,5 @@ The tools under `tools/tank/` prepare a fresh private original-save copy, bind t
 The existing Tank is 19×19×11; it cannot contain the default 22–34 block frontal range. The current owner API excludes Player subjects and supports only wait, subject teleport and block operations. Therefore a native idle/4×4-clearance/renderer run is valid limited coverage; native player-facing, target change, acceleration/turn and frontal recovery remain **NOT_RUN** until an appropriate registered fixture exists. Pure-Java assertions do not certify Minecraft behavior or visual quality. Record this limitation rather than weakening entity dimensions or combat range.
 
 Next work: registered player-observation fixtures and an adequately sized private Tank; native flight validation; then movement primitives/Mobility Context and tactics. Danmaku content is a separate task.
+
+See [verification receipt](FLIGHT-FOUNDATION-VERIFICATION.md) for exact checks, native scope, failures, source identities and retained evidence.

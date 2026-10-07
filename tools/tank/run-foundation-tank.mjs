@@ -24,6 +24,7 @@ const {registerBridgeRequest} = await load('bridge/registration.mjs');
 const {launchDebugRun, readCurrent, stopCurrent} = await load('core.mjs');
 const {setTargetControl} = await load('evidence/target-control.mjs');
 const {evidenceRuntimeFromCurrent} = await load('evidence/runtime.mjs');
+const {finalizeEvidenceRun} = await load('evidence/finalize.mjs');
 const {readTankContext} = await load('tank-cli.mjs');
 const hashJson = value => sha(Buffer.from(stableJson(value)));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -176,6 +177,14 @@ try {
         current ??= await readCurrent(config, lab).catch(() => null);
         if (current?.live) { const stopped = await stopCurrent(config, lab); report.cleanup = {live: stopped.live, clean: stopped.evidenceShutdown?.clean}; assert.equal(stopped.live, false); assert.equal(stopped.evidenceShutdown?.clean, true); }
         if (runtime) { await runtime.ingestAvailable(); report.canonicalObservations = (await runtime.store.readObservations()).length; }
+        if (current?.runDir) {
+            const stopped = await readCurrent(config, lab);
+            if (stopped.live === false) {
+                const finalized = await finalizeEvidenceRun(stopped, {cleanShutdown: stopped.evidenceShutdown?.clean === true,
+                    shutdownMode: stopped.evidenceShutdown?.clean === true ? 'PROBE_FLUSH_ACK_THEN_PROCESS_STOP' : 'UNACKNOWLEDGED_STOP'});
+                report.finalization = {file: finalized.file, status: finalized.manifest.status};
+            }
+        }
     }
 } catch (error) {
     report.failures.push(error.message);

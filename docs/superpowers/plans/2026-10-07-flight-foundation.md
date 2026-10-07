@@ -6,6 +6,8 @@
 
 **Status:** Approved by the user on 2026-10-07. `TANK_CORE` is the Tank; danmaku content is excluded.
 
+**Completion:** The foundation and limited native pilot are implemented and verified; see `docs/FLIGHT-FOUNDATION-VERIFICATION.md`. Full native player/flight scenarios remain NOT_RUN and are the next work unit. Keep the local branch; no push/merge requested.
+
 **Execution ledger:**
 - Core grouped RED: missing FlightVector/FlightController/CombatFacing/CombatAnchor confirmed by javac; GREEN: assertion runner passed. Forge `compileJava build`: PASS (24s), baseline's four errors repaired.
 - Ruling: use the existing TANK_CORE host with a separately source-built NaturalGhast development artifact instead of adding TLM dependencies to the product. Cost if wrong: revise development launch wiring; production has no LAB instrumentation.
