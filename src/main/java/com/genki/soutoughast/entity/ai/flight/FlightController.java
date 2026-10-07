@@ -8,6 +8,10 @@ public final class FlightController {
     public static final double LATERAL_ACCELERATION = 0.045;
 
     public enum Mode { MOVE, BRAKE, HOLD }
+    public FlightVector clearanceSweep(FlightVector actualVelocity,FlightVector next){
+        double horizon=Math.min(MAX_SPEED/BRAKING+2,actualVelocity.length()/BRAKING+2);
+        return next.scale(horizon*.5+1);
+    }
 
     public record Intent(Mode mode, FlightVector direction, double speed) {
         public Intent {

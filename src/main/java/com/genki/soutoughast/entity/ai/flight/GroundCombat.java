@@ -15,6 +15,15 @@ public final class GroundCombat {
     public boolean active(){return phase!=Phase.AIR;}
     public boolean grounded(){return phase==Phase.GROUNDED;}
     public void invalidateTarget(){goal=phase==Phase.GROUNDED?null:goal;tauntLegs=0;pause=12;}
+    /** Query-only landing contact allowance. Actual velocity/native collision stay unchanged. */
+    public FlightVector landingSweep(FlightVector position,FlightVector prediction,
+            BiPredicate<FlightVector,FlightVector> loadedBody,BiPredicate<FlightVector,FlightVector> freshSupport){
+        if(phase!=Phase.LANDING||goal==null||position.y()<goal.y()||prediction.y()>=0||Math.abs(Math.rint(goal.y())-goal.y())>1e-6)return prediction;
+        var clipped=new FlightVector(prediction.x(),Math.max(prediction.y(),goal.y()-position.y()),prediction.z());
+        var floorStart=new FlightVector(position.x(),goal.y(),position.z());
+        var floorEnd=floorStart.add(new FlightVector(prediction.x(),0,prediction.z()));
+        return freshSupport.test(floorStart,floorEnd)&&loadedBody.test(position,position.add(clipped))?clipped:prediction;
+    }
     public void reset(){phase=Phase.AIR;goal=null;ticks=pause=clearSamples=legTicks=memory=tauntLegs=0;publish(FlightController.Intent.hold(),"RESET");}
     public boolean begin(FlightVector position,FlightVector floor,BiPredicate<FlightVector,FlightVector> descent){
         if(active()&&phase!=Phase.SAFE_HOLD||floor==null)return false;

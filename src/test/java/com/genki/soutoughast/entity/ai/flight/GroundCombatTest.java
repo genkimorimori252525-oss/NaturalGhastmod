@@ -10,6 +10,26 @@ public final class GroundCombatTest {
         check(!GroundFootprint.supported(FLOOR,new FlightVector(13,0,0),(x,y,z)->true),"support query horizontal bound");
         check(!GroundFootprint.supported(FLOOR,new FlightVector(0,.3,0),(x,y,z)->true),"different floor heights are not fabricated support");
         check(!GroundFootprint.supported(new FlightVector(1e15,0,0),new FlightVector(1e15,0,0),(x,y,z)->true),"out-of-world coordinates fail before integer conversion");
+        var contact=new GroundCombat();var near=new FlightVector(0,.085,0);contact.begin(near,FLOOR,(a,b)->true);
+        var predicted=new FlightVector(.2,-.3,.1);
+        var clipped=contact.landingSweep(near,predicted,(a,b)->true,(a,b)->true);
+        check(Math.abs(clipped.y()+.085)<1e-9&&clipped.x()==.2&&clipped.z()==.1,"only validated landing query ends at floor, full XZ preserved");
+        check(contact.landingSweep(near,predicted,(a,b)->true,(a,b)->GroundFootprint.supported(a,b,(x,y,z)->x!=0||z!=0)).equals(predicted),"missing floor tile keeps full conservative guard");
+        boolean[] support={true};contact.landingSweep(near,predicted,(a,b)->true,(a,b)->support[0]);support[0]=false;
+        check(contact.landingSweep(near,predicted,(a,b)->true,(a,b)->support[0]).equals(predicted),"changed support is rechecked, not cached from earlier proof");
+        check(contact.landingSweep(near,predicted,(a,b)->b.x()<=.1,(a,b)->true).equals(predicted),"horizontal wall keeps guard");
+        check(contact.landingSweep(near,predicted,(a,b)->false,(a,b)->true).equals(predicted),"unloaded body route keeps guard");
+        check(contact.landingSweep(new FlightVector(0,-.01,0),predicted,(a,b)->true,(a,b)->true).equals(predicted),"never clip below validated plane");
+        var contactVelocity=FlightVector.ZERO;var contactPosition=near;var contactController=new FlightController();
+        for(int i=0;i<40&&!contact.grounded();i++){
+            var s=contact.step(contactPosition,null,REGION,false,null,(a,b)->true,(a,b)->true,.5);
+            var next=contactController.step(contactVelocity,s.intent());
+            var sweep=contact.landingSweep(contactPosition,contactController.clearanceSweep(contactVelocity,next),(a,b)->true,(a,b)->true);
+            if(contactPosition.y()+sweep.y()< -1e-9)next=contactController.step(contactVelocity,FlightController.Intent.brake());
+            contactPosition=contactPosition.add(next);contactVelocity=next;
+            if(contactPosition.y()<0){contactPosition=new FlightVector(contactPosition.x(),0,contactPosition.z());contactVelocity=new FlightVector(next.x(),0,next.z());}
+        }
+        check(contact.grounded()&&contactPosition.y()<.02,"actual .085 hover with predictive stopping guard can land without teleport");
         var ground=new GroundCombat();
         check(!ground.begin(new FlightVector(0,4,0),null,(a,b)->true),"blocked up/down is not support");
         check(!ground.begin(new FlightVector(0,9,0),FLOOR,(a,b)->true),"descent bounded8");

@@ -65,9 +65,8 @@ public final class SoutouGhastInertialMoveControl extends MoveControl {
         FlightVector next = controller.step(actual, intent);
         // One conservative swept box, bounded by the speed cap's stopping horizon.
         // Include inertia during a turn; checking only the waypoint would miss walls.
-        double horizon = Math.min(FlightController.MAX_SPEED / FlightController.BRAKING + 2,
-                actual.length() / FlightController.BRAKING + 2);
-        Vec3 sweep = to(next.scale(horizon * 0.5 + 1));
+        Vec3 sweep = to(controller.clearanceSweep(actual,next));
+        if(ghast.getGroundCombat().active())sweep=ghast.getGroundCombat().collisionSweep(sweep);
         clearanceBlocked = next.length() > 1e-9 && (!ghast.level().noCollision(ghast,
                 clearanceBox(ghast.getBoundingBox(), sweep))
                 ||ghast.getGroundCombat().active()&&!ghast.getGroundCombat().safeMotion(sweep));

@@ -70,6 +70,9 @@ public final class SoutouGhastGroundCombat {
         var position=from(ghast.position());var end=position.add(from(displacement));
         return movement.grounded()?clearance.supportedRoute(position,end):clearance.body(position,end);
     }
+    public Vec3 collisionSweep(Vec3 prediction){
+        return to(movement.landingSweep(from(ghast.position()),from(prediction),clearance::body,clearance::support));
+    }
     private static FlightVector from(Vec3 v){return SoutouGhastInertialMoveControl.from(v);}
     private static Vec3 to(FlightVector v){return SoutouGhastInertialMoveControl.to(v);}
 }
