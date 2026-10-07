@@ -7,6 +7,7 @@ import {pathToFileURL, fileURLToPath} from 'node:url';
 import {analyzeSwimming} from './swimming-results.mjs';
 import {analyzeTactics} from './tactics-results.mjs';
 import {waitForFlightAction} from './flight-owner.mjs';
+import {privateFlightLaunchArgs} from './flight-launch.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
 const option = name => { const i = process.argv.indexOf('--' + name); if (i < 0 || !process.argv[i + 1]) throw Error('Missing --' + name); return path.resolve(process.argv[i + 1]); };
@@ -151,8 +152,7 @@ try {
     config.runtimeRoot = path.join(trial, 'runtime'); config.gameDir = path.join(trial, 'game');
     config.readyTimeoutMs = 240000;
     config.launch.command = path.resolve(host, template.launch.command);
-    config.launch.args = ['--project-dir', host, '-Pforge_version=1.20.1-47.4.10',
-        ...template.launch.args.slice(0, -2).filter(arg => arg !== '--offline'), '--init-script', initScript];
+    config.launch.args = privateFlightLaunchArgs(template.launch.args,host,initScript);
     config.launch.env = {JAVA_HOME: javaHome, KNEEKURA_DEBUG_MOD_PROFILE: 'TANK_CORE', NATURALGHAST_PRIVATE_GAME_DIR: path.join(trial, 'game')};
     config.ownerControl = {requestHash, operatorRegistration: {trustedRoot: privateDir, relativePath: 'operator.json', sha256: sha(await fs.readFile(operatorFile))}};
     await write(path.join(trial, 'config.json'), config);
@@ -212,11 +212,15 @@ try {
         report.tactics=analyzeTactics(rows);await write(path.join(derived,'tactics-summary.json'),report.tactics);
         assert.equal(report.tactics.status,'PASS',report.tactics.failures.join(','));
         report.nativeScope = 'CHECKS_PASSED_FINALIZATION_PENDING';
+    } catch(error) {
+        report.failures.push('native checks: '+error.message);
+        throw error;
     } finally {
         current ??= await readCurrent(config, lab).catch(() => null);
         if (current?.runDir) {
             const finish=await finalizeNativeTrial({current,stop:()=>stopCurrent(config,lab),read:()=>readCurrent(config,lab),finalize:finalizeEvidenceRun});
             report.cleanup=finish.stopped.cleanup;report.shutdown=finish.shutdown;report.finalization=finish.finalization;
+            report.nativeFinalizationReason=finish.reason;
             assert.equal(finish.status,'PASS',finish.reason);
             if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope='PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
         }
