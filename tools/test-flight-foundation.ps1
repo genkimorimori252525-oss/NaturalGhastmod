@@ -17,6 +17,8 @@ $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/Standard
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/CommittedTrajectoryTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ProjectileSelectionTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/OverheadBombingTest.java"
+$sources += "$root/tools/tank/ObservationFailureBoundary.java"
+$sources += "$root/tools/tank/ObservationFailureBoundaryTest.java"
 & "$JavaHome/bin/javac.exe" --release 17 -encoding UTF-8 -d $output @sources
 if ($LASTEXITCODE -ne 0) { throw 'Flight foundation compilation failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.CombatRegionSwimmingTest
@@ -35,3 +37,5 @@ if ($LASTEXITCODE -ne 0) { throw 'Committed trajectory assertions failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Projectile selection/validation assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.OverheadBombingTest
 if ($LASTEXITCODE -ne 0) { throw 'Overhead/director assertions failed.' }
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.tank.ObservationFailureBoundaryTest
+if ($LASTEXITCODE -ne 0) { throw 'Observer failure containment assertions failed.' }

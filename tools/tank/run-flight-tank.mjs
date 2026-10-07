@@ -100,7 +100,7 @@ try {
     const classpath = savedArgs.split(/\r?\n/)[1].replace(/^"|"$/g, '');
     const classes = path.join(trial, 'classes'); await fs.mkdir(classes);
     const exec = (tool, args) => execFileSync(path.join(javaHome, 'bin', tool + '.exe'), args, {cwd: trial, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']});
-    const sources = ['TankSeedEntities.java', 'PrepareFlightTank.java', 'ObserveFlightTank.java'].map(name => path.join(repository, 'tools/tank', name));
+    const sources = ['TankSeedEntities.java', 'PrepareFlightTank.java', 'ObserveFlightTank.java','ObservationFailureBoundary.java'].map(name => path.join(repository, 'tools/tank', name));
     // The registered argument file can include an older product checkout; current verified classes take precedence.
     const compileCp = path.join(repository, 'build/classes/java/main')+';'+report.bridgeReadiness.outputRoot+';'+classpath;
     const compileArgs = path.join(trial, 'javac.args');
@@ -241,6 +241,7 @@ try {
             const context = await readTankContext({...contextFor(observations),
                 timeBudget: overhead?remainingWindowBudget(windowPlan,Date.now()):{experimentMs:10000,finalizationMs:5000,cleanupMs:5000,marginMs:5000}});
             report.preflight = context.preflight;
+            if(overhead){const failed=await json(path.join(derived,'observer-failure.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;});if(failed)throw Error('OBSERVER_FAILED:'+failed.error);}
             const frame = await json(path.join(derived,'frame.json')).catch(() => null);
             if (context.preflight.status === 'READY' && frame) { report.frame = frame; break; }
             const owner = await json(path.join(current.runDir, 'control/owner-status.json')).catch(() => null);
@@ -248,6 +249,7 @@ try {
             await sleep(500);
         }
         assert.equal(report.preflight?.status, 'READY'); assert(report.frame, 'Native frame missing');
+        if(overhead)assert.equal(report.frame.cameraEntity,fixture.playerUuid,'Final frame camera changed');
         const rows=(await fs.readFile(path.join(derived,'flight.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
         assert(rows.every(row=>row.width===4&&row.height===4&&row.health===fixture.subjectHealth));
         assert(rows.every(row=>row.playerUuid===fixture.playerUuid),'Real Player identity changed');
@@ -255,7 +257,7 @@ try {
             report.finalRoster=await roster(1);
             const clients=await readShotRows(path.join(derived,'client-projectiles.jsonl'));
             if(overhead){
-                report.standard=analyzeOverhead({rows,clients,paths:await readShotRows(path.join(derived,'profile-paths.jsonl')),impacts:await readShotRows(path.join(derived,'bomb-impacts.jsonl')),
+                report.standard=analyzeOverhead({rows,clients,paths:await readShotRows(path.join(derived,'profile-paths.jsonl')),impacts:await readShotRows(path.join(derived,'bomb-impacts.jsonl')),events:await readShotRows(path.join(derived,'release-death-events.jsonl')),
                     pose:await json(path.join(derived,'downward-frame.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;}),end:await json(path.join(derived,'window-end.json')),request:windowPlan,
                     downwardFramePresent:!!await fs.stat(path.join(derived,'downward-frame.png')).catch(error=>{if(error.code==='ENOENT')return null;throw error;})},fixture.subjectUuid,fixture.playerUuid);
             }else report.standard=profiles?analyzeProfiles(rows,clients,fixture.subjectUuid,await readShotRows(path.join(derived,'profile-paths.jsonl'))):analyzeStandard(rows,clients,fixture.subjectUuid);
