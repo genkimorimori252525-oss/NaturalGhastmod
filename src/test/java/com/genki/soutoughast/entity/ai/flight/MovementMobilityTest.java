@@ -56,6 +56,20 @@ public final class MovementMobilityTest {
                 "variation cannot override directional clearance");
         reject(()->planner.step(anchor,FlightVector.ZERO,INSIDE,FORWARD,MobilityContext.Kind.OPEN_AIR,open,Double.NaN));
         reject(()->planner.step(anchor,FlightVector.ZERO,INSIDE,FORWARD,MobilityContext.Kind.OPEN_AIR,open,1));
+        planner.reset();
+        FlightVector tangent=new FlightVector(2,6,Math.sqrt(444.1));
+        var tangentDrift=planner.step(anchor,FlightVector.ZERO,tangent,FORWARD,MobilityContext.Kind.OPEN_AIR,open,.85);
+        FlightVector firstVelocity=new FlightController().step(FlightVector.ZERO,tangentDrift.intent());
+        check(anchor.evaluate(FlightVector.ZERO,FORWARD,tangent.add(firstVelocity)).inRegion(),
+                "drift chord cannot cross the inner range hole");
+        check(!new MobilityContext.Sample(769).allows(new FlightVector(3,0,8)),
+                "one clear cardinal ray cannot certify an unsampled diagonal");
+        planner.reset();
+        int[] calls={0};
+        var denied=planner.step(anchor,FlightVector.ZERO,INSIDE,FORWARD,MobilityContext.Kind.OPEN_AIR,open,.7,
+                displacement->{calls[0]++;return false;});
+        check(denied.intent().mode()!=FlightController.Mode.MOVE,"actual clearance rejection cannot issue drift thrust");
+        check(calls[0]==2,"actual candidate queries stay within the bounded budget");
         System.out.println("PASS: "+checks+" movement/mobility assertions");
     }
     private static void check(boolean value,String message){checks++;if(!value)throw new AssertionError(message);}

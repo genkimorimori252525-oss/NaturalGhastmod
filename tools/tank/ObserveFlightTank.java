@@ -41,6 +41,14 @@ public final class ObserveFlightTank {
    row.addProperty("vx",velocity.x);row.addProperty("vy",velocity.y);row.addProperty("vz",velocity.z);row.addProperty("speed",velocity.length());
    row.addProperty("targetUuid",target==null?null:target.getUUID().toString());row.addProperty("targetType",target==null?null:BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString());
    row.addProperty("range",target==null?-1:ghast.distanceTo(target));row.addProperty("lineOfSight",target!=null&&ghast.getSensing().hasLineOfSight(target));
+   boolean frontal=false;
+   if(target!=null){
+    var offset=ghast.position().subtract(target.position());var look=target.getLookAngle();
+    double horizontal=Math.hypot(offset.x,offset.z),lookLength=Math.hypot(look.x,look.z);
+    frontal=offset.y>=4&&offset.y<=10&&horizontal>0&&lookLength>0
+      &&(offset.x*look.x+offset.z*look.z)/(horizontal*lookLength)>=Math.cos(Math.toRadians(35));
+   }
+   row.addProperty("inFrontalVolume",frontal);
    row.addProperty("intent",control.getIntent().mode().name());row.addProperty("primitive",control.getPrimitive().name());row.addProperty("context",control.getMobilityContext().name());
    row.addProperty("clearanceBlocked",control.isClearanceBlocked());row.addProperty("collisionFree",ghast.level().noCollision(ghast,ghast.getBoundingBox()));
    row.addProperty("width",ghast.getBbWidth());row.addProperty("height",ghast.getBbHeight());row.addProperty("health",ghast.getHealth());

@@ -12,6 +12,7 @@ $classpath = "$root/build/classes/java/main;$hostClasspath"
 $arguments = @('--release', '17', '-encoding', 'UTF-8', '-cp', $classpath, '-d', $output,
     "$root/src/main/java/com/genki/soutoughast/entity/ai/SoutouGhastInertialMoveControl.java",
     "$root/src/test/java/com/genki/soutoughast/entity/ai/ForgeClearanceTest.java")
+$arguments += @(Get-ChildItem -LiteralPath "$root/src/main/java/com/genki/soutoughast/entity/ai/flight" -Filter '*.java' | ForEach-Object FullName)
 $argsFile = Join-Path $output 'compile.args'
 [System.IO.File]::WriteAllLines($argsFile, @($arguments | ForEach-Object { '"' + $_.Replace('\','/') + '"' }))
 & "$JavaHome/bin/javac.exe" "@$argsFile"

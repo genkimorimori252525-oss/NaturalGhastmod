@@ -110,6 +110,8 @@ try {
         build_artifact_hash: buildHash, source_revision: sourceRevision, dirty_hash: sha(dirty), config_hash: sha(configMaterial), resource_hash: resourceHash};
     const experiment = 'naturalghast-' + path.basename(trial);
     const windowCells=[];for(let x=8;x<=10;x++)for(let y=228;y<=231;y++)windowCells.push([x,y,6]);
+    // Keep the eye ray occluded until all preparatory mutations have completed.
+    windowCells.sort((a,b)=>Number(a[0]===9&&a[1]===228)-Number(b[0]===9&&b[1]===228));
     const actions=windowCells.map((position,i)=>({action_id:'open-'+String(i).padStart(2,'0'),operation:'set_block',position,block:'minecraft:air'}));
     const request = {schema_version: 1, experiment_id: experiment, generation: 1, target,
         arena: {arena_id: experiment, baseline_hash: fixture.baselineHash, bounds: {min: [7,224,6], max: [13,235,13]}, preset: 'private-flight-mobility'},
@@ -169,8 +171,8 @@ try {
         for(const action of actions){
             await submitSelectedAction({...options,selectedActionId:action.action_id});
             const deadline=Date.now()+5000;let receipt;
-            do{receipt=await inspectSelectedAction({...options,selectedActionId:action.action_id});if(receipt.recordedStatus==='VERIFIED')break;await sleep(50);}while(Date.now()<deadline);
-            assert.equal(receipt.recordedStatus,'VERIFIED');report.actions.push({actionId:action.action_id,status:receipt.recordedStatus});
+            do{receipt=await inspectSelectedAction({...options,selectedActionId:action.action_id});if(receipt.reportedStatus==='VERIFIED')break;await sleep(50);}while(Date.now()<deadline);
+            assert.equal(receipt.reportedStatus,'VERIFIED');report.actions.push({actionId:action.action_id,status:receipt.reportedStatus});
         }
         const derived=path.join(current.runDir,'evidence/derived/naturalghast-flight');await fs.mkdir(derived,{recursive:true});
         await write(path.join(derived,'request-frame.json'),{scope:'ONE_EXPLICIT_SUPPLEMENTARY_FRAME',sourceRevision,requestHash});

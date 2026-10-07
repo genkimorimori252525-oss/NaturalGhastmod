@@ -33,13 +33,20 @@ public final class SoutouGhastInertialMoveControl extends MoveControl {
     public void setMovementPlan(MovementPlanner.Plan plan) { intent = plan.intent(); primitive = plan.primitive(); }
     public MobilityContext.Sample sampleMobility() {
         int mask = 0;
-        for (int i = 0; i < 10; i++) {
+        // Six coarse body sweeps; diagonals require both adjacent cardinal rays.
+        // Planner additionally checks at most two actual candidate displacements.
+        for (int i : new int[]{0,2,4,6,8,9}) {
             Vec3 sweep = to(MobilityContext.direction(i).scale(i < 8 ? 8 : 4));
             if (ghast.level().noCollision(ghast, clearanceBox(ghast.getBoundingBox(), sweep))) mask |= 1 << i;
         }
+        for(int i=1;i<8;i+=2)if((mask&(1<<(i-1)))!=0&&(mask&(1<<((i+1)%8)))!=0)mask|=1<<i;
         var sample = new MobilityContext.Sample(mask);
         mobility.update(sample);
         return sample;
+    }
+    public boolean hasDirectionalClearance(FlightVector displacement) {
+        Vec3 sweep=to(displacement.limited(8));
+        return ghast.level().noCollision(ghast,clearanceBox(ghast.getBoundingBox(),sweep));
     }
 
     @Override

@@ -17,7 +17,7 @@ public final class PrepareFlightTank {
  private static String fixtureBlock(int x,int y,int z){
   boolean shell=x==-1||x==SIZE||z==-1||z==SIZE||y==Y-1||y==Y+HEIGHT;
   boolean wall=z==6&&x>=7&&x<=12&&y>=224&&y<=237;
-  return shell||wall?"minecraft:black_concrete":"minecraft:air";
+  return shell?"minecraft:black_concrete":wall?"minecraft:stone":"minecraft:air";
  }
  private static CompoundTag state(String name){CompoundTag s=new CompoundTag();s.putString("Name",name);return s;}
  private static CompoundTag cell(CompoundTag section,int x,int y,int z){

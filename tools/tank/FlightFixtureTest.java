@@ -9,7 +9,7 @@ public final class FlightFixtureTest {
   if(!PrepareFlightTank.block(floor,9,15,9).equals("minecraft:black_concrete"))throw new AssertionError("floor missing");
   CompoundTag edge=PrepareFlightTank.section(14,-1,0);
   if(!PrepareFlightTank.block(edge,15,0,9).equals("minecraft:black_concrete"))throw new AssertionError("negative boundary packing");
-  if(!PrepareFlightTank.block(section,9,5,6).equals("minecraft:black_concrete"))throw new AssertionError("initial LOS wall missing");
+  if(!PrepareFlightTank.block(section,9,5,6).equals("minecraft:stone"))throw new AssertionError("initial LOS wall must use the registered Arena palette");
   if(!PrepareFlightTank.block(section,9,6,9).equals("minecraft:air"))throw new AssertionError("ghast initial body obstructed");
   if(PrepareFlightTank.allocatedCells()!=60552)throw new AssertionError("geometry allocation changed");
   System.out.println("PASS: 6 mapped flight fixture assertions");

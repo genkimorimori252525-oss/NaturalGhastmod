@@ -12,8 +12,9 @@ public final class MobilityContext {
             FlightVector d=direction.normalized();
             if(d.y()>.25&&!clear(8)||d.y()<-.25&&!clear(9))return false;
             if(Math.hypot(d.x(),d.z())<.1)return true;
-            int sector=Math.floorMod((int)Math.round(Math.atan2(d.x(),d.z())/(Math.PI/4)),8);
-            return clear(sector);
+            double sector=Math.atan2(d.x(),d.z())/(Math.PI/4);
+            int lower=(int)Math.floor(sector+1e-9),upper=(int)Math.ceil(sector-1e-9);
+            return clear(Math.floorMod(lower,8))&&clear(Math.floorMod(upper,8));
         }
         public Kind kind(){
             int horizontal=Integer.bitCount(clearMask&255);

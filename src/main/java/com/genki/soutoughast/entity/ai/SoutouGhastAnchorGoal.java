@@ -47,7 +47,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
         var sample = control().sampleMobility();
         var plan = planner.step(anchor, SoutouGhastInertialMoveControl.from(target.position()),
                 SoutouGhastInertialMoveControl.from(ghast.position()), facing.direction(),
-                control().getMobilityContext(), sample, ghast.getRandom().nextDouble());
+                control().getMobilityContext(), sample, ghast.getRandom().nextDouble(),control()::hasDirectionalClearance);
         control().setMovementPlan(plan);
         Vec3 look = target.getEyePosition().subtract(ghast.getEyePosition());
         ((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(look);
