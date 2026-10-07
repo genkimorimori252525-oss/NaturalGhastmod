@@ -5,6 +5,7 @@ import com.genki.soutoughast.entity.ai.flight.FlightVector;
 import com.genki.soutoughast.entity.ai.flight.RallyReaction;
 import com.genki.soutoughast.entity.ai.flight.StandardAttack;
 import com.genki.soutoughast.entity.ai.flight.CommittedTrajectory;
+import com.genki.soutoughast.entity.ai.flight.CommittedProfile;
 import com.genki.soutoughast.entity.ai.flight.ProjectileSelector;
 import com.genki.soutoughast.entity.ai.flight.ObservedStationarity;
 import com.genki.soutoughast.entity.ai.flight.MobilityContext;
@@ -31,6 +32,8 @@ public final class SoutouGhastStandardAttack {
     private final ObservedStationarity stationarity=new ObservedStationarity();
     private double selectionVariation;
     private CommittedPathClearance.Proof lastProof;
+    private CommittedProfile committedProfile;
+    private long profileCueTick=-1;
     private String lastCandidate="NONE",lastRejection="NONE";
     public SoutouGhastStandardAttack(SoutouGhast ghast){this.ghast=ghast;}
     public StandardAttack.State state(){return attack.state();}
@@ -43,14 +46,16 @@ public final class SoutouGhastStandardAttack {
     public String lastRejection(){return lastRejection;}
     public int stationaryTicks(){return stationarity.ticks();}
     public double observedDisplacement(){return stationarity.displacement();}
+    public CommittedProfile committedProfile(){return committedProfile;}
+    public long profileCueTick(){return profileCueTick;}
     public boolean engaged(){return attack.state().face()||rally.state().face();}
-    public void reset(){attack.reset();rally.reset();incoming=null;targetUuid=null;selector.reset();stationarity.reset();lockedEye=null;lockedLanding=null;ghast.setCharging(false);}
+    public void reset(){attack.reset();rally.reset();incoming=null;targetUuid=null;selector.reset();stationarity.reset();lockedEye=null;lockedLanding=null;committedProfile=null;ghast.setCharging(false);}
     public Vec3 tick(LivingEntity target,boolean visible,boolean movementFeint){
         selector.tick();
         boolean present=target!=null&&target.isAlive();
         if(!present||!target.getUUID().equals(targetUuid)){
             attack.invalidateTarget();rally.reset();incoming=null;targetUuid=present?target.getUUID():null;
-            selector.reset();stationarity.reset();lockedEye=null;lockedLanding=null;
+            selector.reset();stationarity.reset();lockedEye=null;lockedLanding=null;committedProfile=null;
         }
         if(!present){
             var committed=attack.step(null,false);ghast.setCharging(committed.face());
@@ -93,18 +98,26 @@ public final class SoutouGhastStandardAttack {
         if(state.face())look=to(state.direction());
         if(state.phase()==StandardAttack.Phase.CHARGE&&state.ticks()==0){
             lastProof=null;lastCandidate="NONE";lastRejection="NONE";
+            committedProfile=null;profileCueTick=-1;choice=ProjectileSelector.Choice.STANDARD;
             selectionVariation=ghast.getRandom().nextDouble();
+        }
+        if(state.phase()==StandardAttack.Phase.CHARGE&&state.ticks()==19){
             choice=selector.choose(context(),ghast.getEyePosition().distanceTo(aimPoint),from(observedVelocity),stationarity.ticks(),selectionVariation);
-            // A rejected candidate never commits a special tell. Standard remains a baseline alternative.
-            if(choice!=ProjectileSelector.Choice.STANDARD&&profileShot(ghast.getEyePosition().add(look.scale(3)))==null){
+            // Commit attack recipe/aim at the distinct cue; physical trajectory starts at launch.
+            if(choice!=ProjectileSelector.Choice.STANDARD&&!prepareProfile(ghast.getEyePosition().add(look.scale(3)))){
                 selector.record(choice);choice=ProjectileSelector.Choice.STANDARD;
+            }
+            if(committedProfile!=null&&ghast.level() instanceof net.minecraft.server.level.ServerLevel server){
+                var cue=switch(choice){case BURST -> net.minecraft.core.particles.ParticleTypes.END_ROD;case CURVE -> net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME;default -> net.minecraft.core.particles.ParticleTypes.LAVA;};
+                Vec3 point=ghast.getEyePosition().add(look.scale(3));server.sendParticles(cue,point.x,point.y,point.z,8,.35,.35,.35,.02);
+                profileCueTick=server.getGameTime();
             }
         }
         if(state.fire()){
             Vec3 muzzle=ghast.getEyePosition().add(look.scale(3));
             // No firing through a nearby wall or a muzzle inside another collider.
             boolean clear=ghast.level().clip(new ClipContext(ghast.getEyePosition(),muzzle,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,ghast)).getType()==HitResult.Type.MISS;
-            var shot=choice==ProjectileSelector.Choice.STANDARD?new StandardSoutouFireball(ghast,muzzle,look):profileShot(muzzle);
+            var shot=choice==ProjectileSelector.Choice.STANDARD?new StandardSoutouFireball(ghast,muzzle,look):verifiedProfile(committedProfile,muzzle);
             if(clear&&shot!=null&&ghast.level().noCollision(shot,shot.getBoundingBox())&&ghast.level().addFreshEntity(shot)){
                 fired++;lastFired=choice;selector.record(choice);ghast.level().levelEvent(null,1016,ghast.blockPosition(),0);
             }else if(choice!=ProjectileSelector.Choice.STANDARD){
@@ -115,12 +128,11 @@ public final class SoutouGhastStandardAttack {
         ghast.setCharging(state.face());return look;
     }
     private MobilityContext.Kind context(){return ((SoutouGhastInertialMoveControl)ghast.getMoveControl()).getMobilityContext();}
-    private CommittedSoutouFireball profileShot(Vec3 muzzle){
-        if(lockedEye==null||lockedLanding==null||context()==MobilityContext.Kind.GROUND_FORCED)return null;
-        var paths=new java.util.ArrayList<CommittedTrajectory>();
-        try{
+    private boolean prepareProfile(Vec3 muzzle){
+        if(lockedEye==null||lockedLanding==null||context()==MobilityContext.Kind.GROUND_FORCED)return false;
+        var recipes=new java.util.ArrayList<CommittedProfile>();
             switch(choice){
-                case BURST -> {if(context()!=MobilityContext.Kind.CONFINED)paths.add(CommittedTrajectory.burst(from(muzzle),from(lockedEye)));}
+                case BURST -> {if(context()!=MobilityContext.Kind.CONFINED)recipes.add(new CommittedProfile(CommittedTrajectory.Kind.BURST,null,0,0,from(lockedEye)));}
                 case CURVE -> {
                     int side=selectionVariation<.7?1:-1;
                     // Locked observed strafe, deliberately not an always-optimal counter.
@@ -128,23 +140,29 @@ public final class SoutouGhastStandardAttack {
                     var strengths=context()==MobilityContext.Kind.CONFINED?new CommittedTrajectory.Strength[]{CommittedTrajectory.Strength.SHALLOW}:
                         context()==MobilityContext.Kind.OPEN_AIR&&selectionVariation>.85?new CommittedTrajectory.Strength[]{CommittedTrajectory.Strength.DEEP,CommittedTrajectory.Strength.NORMAL,CommittedTrajectory.Strength.SHALLOW}:
                             new CommittedTrajectory.Strength[]{CommittedTrajectory.Strength.NORMAL,CommittedTrajectory.Strength.SHALLOW};
-                    for(var strength:strengths)for(int direction:new int[]{side,-side})paths.add(CommittedTrajectory.curve(from(muzzle),from(lockedEye),strength,direction));
+                    for(var strength:strengths)for(int direction:new int[]{side,-side})recipes.add(new CommittedProfile(CommittedTrajectory.Kind.CURVE,strength,direction,0,from(lockedEye)));
                 }
-                case LOB -> paths.addAll(CommittedTrajectory.lobCandidates(from(muzzle),from(lockedLanding),context()==MobilityContext.Kind.OPEN_AIR?new double[]{10,8,6}:new double[]{6,4}));
-                default -> {return null;}
+                case LOB -> {for(double height:context()==MobilityContext.Kind.OPEN_AIR?new double[]{10,8,6}:new double[]{6,4})recipes.add(new CommittedProfile(CommittedTrajectory.Kind.LOB,null,0,height,from(lockedLanding)));}
+                default -> {return false;}
             }
+        for(var recipe:recipes){
+            if(verifiedProfile(recipe,muzzle)!=null){committedProfile=recipe;return true;}
+        }
+        return false;
+    }
+    private CommittedSoutouFireball verifiedProfile(CommittedProfile recipe,Vec3 muzzle){
+        if(recipe==null||context()==MobilityContext.Kind.GROUND_FORCED)return null;
+        if(recipe.kind()==CommittedTrajectory.Kind.BURST&&context()==MobilityContext.Kind.CONFINED)return null;
+        if(recipe.strength()==CommittedTrajectory.Strength.DEEP&&context()!=MobilityContext.Kind.OPEN_AIR)return null;
+        lastCandidate=recipe.toString();lastProof=null;
+        try{
+            var shot=new CommittedSoutouFireball(ghast,recipe.pathFrom(from(muzzle)));
+            lastProof=CommittedPathClearance.validate(ghast.level(),shot,shot.flight().path());
+            lastRejection=lastProof.result().clear()?"NONE":lastProof.result().reason();
+            if(lastProof.result().clear()){shot.setPreflight(lastProof);return shot;}
         }catch(IllegalArgumentException invalidRange){
             if(!"COMMITTED_RANGE_INVALID".equals(invalidRange.getMessage())&&!"COMMITTED_SEGMENT_SPEED_BOUND".equals(invalidRange.getMessage())&&!"HORIZONTAL_CURVE_REQUIRED".equals(invalidRange.getMessage()))throw invalidRange;
             lastRejection=invalidRange.getMessage();return null;
-        }
-        if(paths.isEmpty()){lastCandidate=choice.name();lastRejection="NO_VALID_CANDIDATE_GEOMETRY";}
-        int ordinal=0;
-        for(var path:paths){
-            lastCandidate=path.kind().name()+":"+ordinal++;
-            var shot=new CommittedSoutouFireball(ghast,path);
-            lastProof=CommittedPathClearance.validate(ghast.level(),shot,path);
-            lastRejection=lastProof.result().clear()?"NONE":lastProof.result().reason();
-            if(lastProof.result().clear()){shot.setPreflight(lastProof);return shot;}
         }
         return null;
     }

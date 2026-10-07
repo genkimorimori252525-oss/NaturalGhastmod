@@ -30,6 +30,13 @@ public final class CommittedTrajectoryTest {
         boolean highRejected=false;try{CommittedTrajectory.lob(verticalStart,verticalEnd,10);}catch(IllegalArgumentException expected){highRejected=true;}
         check(highRejected,"high arc exceeds segment speed bound");
         check(CommittedTrajectory.lobCandidates(verticalStart,verticalEnd,10,8,6).size()==2,"one infeasible high arc must not suppress valid lower arcs");
+        var recipe=new CommittedProfile(CommittedTrajectory.Kind.LOB,null,0,8,new FlightVector(0,0,30));
+        var movedMuzzle=start.add(new FlightVector(1,0,0));var launched=recipe.pathFrom(movedMuzzle);
+        check(launched.points().get(0).equals(movedMuzzle),"actual muzzle is the physical start, not a predicted or old start");
+        check(launched.points().get(launched.points().size()-1).equals(recipe.endpoint())&&recipe.lobHeight()==8,"unchanged committed parameters and endpoint");
+        check(!TrajectoryValidation.verify(launched,(i,a,b,last)->TrajectoryValidation.Segment.BLOCKED).clear(),"invalid actual launch cancels, without alternate recipe");
+        boolean immutable=false;try{launched.points().set(0,start);}catch(UnsupportedOperationException expected){immutable=true;}
+        check(immutable,"complete spawned path is immutable");
         for(var path:new CommittedTrajectory[]{burst,lob,CommittedTrajectory.curve(start,end,CommittedTrajectory.Strength.NORMAL,1)}){
             var flight=new CommittedTrajectory.Flight(path);
             check(flight.next()!=null,"initial committed step");flight.normalize();check(flight.next()==null&&flight.normalized(),"deflection immediately removes all special motion");

@@ -16,6 +16,8 @@ export function analyzeProfiles(rows,clients,subjectUuid,paths){
   const valid=Array.isArray(points)&&points.length>=2&&points.length<=97&&points.every(p=>Array.isArray(p)&&p.length===3&&p.every(Number.isFinite));
   fail(valid,'BOUNDED_IMMUTABLE_POINTS');if(!valid)continue;
   fail(['BURST','CURVE','LOB'].includes(record.kind),'KNOWN_PROFILE');
+  const launch=rows.findIndex(r=>r.attackFire),locked=rows.slice(launch-11,launch+1),lock=locked[0];
+  fail(launch>=11&&locked.length===12&&lock&&typeof lock.recipe==='string'&&locked.every(r=>r.selectedProfile===record.kind&&r.recipe===lock.recipe&&r.profileCueTick===lock.tick&&Array.isArray(r.recipeEndpoint)&&r.recipeEndpoint.every((v,i)=>v===points.at(-1)[i])),'LOCKED_RECIPE_ENDPOINT_AND_CUE');
   fail(record.preflightScope==='PRE_LAUNCH_LOADED_SWEPT_BODY'&&record.preflightSegments===points.length-1&&Number.isSafeInteger(record.preflightGameTime),'DECLARED_COMPLETE_PREFLIGHT');
   const observations=rows.flatMap(row=>(row.projectiles??[]).filter(p=>p.uuid===record.uuid).map(p=>({...p,tick:row.tick})));
   fail(observations.length>=12,'MEASURED_PROFILE_WINDOW');
