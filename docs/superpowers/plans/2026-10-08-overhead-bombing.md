@@ -1,6 +1,6 @@
 # Next unit: Overhead Bombing and major-action spacing
 
-Base `0e7a2b5`. Committed-profile development unit closed with native Lob-only acceptance. This plan is the next authorized implementation unit, not a completion receipt.
+Base `0e7a2b5`. Source slice implemented. [Verification receipt](../../OVERHEAD-BOMBING-VERIFICATION.md): native acceptance partial and unresolved; this is not full major/boss completion.
 
 Authority: redesign v0.6 Major Art1. Compact Astra ruling: Overhead → positive Ground → persistent conflict-aware Domain. All Grand Danmaku stays excluded. Ground fan geometry is deferred scope, not implicitly forbidden by the Grand exclusion.
 

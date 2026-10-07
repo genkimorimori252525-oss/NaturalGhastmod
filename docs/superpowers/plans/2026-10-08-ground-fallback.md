@@ -1,0 +1,18 @@
+# Next unit: positive Ground fallback
+
+Base b03ae60. Read redesign v0.6 GROUND_FORCED fallback/transition (lines1107-1178). Compact Astra approves development while native ownership failure is diagnosed, but does not waive the native gate. All Grand Danmaku excluded; Ground fans are explicitly deferred scope. Keep accepted boss-owned20/8/20 region, fixed4x4body, sole FlightController velocity writer and existing0.65 cap.
+
+Contracts:
+- Blocked up/down alone is not a floor. Loaded fullbody descent and confirmed floor support are prerequisites to finite LANDING -> GROUNDED. Invalid descent never teleports or fabricates support. Land via intents, no added velocity writer/gravity patch.
+- GROUNDED creates bounded horizontal waypoints at confirmed support elevation, sustained0.55scuttle/rare brief0.65bursts, finite zigzag/crossing with readable pauses. Bounded support checks across whole planned sweep reject ledges/gaps/walls; brake and reconsider on invalidation. Preserve same retained region center/generation; no Player-camera chasing or re-anchoring each tick. Visible-lane taunt is rare/repetition-limited, not relentless oscillation.
+- Require20consecutive clear samples plus collision-safe loaded ascent before finite TAKEOFF -> ordinary air swimming. One transient sample cannot flip modes. Loss of target cancels offense, retains physical support safety; no unseen live target tracking.
+- New distinct Standard-family single projectile: fixed1.9speed, direct3/explosionradius0.5,8tick charge/6tick committed firing expression/20quiet. These are provisional. No profiles, boss rally or overlapping major/tactical charge in Ground. Legitimate native Player deflection normalizes flight; own attributed return20 preserved. Refactor only protected per-projectile damage/radius/inertia hooks; existing Standard/profile/BOMB behavior unchanged.
+- Use existing standalone Forge assets; no new dependency, no copied Jujutsu/unknown legacy binary assets, no body shrink/camera control. Ground pose must remain readable and scoped to actual state; normal appearance unchanged.
+
+Grouped verification:
+1. Pure state/director/waypoint/cadence RED->GREEN: safe landing, floor absence, ledges/walls, low ceiling, mode hysteresis, target invalidation with committed recovery, scuttle/pauses/takeoff; prior swim/Overhead regressions stay green.
+2. Mapped loaded geometry and supported sweeps, actual muzzle/registry/client sync/save/deflection policy. Genuine Java17Forge compile/build, relevant Node/analyzer negatives. Codec/shape is not actual reload/damage proof.
+3. One fresh compact Astra whole-unit source review and one Important/Critical fix pass. Finite private low-ceiling real20HPsurvival TANK_CORE copy, genuine natural selection, declared static fixture, room rosters+actualXYZ/groundsupport/projectile/client evidence. Do not force/heal/weaken source/owner/lease/input assertions. Measure actual movement/cadence and observed combined impact/explosion damage; if real-input gates unavailable recordNOT_RUN.
+4. Record decisions/scoped receipts and Tank feedback in GitHub branches, preserve originals/acceptedJAR/failedruns. Reversible standalone Domain follows; not complete boss until required remaining scope is handled.
+
+Domain research acquired read-only from TechHub PR99 revision593c03efa995195d19017ceebdf4d093c44b31c3: DOMAIN-SYSTEM.md,DOMAIN-BLOCK-ARCHITECTURE.md,LICENSE-PROVENANCE.md. Reuse concepts (owner/center/radius/lifecycle/barrier roles/participant/clash/restoration), not original copyrighted code/assets. Domain requires persisted conflict-aware restoration and restart proof before overlay activation, standalone with no JujutsuCraft dependency.
