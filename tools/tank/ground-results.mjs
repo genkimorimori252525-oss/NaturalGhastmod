@@ -1,4 +1,7 @@
 /** Supplementary actual native rows; never substitutes for canonical roster/owned closure. */
+// Native motion/spawn packets truncate each component at 1/8000; norm can only shrink.
+// This bounds the observed first client velocity, not server physics or displacement.
+const CLIENT_PACKET_NORM_LOSS=Math.sqrt(3)/8000;
 export function analyzeGround({rows,clients,events=[],damage,clientGround,end,request},boss,player){
  const failures=[];const require=(ok,name)=>{if(!ok)failures.push(name);};
  require(Array.isArray(rows)&&rows.length>=80&&rows.length<=180,'FINITE_GROUND_COVERAGE');
@@ -43,7 +46,7 @@ export function analyzeGround({rows,clients,events=[],damage,clientGround,end,re
  for(const [uuid,points] of shots){
   require(points.every(p=>p.type==='soutou_ghast:ground_fireball'&&p.origin===boss&&p.owner===boss&&p.savedOrigin===boss&&!p.playerDeflected&&p.width===1&&p.height===1&&p.pickRadius===1.5&&Math.abs(p.speed-1.9)<1e-6),'GROUND_PROJECTILE_PROVENANCE');
   require(points.every((p,i)=>[p.x,p.y,p.z].every(Number.isFinite)&&(!i||p.tick===points[i-1].tick+1&&Math.abs(Math.hypot(p.x-points[i-1].x,p.y-points[i-1].y,p.z-points[i-1].z)-1.9)<1e-6)),'ACTUAL_FIXED_SPEED_FLIGHT');
-  if(points.length>=3){const client=clients?.find(c=>c.uuid===uuid);require(client?.type==='soutou_ghast:ground_fireball'&&client.renderer?.endsWith('ThrownItemRenderer')&&client.powerMagnitude===0&&Math.abs(client.speed-1.9)<1e-6,'ACTUAL_CLIENT_SINGLE_RENDER');proven.push(uuid);}
+  if(points.length>=3){const client=clients?.find(c=>c.uuid===uuid);require(client?.type==='soutou_ghast:ground_fireball'&&client.renderer?.endsWith('ThrownItemRenderer')&&client.powerMagnitude===0&&Number.isFinite(client.speed)&&client.speed>=1.9-CLIENT_PACKET_NORM_LOSS-1e-9&&client.speed<=1.9+1e-9,'ACTUAL_CLIENT_SINGLE_RENDER');proven.push(uuid);}
  }
  require(proven.length>=2,'TWO_MEASURED_SINGLE_FLIGHTS');
  for(const launch of successful){

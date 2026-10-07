@@ -43,3 +43,16 @@ test('cadence requires observed target,8charge/6face/20quiet and actual successf
   const f=fixture();mutate(f);assert.equal(analyzeGround(f,boss,player).status,'FAIL');
  }
 });
+test('client launch speed accepts native packet quantization only; server flight stays exact',()=>{
+ const f=fixture();
+ for(const [i,speed] of [1.8999491810637987,1.8998874226516687,1.8999779275033697].entries())f.clients[i].speed=speed;
+ assert.equal(analyzeGround(f,boss,player).status,'PASS','actual xH7a90 client measurements');
+ for(const speed of [1.9-Math.sqrt(3)/8000-1e-7,1.9+1e-7,NaN,Infinity]){
+  const bad=fixture();bad.clients[0].speed=speed;assert.ok(analyzeGround(bad,boss,player).failures.includes('ACTUAL_CLIENT_SINGLE_RENDER'));
+ }
+ const bad=fixture();bad.rows[40].projectiles[0].speed=1.8998874226516687;
+ assert.ok(analyzeGround(bad,boss,player).failures.includes('GROUND_PROJECTILE_PROVENANCE'));
+ for(const mutate of [c=>c.type='foreign',c=>c.renderer='foreign',c=>c.powerMagnitude=.1]){
+  const bad=fixture();mutate(bad.clients[0]);assert.ok(analyzeGround(bad,boss,player).failures.includes('ACTUAL_CLIENT_SINGLE_RENDER'));
+ }
+});
