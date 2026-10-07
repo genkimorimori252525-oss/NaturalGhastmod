@@ -28,7 +28,7 @@ const {setTargetControl} = await load('evidence/target-control.mjs');
 const {evidenceRuntimeFromCurrent} = await load('evidence/runtime.mjs');
 const {finalizeEvidenceRun} = await load('evidence/finalize.mjs');
 const {readTankContext} = await load('tank-cli.mjs');
-const {submitSelectedAction,inspectSelectedAction,inspectOwnerControl} = await load('bridge/owner-action-adapter.mjs');
+const {submitSelectedAction,inspectSelectedAction,readInstalledControl} = await load('bridge/owner-action-adapter.mjs');
 const {prepareTankResourceFile} = await load('tank-cli.mjs');
 const hashJson = value => sha(Buffer.from(stableJson(value)));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -110,16 +110,15 @@ try {
     const target = {profile_id: hashJson({profile: 'TANK_CORE', observer: 'OBSERVE_GRID'}), index_snapshot_id: hashJson({sourceRevision}),
         build_artifact_hash: buildHash, source_revision: sourceRevision, dirty_hash: sha(dirty), config_hash: sha(configMaterial), resource_hash: resourceHash};
     const experiment = 'naturalghast-' + path.basename(trial);
-    const windowCells=[];for(let x=8;x<=10;x++)for(let y=228;y<=231;y++)windowCells.push([x,y,6]);
-    // Keep the eye ray occluded until all preparatory mutations have completed.
-    windowCells.sort((a,b)=>Number(a[0]===9&&a[1]===228)-Number(b[0]===9&&b[1]===228));
+    // Offline aperture stays sealed on the initial eye ray until this one mutation.
+    const windowCells=[[9,228,6]];
     const actions=windowCells.map((position,i)=>({action_id:'open-'+String(i).padStart(2,'0'),operation:'set_block',position,block:'minecraft:air'}));
     const request = {schema_version: 1, experiment_id: experiment, generation: 1, target,
         arena: {arena_id: experiment, baseline_hash: fixture.baselineHash, bounds: {min: [7,224,6], max: [13,235,13]}, preset: 'private-flight-mobility'},
         subjects: [{subject_id: 'ghast', entity_type: 'soutou_ghast:soutou_ghast', uuid: fixture.subjectUuid}], initial_state: [], actions,
         observation_scopes: [{kind: 'ENTITY_UUID', lanes: ['SERVER_ENTITY_STATE'], level: 'L1', subject_id: 'ghast'}],
         visual_rig: {mode: 'none'}, assertions: [{assertion_id: 'idle-health', expected: 10, field: 'health', kind: 'structured', operator: 'equals', subject_id: 'ghast'}],
-        budgets: {time_budget_ms: 120000, max_actions: 12, max_captures: 0}};
+        budgets: {time_budget_ms: 120000, max_actions: 1, max_captures: 0}};
     await write(path.join(inputs, 'request.json'), request); await write(path.join(inputs, 'assertions.json'), request.assertions);
     const requestHash = sha(await fs.readFile(path.join(inputs, 'request.json')));
     const binding = {schema_version: 1, experiment_id: experiment, generation: 1, request_hash: requestHash, target,
@@ -170,10 +169,10 @@ try {
         const options={runDir:current.runDir,envelopeHash:owner.ownerEnvelopeHash};
         report.actions=[];
         for(const action of actions){
-            await waitForFlightAction({inspect:()=>inspectOwnerControl({...options,allowBusyObservation:true}),selectedActionId:action.action_id});
+            await waitForFlightAction({inspect:async()=>{const value=await readInstalledControl({...options,allowBusyObservation:true});return {...value.control,idle:value.status.idle};},selectedActionId:action.action_id});
             await submitSelectedAction({...options,selectedActionId:action.action_id});
             const deadline=Date.now()+5000;let receipt;
-            do{receipt=await inspectSelectedAction({...options,selectedActionId:action.action_id});if(receipt.reportedStatus==='VERIFIED')break;await sleep(50);}while(Date.now()<deadline);
+            do{receipt=await inspectSelectedAction({...options,selectedActionId:action.action_id});if(receipt.reportedStatus==='VERIFIED')break;await sleep(250);}while(Date.now()<deadline);
             assert.equal(receipt.reportedStatus,'VERIFIED');report.actions.push({actionId:action.action_id,status:receipt.reportedStatus});
         }
         const derived=path.join(current.runDir,'evidence/derived/naturalghast-flight');await fs.mkdir(derived,{recursive:true});
