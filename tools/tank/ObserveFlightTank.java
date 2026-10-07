@@ -32,7 +32,7 @@ public final class ObserveFlightTank {
  @Mod.EventBusSubscriber(modid="naturalghast_tank_observer")
  public static final class ServerObserver {
   @SubscribeEvent public static void tick(TickEvent.ServerTickEvent event)throws Exception{
-   if(!active()||event.phase!=TickEvent.Phase.END||samples>=600||!owned())return;
+   if(!active()||event.phase!=TickEvent.Phase.END||samples>=900||!owned())return;
    var entity=event.getServer().overworld().getEntity(UUID.fromString("67676767-1007-4000-8000-000000000001"));
    if(!(entity instanceof SoutouGhast ghast))return;
    var control=(SoutouGhastInertialMoveControl)ghast.getMoveControl();var target=ghast.getTarget();var velocity=ghast.getDeltaMovement();
@@ -68,7 +68,7 @@ public final class ObserveFlightTank {
     row.addProperty("inCombatRegion",region.contains(SoutouGhastInertialMoveControl.from(ghast.position())));
    }
    row.addProperty("width",ghast.getBbWidth());row.addProperty("height",ghast.getBbHeight());row.addProperty("health",ghast.getHealth());
-   Files.createDirectories(output());Files.writeString(output().resolve("flight.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);ready=++samples>=600;
+   Files.createDirectories(output());Files.writeString(output().resolve("flight.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);ready=++samples>=900;
   }
  }
  @Mod.EventBusSubscriber(modid="naturalghast_tank_observer",value=Dist.CLIENT)

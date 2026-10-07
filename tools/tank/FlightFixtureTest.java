@@ -17,6 +17,11 @@ public final class FlightFixtureTest {
   CompoundTag ceiling=PrepareFlightTank.section(15,0,0);
   if(!PrepareFlightTank.block(ceiling,9,7,9).equals("minecraft:air"))throw new AssertionError("vertical swimming and body clearance missing");
   if(!PrepareFlightTank.block(ceiling,9,8,9).equals("minecraft:black_concrete"))throw new AssertionError("new ceiling missing");
-  System.out.println("PASS: 10 mapped flight fixture assertions");
+  CompoundTag singleSeal=PrepareFlightTank.section(14,0,0,true);
+  if(!PrepareFlightTank.block(singleSeal,9,4,6).equals("minecraft:stone"))throw new AssertionError("single-cell fixture must keep initial owner seal");
+  if(!PrepareFlightTank.block(singleSeal,7,4,6).equals("minecraft:air"))throw new AssertionError("open tactics fixture must not keep the LOS wall");
+  if(!PrepareFlightTank.block(singleSeal,9,10,6).equals("minecraft:air"))throw new AssertionError("open tactics fixture retains no upper wall");
+  if(PrepareFlightTank.allocatedCells()!=75816)throw new AssertionError("variant cannot grow allocation");
+  System.out.println("PASS: 14 mapped flight fixture assertions");
  }
 }

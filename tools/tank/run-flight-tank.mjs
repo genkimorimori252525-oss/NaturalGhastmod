@@ -13,6 +13,7 @@ import {privateFlightLaunchArgs} from './flight-launch.mjs';
 const option = name => { const i = process.argv.indexOf('--' + name); if (i < 0 || !process.argv[i + 1]) throw Error('Missing --' + name); return path.resolve(process.argv[i + 1]); };
 const lab = option('lab'), templateFile = option('template'), original = option('original'), classpathFile = option('classpath-file');
 const javaHome = option('java-home');
+const singleCellSeal=process.argv.includes('--single-cell-seal');
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const template = JSON.parse(await fs.readFile(templateFile));
 assert.equal(template.launch.env.KNEEKURA_DEBUG_MOD_PROFILE, 'TANK_CORE');
@@ -91,7 +92,7 @@ try {
     await fs.writeFile(compileArgs, ['--release', '17', '-encoding', 'UTF-8', '-cp', compileCp, '-d', classes, ...sources].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('javac', ['@' + compileArgs]);
     const prepareArgs = path.join(trial, 'java.args');
-    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFlightTank', trial, privateParent].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
+    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFlightTank', trial, privateParent,...(singleCellSeal?['SINGLE_CELL_SEAL']:[])].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('java', ['@' + prepareArgs]);
     const inputs = path.join(trial, 'inputs'), privateDir = path.join(trial, 'private');
     await fs.mkdir(inputs); await fs.mkdir(privateDir);
@@ -184,7 +185,7 @@ try {
         }
         const derived=path.join(current.runDir,'evidence/derived/naturalghast-flight');await fs.mkdir(derived,{recursive:true});
         await write(path.join(derived,'request-frame.json'),{scope:'ONE_EXPLICIT_SUPPLEMENTARY_FRAME',sourceRevision,requestHash});
-        const deadline = Date.now() + 45000;
+        const deadline = Date.now() + 65000;
         let retainedObservations = [];
         while (Date.now() < deadline) {
             await runtime.ingestAvailable();
