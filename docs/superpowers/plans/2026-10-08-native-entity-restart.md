@@ -1,0 +1,21 @@
+# Native entity/server restart implementation plan
+
+Execute inline; user authorizes compact Astra decisions and continued non-danmaku work. Base cbbec31; accepted broad retained swimming stays unchanged.
+
+Goal: verify actual clean-stop disk persistence and new-process entity loading in two finite private TANK_CORE integrated-server runs. This closes a correctness gap after instantiated reload, not power-loss, natural selection, genuine melee or late-client acceptance.
+
+Compact Astra approves clean-stop/new-process persistence. `MinecraftServer.halt(false)` requests termination without waiting; require native ServerStopped, confirmed world closure and owned-process termination before copying. Canonical ACK/finalization are separate. Record actual ServerStopping snapshots, not an assumed clock. Require UUID/position/velocity/power/owner/provenance/age/profile/path/index/normalization/preflight continuity. Targeting/charge/maneuver/major/cooldowns are transient unless explicitly persisted; require safe reset, defer exact continuation. Reject premature impact/expiry rather than lengthening product paths. No further probabilistic trials or barrage implementation.
+
+Phase A: fresh DOMAIN_RELIABILITY52x24x52 copy, real connected survival Player/AI boss, no ScopedOwner. Private-only probe registers genuine Burst/Curve/Lob/Bomb/Player-normalizedCurve/Standard/Ground projectiles in preflighted disjoint corridors. Bomb starts246 above declared floor223.75 so its ordinary finite path has more than9segments; require remaining segments after9native ticks. At9native ticks, request integrated-server halt. Observe ServerStopping state and ServerStopped receipt; no input/pause/tick/health/motion/target overrides. Bounds120ticks AND15seconds from authenticated dispatch. An injected actual-Player PLAYER_ATTACK call is explicitly synthetic normalization, not physical melee.
+
+Phase B: after A's clean native stop, supervisor ACK/verified owned exit and finalization, raw-copy A's closed world into a CREATE_NEW B directory; hash every copied file against its source. Never manually open A/original/finalized worlds through NBT/RegionFile. Launch another owned Java process with the same pinned source/private material. An immutable bounded request authenticates expected world/nonce/A receipt and exact stopping descriptors. Observe actual server EntityJoinLevelEvent before the first native tick; do not call EntityType.loadEntityRecursive/addFreshEntity for restored entities. Native loading must supply every same-UUID entity. Observe continuation until finite profiles terminate and at least4native ticks for normalized/Standard/Ground, then request clean server halt. Resolve actual boss/Player ownership once available. Bounds180server ticks AND15seconds from first server tick; no infinite pre-readiness capture.
+
+Verification: strict source-pinned analyzer derives process distinction, byte-exact world-copy provenance, initial load equality, owner resolution, clock/path/position progression, safe boss reset, actual movement and process/evidence closure. Fail missing/different entities or premature removal; preserve all failures. Boss persisted health/profile/position are checked; resumed combat creates a fresh transient brain, not a falsely claimed durable anchor. Continue to preserve20/8/20 swimming within each combat.
+
+Files: private `EntityRestartProbe.java`, `EntityRestartGeometryTest.java`, `entity-restart-results.mjs`/`.test.mjs`, `run-entity-restart.mjs`, English receipt/feedback. No normal product changes/dependencies/public activation commands unless a demonstrated defect requires a separate minimal regression/fix.
+
+- [ ] Write strict positive/negative analyzer contracts first; retain RED, then implement minimal analyzer.
+- [ ] Implement private probe/two-phase harness; mapped preflight geometry and javac, relevant Node checks and genuine product build.
+- [ ] One compact scoped Astra review and one Important/Critical correction pass, no whole Ground/Domain re-review.
+- [ ] Commit/push clean pinned source; one fresh native pair, independently correlate raw rows/events/results/hashes, actual closure and historical85/acceptedJAR.
+- [ ] Record honest English evidence, decisions, limits and useful Tank feedback in GitHub. Leave late-client/input/cues/balance/unobserved selectors/full release pending.
