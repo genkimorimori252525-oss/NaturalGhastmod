@@ -1,5 +1,7 @@
 # Finite actual boss Domain integration
 
+Next-unit ruling (compact Astra): DEFER injected client KeyMapping input. Focus changes, physical key overlap and reliable ownership/restoration require a separate mechanism beyond this read-only observation scope; injected movement would still not prove genuine counterplay. Leave the Player-facing400tick cycle for voluntary manual interaction. Keep the short abort receipt and direct-overlay expiry evidence separate. Proceed with bounded instantiated projectile reload/deflection/damage/client gates without taking over input; no relaxed admission or repeated unchanged natural trials.
+
 Authority: compact Astra recommendation recorded in DOMAIN-PREPARATION-OBSERVATION.md. Natural no-admission trials remain immutable. This is explicitly requested reliability activation, never natural selection/full boss acceptance. Grand Danmaku excluded; preserve accepted20/8/20 swimming/JAR/original world.
 
 Extract the production post-reservation binding into one package-private method called by the existing natural path. A private same-package helper, compiled only into a freshly owned verification JAR, uses genuine canonical connected survival Player, existing read-only preparation/commit and world coordinator reservation, then the exact binding. No product command/config/public activation API, selector/rate changes, reflection or fabricated ServerPlayer. Attest helper absent from normal product JAR. Check shared-major exclusion before binding; invalid entry never arms placement.
