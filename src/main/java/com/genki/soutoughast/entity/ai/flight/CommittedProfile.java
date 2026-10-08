@@ -14,7 +14,7 @@ public record CommittedProfile(CommittedTrajectory.Kind kind,CommittedTrajectory
     public CommittedTrajectory pathFrom(FlightVector muzzle){return switch(kind){
         case BURST -> CommittedTrajectory.burst(muzzle,endpoint);
         case CURVE -> CommittedTrajectory.curve(muzzle,endpoint,strength,side);
-        case LOB -> CommittedTrajectory.lob(muzzle,endpoint,lobHeight);
+        case LOB -> LobTerminalSubdivision.refine(CommittedTrajectory.lob(muzzle,endpoint,lobHeight));
         case BOMB -> CommittedTrajectory.bomb(muzzle,endpoint);
     };}
 }

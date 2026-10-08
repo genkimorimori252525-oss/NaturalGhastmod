@@ -21,6 +21,7 @@ $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/Observed
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/OverheadBombingTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/OverheadReanchorTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/RememberedCoverLobTest.java"
+$sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/LobTerminalSubdivisionTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ObservedProjectileDodgeTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/GroundCombatTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/DomainGroundPolicyTest.java"
@@ -52,6 +53,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Overhead/director assertions failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Overhead re-anchor/controller assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.RememberedCoverLobTest
 if ($LASTEXITCODE -ne 0) { throw 'Remembered cover Lob assertions failed.' }
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.LobTerminalSubdivisionTest
+if ($LASTEXITCODE -ne 0) { throw 'Lob terminal subdivision assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.ObservedProjectileDodgeTest
 if ($LASTEXITCODE -ne 0) { throw 'Observed projectile dodge/controller assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.GroundCombatTest
