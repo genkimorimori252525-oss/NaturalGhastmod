@@ -7,7 +7,7 @@ import {randomUUID,createHash} from 'node:crypto';
 // One finite, sequential batch. Each runner owns its process watchdog and fresh world.
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const git=(...args)=>execFileSync('git',args,{cwd:repo,encoding:'utf8',windowsHide:true}).trim();
-if(process.argv.length!==2||process.platform!=='win32'||!process.env.JAVA_HOME)throw new Error('DOMAIN_MATRIX_WINDOWS_JAVA17_NO_ARGUMENTS');
+if(!((process.argv.length===2)||(process.argv.length===4&&process.argv[2]==='--from'))||process.platform!=='win32'||!process.env.JAVA_HOME)throw new Error('DOMAIN_MATRIX_WINDOWS_JAVA17_FROM_CASE');
 if(git('status','--porcelain'))throw new Error('DOMAIN_MATRIX_COMMITTED_SOURCE_REQUIRED');
 const revision=git('rev-parse','HEAD'),nonce=randomUUID();
 const parent=path.join(repo,'build','tank');await mkdir(parent,{recursive:true});
@@ -15,7 +15,10 @@ const root=await realpath(await mkdtemp(path.join(parent,'domain-matrix-')));
 await writeFile(path.join(root,'matrix-owner.json'),JSON.stringify({nonce,sourceRevision:revision,scope:'DIRECT_NATIVE_DOMAIN_INTERRUPTION_MATRIX'})+'\n',{flag:'wx'});
 const boundaries=['PREPARE_BEGIN','PREPARE_FORCED','BEFORE_RENAME','AFTER_RENAME','AFTER_READBACK','PUBLISHED_BEFORE_RETURN'];
 const cases=[...['INIT','PLACE','RESTORE','TERMINAL'].flatMap(prefix=>boundaries.map(boundary=>`${prefix}_${boundary}`)),'BEFORE_FIRST_MUTATION','AFTER_FIRST_MUTATION','PARTIAL_PLACEMENT','BEFORE_FIRST_RESTORE','AFTER_FIRST_RESTORE','PARTIAL_RESTORATION','UNPUBLISHED_INITIAL_THIRD_PARTY','UNPUBLISHED_PENDING_THIRD_PARTY','PREPLACEMENT_THIRD_PARTY','REJECTED_BEFORE_CONFLICT_PUBLICATION','DURABILITY_BEFORE_BARRIER','DURABILITY_TERMINAL_PREPARE_BEGIN'];
-console.log(JSON.stringify({matrixRoot:root,sourceRevision:revision,cases:cases.length,scope:'DIRECT_NATIVE_DOMAIN_INTERRUPTION_MATRIX'}));
+const start=process.argv[2]==='--from'?cases.indexOf(process.argv[3]):0;
+if(start<0)throw new Error('DOMAIN_MATRIX_UNKNOWN_START_CASE');
+const selectedCases=cases.slice(start);
+console.log(JSON.stringify({matrixRoot:root,sourceRevision:revision,cases:selectedCases.length,scope:'DIRECT_NATIVE_DOMAIN_INTERRUPTION_MATRIX',firstCase:selectedCases[0]}));
 const results=[];let failure='';
 const run=async (args,label)=>{
  const child=spawn(process.execPath,[path.join(repo,'tools/tank/run-domain-probe.mjs'),...args],{cwd:repo,env:process.env,windowsHide:true,stdio:['ignore','pipe','pipe']});
@@ -34,21 +37,21 @@ const run=async (args,label)=>{
  if(receipt.sourceRevision!==revision||!receipt.sourceUnchanged||receipt.timedOut||receipt.overflow||receipt.stopError||receipt.remainingOwnedJavaPids?.length!==0)throw new Error('DOMAIN_MATRIX_RECEIPT_NOT_CLOSED');
  return {worldRoot,receipt,path:actualPath,sha256:createHash('sha256').update(receiptBytes).digest('hex')};
 };
-for(let i=0;i<cases.length;i++){
+for(let i=start;i<cases.length;i++){
  const faultCase=cases[i],label=String(i+1).padStart(2,'0')+'-'+faultCase;
  try{
   const crashed=await run(['--crash',faultCase],label+'-crash');
   if(crashed.receipt.verdict!=='EXPECTED_CRASH'||crashed.receipt.faultCase!==faultCase||crashed.receipt.nativeExit73!==true)throw new Error('DOMAIN_MATRIX_EXPECTED_ABRUPT_EXIT');
   const recovered=await run(['--recover',crashed.worldRoot],label+'-recover');
   if(recovered.receipt.verdict!=='PASS'||recovered.receipt.faultCase!==faultCase||recovered.receipt.nonce!==crashed.receipt.nonce||recovered.worldRoot!==crashed.worldRoot)throw new Error('DOMAIN_MATRIX_RECOVERY_NOT_PASSED');
-  const result={faultCase,verdict:'PASS',retainedUnresolved:recovered.receipt.native.unresolvedDurabilityRetained===true,worldFlushBeforeHalt:crashed.receipt.native.worldFlushBeforeHalt,crashReceipt:crashed.path,crashSha256:crashed.sha256,recoverReceipt:recovered.path,recoverSha256:recovered.sha256};results.push(result);
+  const result={faultCase,verdict:'PASS',retainedUnresolved:recovered.receipt.native.unresolvedDurabilityRetained===true||recovered.receipt.native.boundary==='RECOVERY_DURABILITY_CONFLICT_RETAINED',worldFlushBeforeHalt:crashed.receipt.native.worldFlushBeforeHalt,crashReceipt:crashed.path,crashSha256:crashed.sha256,recoverReceipt:recovered.path,recoverSha256:recovered.sha256};results.push(result);
   await writeFile(path.join(root,label+'.json'),JSON.stringify(result,null,2)+'\n',{flag:'wx'});
-  console.log(JSON.stringify({completed:results.length,total:cases.length,faultCase,verdict:'PASS'}));
- }catch(error){failure=error.message;console.log(JSON.stringify({completed:results.length,total:cases.length,faultCase,verdict:'FAIL',failure}));break;}
+  console.log(JSON.stringify({completed:results.length,total:selectedCases.length,faultCase,verdict:'PASS'}));
+ }catch(error){failure=error.message;console.log(JSON.stringify({completed:results.length,total:selectedCases.length,faultCase,verdict:'FAIL',failure}));break;}
 }
 const sourceUnchanged=git('rev-parse','HEAD')===revision&&!git('status','--porcelain');
-const pass=!failure&&sourceUnchanged&&results.length===cases.length;
+const pass=!failure&&sourceUnchanged&&results.length===selectedCases.length;
 const receipt=path.join(root,'matrix-result.json');
-await writeFile(receipt,JSON.stringify({scope:'DIRECT_NATIVE_DOMAIN_INTERRUPTION_MATRIX',verdict:pass?'PASS':'FAIL',nonce,sourceRevision:revision,sourceUnchanged,cases,results,failure,limitations:['Per-case flush condition: two durability cases omit the extra pre-halt world save; no power-loss claim.','Unverified PENDING/non-original cells remain unresolved; safe retention is not successful restoration.','Direct restoration reliability; no natural boss combat acceptance.']},null,2)+'\n',{flag:'wx'});
-console.log(JSON.stringify({receipt,verdict:pass?'PASS':'FAIL',completed:results.length,total:cases.length}));
+await writeFile(receipt,JSON.stringify({scope:'DIRECT_NATIVE_DOMAIN_INTERRUPTION_MATRIX',verdict:pass?'PASS':'FAIL',nonce,sourceRevision:revision,sourceUnchanged,cases:selectedCases,allDeclaredCases:cases,results,failure,limitations:['PASS covers selected cases only; combine different revisions only after separate source and evidence validation.','Per-case flush condition: two durability cases omit the extra pre-halt world save; no power-loss claim.','Unverified PENDING/non-original cells remain unresolved; safe retention is not successful restoration.','Direct restoration reliability; no natural boss combat acceptance.']},null,2)+'\n',{flag:'wx'});
+console.log(JSON.stringify({receipt,verdict:pass?'PASS':'FAIL',completed:results.length,total:selectedCases.length}));
 if(!pass)process.exitCode=1;

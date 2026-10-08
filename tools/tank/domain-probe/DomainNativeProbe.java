@@ -22,7 +22,7 @@ import net.minecraftforge.gametest.*;
 public final class DomainNativeProbe {
  @GameTest(template="empty",timeoutTicks=1200)
  public static void reliability(GameTestHelper helper)throws Exception{
-  var probe=new Trial(helper);if(Set.of("crash","recover").contains(probe.scenario)){DomainCrashProbe.run(probe);return;}helper.onEachTick(probe::tick);
+  var probe=new Trial(helper);if(Set.of("crash","recover").contains(probe.scenario)){DomainCrashProbe.run(probe);return;}if(probe.scenario.equals("native-fault")){DomainNativeFaultProbe.run(probe);return;}helper.onEachTick(probe::tick);
  }
  static final class Trial {
   final GameTestHelper helper;final ServerLevel level;final Path root,world;final String nonce,source,scenario,dimension;
@@ -33,7 +33,7 @@ public final class DomainNativeProbe {
   int stage,fixtureCursor,verifyCursor,activeTicks,changedCells,checks;boolean finished;long started,floorSweepNanos;
   Trial(GameTestHelper helper)throws Exception{
    this.helper=helper;level=helper.getLevel();root=Path.of(required("root")).toRealPath();nonce=required("nonce");source=required("source");scenario=required("scenario");
-   if(!nonce.matches("[a-f0-9-]{36}")||!source.matches("[a-f0-9]{40}")||!Set.of("baseline","reopen-terminal","crash","recover").contains(scenario)||!root.getFileName().toString().startsWith("domain-probe-"))throw new IOException("DOMAIN_PROBE_AUTHORITY");
+   if(!nonce.matches("[a-f0-9-]{36}")||!source.matches("[a-f0-9]{40}")||!Set.of("baseline","reopen-terminal","crash","recover","native-fault").contains(scenario)||!root.getFileName().toString().startsWith("domain-probe-"))throw new IOException("DOMAIN_PROBE_AUTHORITY");
    if(!Files.readString(root.resolve("probe-owner.txt")).equals(nonce+"\n"+source+"\n"))throw new IOException("DOMAIN_PROBE_OWNER");
    Path expected=root.resolve("universe/domain-owned");safeDirectories(expected);
    world=level.getServer().getWorldPath(LevelResource.ROOT).toRealPath();if(!world.equals(expected))throw new IOException("DOMAIN_PROBE_WORLD");

@@ -6,7 +6,7 @@ gradle.beforeProject { p ->
         def sourceRevision = System.getenv('NATURAL_DOMAIN_PROBE_SOURCE')
         def scenario = System.getenv('NATURAL_DOMAIN_PROBE_SCENARIO')
         def faultCase = System.getenv('NATURAL_DOMAIN_PROBE_FAULT_CASE') ?: ''
-        if (!probeRoot || !nonce || !sourceRevision || !(scenario in ['baseline', 'reopen-terminal', 'crash', 'recover'])) throw new GradleException('DOMAIN_PROBE_ENVIRONMENT')
+        if (!probeRoot || !nonce || !sourceRevision || !(scenario in ['baseline', 'reopen-terminal', 'crash', 'recover','native-fault'])) throw new GradleException('DOMAIN_PROBE_ENVIRONMENT')
         def owned = new File(probeRoot).canonicalFile
         def allowed = new File(p.projectDir, 'build/tank').canonicalFile
         if (owned.parentFile != allowed || !owned.name.startsWith('domain-probe-') || !nonce.matches('[a-f0-9-]{36}') || !sourceRevision.matches('[a-f0-9]{40}')) throw new GradleException('DOMAIN_PROBE_PATH')
@@ -26,6 +26,7 @@ gradle.beforeProject { p ->
             property 'naturalghast.domainProbe.source', sourceRevision
             property 'naturalghast.domainProbe.scenario', scenario
             property 'naturalghast.domainProbe.faultCase', faultCase
+            property 'naturalghast.domainProbe.lockScript', new File(p.projectDir, 'tools/tank/domain-probe/lock-domain-region.ps1').canonicalPath
             args '--universe', new File(owned, 'universe').path, '--world', 'domain-owned', '--nogui'
             mods { soutou_ghast { source sidecar } }
         }
