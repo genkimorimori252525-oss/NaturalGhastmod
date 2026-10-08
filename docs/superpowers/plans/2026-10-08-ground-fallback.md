@@ -1,5 +1,7 @@
 # Next unit: positive Ground fallback
 
+Status: source implemented; [verification](../../GROUND-COMBAT-VERIFICATION.md) records all four preserved native failures and the separate corrected xH7a90 analysis PASS for static supported Ground/single flight. Native takeoff/counterplay/damage/readability/reload gates remain open. Next unit is gated reversible Domain; all Grand Danmaku remains excluded.
+
 Base b03ae60. Read redesign v0.6 GROUND_FORCED fallback/transition (lines1107-1178). Compact Astra approves development while native ownership failure is diagnosed, but does not waive the native gate. All Grand Danmaku excluded; Ground fans are explicitly deferred scope. Keep accepted boss-owned20/8/20 region, fixed4x4body, sole FlightController velocity writer and existing0.65 cap.
 
 Contracts:
