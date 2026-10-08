@@ -16,12 +16,12 @@ final class DomainCrashProbe {
  private DomainOverlay engine;private DomainOverlay.World world;private DomainOverlay.Journal saved;
  private DomainPersistenceBarrier durability;
  private DomainPersistenceBarrier overlaySeed;private boolean overlaySaved;
- private final boolean durabilityCase;private boolean retainedConflict;
+ private final boolean durabilityCase;private boolean retainedConflict;private final Set<DomainGeometry.Cell> expectedAmbiguous=new HashSet<>();
  private boolean initialized,finished;private int placements,restorations;private List<String> expectedFinal;
  private DomainCrashProbe(DomainNativeProbe.Trial trial)throws IOException{t=trial;fault=System.getProperty("naturalghast.domainProbe.faultCase","");if(!valid(fault))throw new IOException("DOMAIN_PROBE_FAULT_CASE");durabilityCase=fault.startsWith("DURABILITY_");}
  static void run(DomainNativeProbe.Trial trial)throws IOException{var probe=new DomainCrashProbe(trial);trial.helper.onEachTick(probe::tick);}
  static boolean valid(String fault){
-  if(Set.of("BEFORE_FIRST_MUTATION","AFTER_FIRST_MUTATION","PARTIAL_PLACEMENT","BEFORE_FIRST_RESTORE","AFTER_FIRST_RESTORE","PARTIAL_RESTORATION","UNPUBLISHED_INITIAL_THIRD_PARTY","UNPUBLISHED_PENDING_THIRD_PARTY","DURABILITY_BEFORE_BARRIER","DURABILITY_TERMINAL_PREPARE_BEGIN").contains(fault))return true;
+  if(Set.of("BEFORE_FIRST_MUTATION","AFTER_FIRST_MUTATION","PARTIAL_PLACEMENT","BEFORE_FIRST_RESTORE","AFTER_FIRST_RESTORE","PARTIAL_RESTORATION","UNPUBLISHED_INITIAL_THIRD_PARTY","UNPUBLISHED_PENDING_THIRD_PARTY","DURABILITY_BEFORE_BARRIER","DURABILITY_TERMINAL_PREPARE_BEGIN","PREPLACEMENT_THIRD_PARTY","REJECTED_BEFORE_CONFLICT_PUBLICATION").contains(fault))return true;
   for(String prefix:List.of("INIT_","PLACE_","RESTORE_","TERMINAL_"))if(fault.startsWith(prefix))try{DomainJournalRepository.PublicationBoundary.valueOf(fault.substring(prefix.length()));return true;}catch(IllegalArgumentException ignored){}
   return false;
  }
@@ -32,13 +32,16 @@ final class DomainCrashProbe {
    if(t.scenario.equals("recover")){
     if(engine!=null&&engine.journal().phase()==DomainOverlay.Phase.RESTORING)engine.restore(world,1);
     verifyDurability();
-    if(fault.equals("DURABILITY_BEFORE_BARRIER")){
-     t.check(engine.journal().phase()==DomainOverlay.Phase.RESTORING&&engine.journal().entries().stream().allMatch(e->e.mutationIntent()&&e.status()==DomainOverlay.Status.DURABILITY_CONFLICT),"NATIVE_RESTART_DURABILITY_CONFLICT_RETAINED");
+    if(!expectedAmbiguous.isEmpty()){
+     boolean settled=engine.journal().entries().stream().allMatch(e->expectedAmbiguous.contains(e.cell())?e.status()==DomainOverlay.Status.DURABILITY_CONFLICT:e.status()==DomainOverlay.Status.RESTORED);
+     if(!settled)return;
+     t.check(engine.journal().phase()==DomainOverlay.Phase.RESTORING&&!engine.terminal(),"NATIVE_RESTART_UNVERIFIED_OWNERSHIP_RETAINED");
      for(int i=0;i<cells.size();i++)t.check(nativeState(cells.get(i)).equals(expectedFinal.get(i)),"AMBIGUOUS_PERSISTED_OVERLAY_NEVER_OVERWRITTEN");
      t.repository.close();t.repository=null;
      try(var nativeCoordinator=DomainNativeCoordinator.open(t.level.getServer())){
       var coordinator=nativeCoordinator.coordinator();t.check(!coordinator.ready(),"NATIVE_DURABILITY_CONFLICT_BLOCKS_ADMISSION");
       var incoming=coordinator.begin(UUID.randomUUID(),UUID.randomUUID(),t.dimension,t.plan,List.of());t.check(incoming.outcome()==DomainCoordinator.Outcome.RECONCILIATION_PENDING,"NATIVE_NO_START_WHILE_DURABILITY_UNCERTAIN");
+      coordinator.tick(); // A restarted original-state cell may require one meaningful transition.
       Path canonical=canonical();String before=rawHash(canonical);coordinator.tick();t.check(rawHash(canonical).equals(before),"UNCHANGED_NATIVE_DURABILITY_CONFLICT_NO_REWRITE");
      }
      retainedConflict=true;receipt("PASS","RECOVERY_DURABILITY_CONFLICT_RETAINED",null);finished=true;t.helper.succeed();return;
@@ -74,6 +77,7 @@ final class DomainCrashProbe {
   t.repository=DomainJournalRepository.open(t.world,this::boundary);
   List<DomainOverlay.Change> changes=new ArrayList<>();for(var cell:cells)changes.add(t.change(cell,Blocks.AIR.defaultBlockState(),Blocks.BLACKSTONE.defaultBlockState()));
   engine=t.start(0,changes);var adapter=DomainWorldAdapter.forJournal(t.level,engine.journal());
+  if(fault.equals("PREPLACEMENT_THIRD_PARTY"))t.fixture(cells.get(1),Blocks.BLACKSTONE.defaultBlockState());
   world=new DomainOverlay.World(){
    public boolean loaded(DomainGeometry.Cell c)throws IOException{return adapter.loaded(c);}
    public String state(DomainGeometry.Cell c)throws IOException{return adapter.state(c);}
@@ -83,6 +87,7 @@ final class DomainCrashProbe {
     if(!restore&&placements==0&&fault.equals("BEFORE_FIRST_MUTATION"))halt("BEFORE_FIRST_MUTATION",null);
     if(restore&&restorations==0&&fault.equals("BEFORE_FIRST_RESTORE"))halt("BEFORE_FIRST_RESTORE",null);
     adapter.set(c,desired);if(restore)restorations++;else placements++;
+    if(!restore&&placements==1&&fault.equals("REJECTED_BEFORE_CONFLICT_PUBLICATION"))t.fixture(cells.get(1),Blocks.BLACKSTONE.defaultBlockState());
     if(!restore&&placements==1&&fault.equals("AFTER_FIRST_MUTATION"))halt("AFTER_FIRST_MUTATION",null);
     if(restore&&restorations==1&&fault.equals("AFTER_FIRST_RESTORE"))halt("AFTER_FIRST_RESTORE",null);
    }
@@ -100,6 +105,8 @@ final class DomainCrashProbe {
   }
   if(fault.equals("DURABILITY_BEFORE_BARRIER"))selected=next.phase()==DomainOverlay.Phase.RESTORED_PENDING_DURABILITY&&observed==DomainJournalRepository.PublicationBoundary.PUBLISHED_BEFORE_RETURN;
   if(fault.equals("DURABILITY_TERMINAL_PREPARE_BEGIN"))selected=next.phase()==DomainOverlay.Phase.VERIFIED_TERMINAL&&observed==DomainJournalRepository.PublicationBoundary.PREPARE_BEGIN;
+  if(fault.equals("PREPLACEMENT_THIRD_PARTY"))selected=next.reason().equals("PLACEMENT_CONTEXT_CHANGED")&&observed==DomainJournalRepository.PublicationBoundary.PUBLISHED_BEFORE_RETURN;
+  if(fault.equals("REJECTED_BEFORE_CONFLICT_PUBLICATION"))selected=next.reason().equals("PLACEMENT_CONTEXT_CHANGED")&&observed==DomainJournalRepository.PublicationBoundary.PREPARE_BEGIN;
   if(selected)halt(prefix+observed.name(),next);
  }
  private void initializeRecovery()throws Exception{
@@ -110,7 +117,14 @@ final class DomainCrashProbe {
   Path canonical=t.world.resolve("data/naturalghast-domain-v1").resolve(DomainJournalCodec.sha(t.dimension.getBytes(StandardCharsets.UTF_8))).resolve("slot-0.json");
   t.check(rawHash(canonical).equals(prior.get("canonicalSha256").getAsString()),"ACTUAL_POST_RESTART_PUBLISHED_JOURNAL");
   t.repository=DomainJournalRepository.open(t.world);var slot=t.repository.slot(t.dimension,0);saved=slot.read();
-  boolean thirdParty=fault.startsWith("UNPUBLISHED_")||fault.equals("DURABILITY_BEFORE_BARRIER");expectedFinal=new ArrayList<>();for(int i=0;i<cells.size();i++)expectedFinal.add(thirdParty?states.get(i).getAsString():DomainStateCodec.encode(Blocks.AIR.defaultBlockState()));
+  expectedFinal=new ArrayList<>();
+  for(int i=0;i<cells.size();i++){
+   String persisted=states.get(i).getAsString(),original=DomainStateCodec.encode(Blocks.AIR.defaultBlockState());
+   var entry=saved==null?null:saved.entries().get(i);
+   boolean ambiguous=entry!=null&&entry.mutationIntent()&&(entry.status()==DomainOverlay.Status.PENDING||entry.status()==DomainOverlay.Status.RESTORED)&&!persisted.equals(entry.original());
+   if(ambiguous)expectedAmbiguous.add(cells.get(i));
+   expectedFinal.add(entry==null||!entry.mutationIntent()||ambiguous?persisted:original);
+  }
   if(durabilityCase)overlaySaved=prior.get("overlayBaselineDurabilityVerified").getAsBoolean();
   if(saved==null){t.check(t.repository.loadAll().isEmpty(),"UNPUBLISHED_JOURNAL_GRANTS_NO_RESTORATION_AUTHORITY");}
   else{engine=DomainOverlay.recover(saved,slot);world=DomainWorldAdapter.forJournal(t.level,engine.journal());t.check(engine.terminal()||engine.journal().phase()==DomainOverlay.Phase.RESTORING,"RESTART_NEVER_RESUMES_ACTIVATION");}

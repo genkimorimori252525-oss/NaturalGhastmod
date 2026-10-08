@@ -14,7 +14,7 @@ const parent=path.join(repo,'build','tank');await mkdir(parent,{recursive:true})
 const root=await realpath(await mkdtemp(path.join(parent,'domain-matrix-')));
 await writeFile(path.join(root,'matrix-owner.json'),JSON.stringify({nonce,sourceRevision:revision,scope:'DIRECT_NATIVE_DOMAIN_INTERRUPTION_MATRIX'})+'\n',{flag:'wx'});
 const boundaries=['PREPARE_BEGIN','PREPARE_FORCED','BEFORE_RENAME','AFTER_RENAME','AFTER_READBACK','PUBLISHED_BEFORE_RETURN'];
-const cases=[...['INIT','PLACE','RESTORE','TERMINAL'].flatMap(prefix=>boundaries.map(boundary=>`${prefix}_${boundary}`)),'BEFORE_FIRST_MUTATION','AFTER_FIRST_MUTATION','PARTIAL_PLACEMENT','BEFORE_FIRST_RESTORE','AFTER_FIRST_RESTORE','PARTIAL_RESTORATION','UNPUBLISHED_INITIAL_THIRD_PARTY','UNPUBLISHED_PENDING_THIRD_PARTY'];
+const cases=[...['INIT','PLACE','RESTORE','TERMINAL'].flatMap(prefix=>boundaries.map(boundary=>`${prefix}_${boundary}`)),'BEFORE_FIRST_MUTATION','AFTER_FIRST_MUTATION','PARTIAL_PLACEMENT','BEFORE_FIRST_RESTORE','AFTER_FIRST_RESTORE','PARTIAL_RESTORATION','UNPUBLISHED_INITIAL_THIRD_PARTY','UNPUBLISHED_PENDING_THIRD_PARTY','PREPLACEMENT_THIRD_PARTY','REJECTED_BEFORE_CONFLICT_PUBLICATION','DURABILITY_BEFORE_BARRIER','DURABILITY_TERMINAL_PREPARE_BEGIN'];
 console.log(JSON.stringify({matrixRoot:root,sourceRevision:revision,cases:cases.length,scope:'DIRECT_NATIVE_DOMAIN_INTERRUPTION_MATRIX'}));
 const results=[];let failure='';
 const run=async (args,label)=>{
@@ -41,7 +41,7 @@ for(let i=0;i<cases.length;i++){
   if(crashed.receipt.verdict!=='EXPECTED_CRASH'||crashed.receipt.faultCase!==faultCase||crashed.receipt.nativeExit73!==true)throw new Error('DOMAIN_MATRIX_EXPECTED_ABRUPT_EXIT');
   const recovered=await run(['--recover',crashed.worldRoot],label+'-recover');
   if(recovered.receipt.verdict!=='PASS'||recovered.receipt.faultCase!==faultCase||recovered.receipt.nonce!==crashed.receipt.nonce||recovered.worldRoot!==crashed.worldRoot)throw new Error('DOMAIN_MATRIX_RECOVERY_NOT_PASSED');
-  const result={faultCase,verdict:'PASS',crashReceipt:crashed.path,crashSha256:crashed.sha256,recoverReceipt:recovered.path,recoverSha256:recovered.sha256};results.push(result);
+  const result={faultCase,verdict:'PASS',retainedUnresolved:recovered.receipt.native.unresolvedDurabilityRetained===true,worldFlushBeforeHalt:crashed.receipt.native.worldFlushBeforeHalt,crashReceipt:crashed.path,crashSha256:crashed.sha256,recoverReceipt:recovered.path,recoverSha256:recovered.sha256};results.push(result);
   await writeFile(path.join(root,label+'.json'),JSON.stringify(result,null,2)+'\n',{flag:'wx'});
   console.log(JSON.stringify({completed:results.length,total:cases.length,faultCase,verdict:'PASS'}));
  }catch(error){failure=error.message;console.log(JSON.stringify({completed:results.length,total:cases.length,faultCase,verdict:'FAIL',failure}));break;}
@@ -49,6 +49,6 @@ for(let i=0;i<cases.length;i++){
 const sourceUnchanged=git('rev-parse','HEAD')===revision&&!git('status','--porcelain');
 const pass=!failure&&sourceUnchanged&&results.length===cases.length;
 const receipt=path.join(root,'matrix-result.json');
-await writeFile(receipt,JSON.stringify({scope:'DIRECT_NATIVE_DOMAIN_INTERRUPTION_MATRIX',verdict:pass?'PASS':'FAIL',nonce,sourceRevision:revision,sourceUnchanged,cases,results,failure,limitations:['Deliberately flushed private world; no power-loss claim.','Direct restoration reliability; no natural boss combat acceptance.']},null,2)+'\n',{flag:'wx'});
+await writeFile(receipt,JSON.stringify({scope:'DIRECT_NATIVE_DOMAIN_INTERRUPTION_MATRIX',verdict:pass?'PASS':'FAIL',nonce,sourceRevision:revision,sourceUnchanged,cases,results,failure,limitations:['Per-case flush condition: two durability cases omit the extra pre-halt world save; no power-loss claim.','Unverified PENDING/non-original cells remain unresolved; safe retention is not successful restoration.','Direct restoration reliability; no natural boss combat acceptance.']},null,2)+'\n',{flag:'wx'});
 console.log(JSON.stringify({receipt,verdict:pass?'PASS':'FAIL',completed:results.length,total:cases.length}));
 if(!pass)process.exitCode=1;

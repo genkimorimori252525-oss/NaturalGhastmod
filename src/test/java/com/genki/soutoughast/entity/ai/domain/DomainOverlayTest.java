@@ -29,6 +29,18 @@ public final class DomainOverlayTest {
  static DomainOverlay.Identity identity(long generation){return new DomainOverlay.Identity(UUID.randomUUID(),UUID.randomUUID(),"minecraft:overworld",0,generation);}
  static List<DomainOverlay.Change> changes(){return List.of(new DomainOverlay.Change(new DomainGeometry.Cell(0,0,0),"stone","blackstone"),new DomainOverlay.Change(new DomainGeometry.Cell(1,0,0),"stone","blackstone"));}
  static void finish(DomainOverlay e,World w)throws Exception{for(int i=0;i<10&&!e.terminal();i++){if(e.journal().phase()==DomainOverlay.Phase.RESTORED_PENDING_DURABILITY)e.verifyDurability(j->DomainOverlay.DurabilityResult.VERIFIED);else e.restore(w,1);}check(e.terminal(),"bounded test restoration reaches terminal through explicit fake barrier");check(w.states.values().stream().allMatch("stone"::equals),"exact originals restored");}
+ static void recoverAndVerify(Store s,World w)throws Exception{
+  var ambiguous=new HashMap<DomainGeometry.Cell,String>();
+  for(var entry:s.durable.entries())if(entry.mutationIntent()&&(entry.status()==DomainOverlay.Status.PENDING||entry.status()==DomainOverlay.Status.RESTORED)&&!w.state(entry.cell()).equals(entry.original()))ambiguous.put(entry.cell(),w.state(entry.cell()));
+  var recovered=DomainOverlay.recover(s.durable,s);
+  if(ambiguous.isEmpty()){finish(recovered,w);return;}
+  for(int i=0;i<6;i++)recovered.restore(w,1);
+  check(!recovered.terminal()&&recovered.journal().phase()==DomainOverlay.Phase.RESTORING,"ambiguous unverified interruption stays unresolved");
+  for(var entry:recovered.journal().entries()){
+   if(ambiguous.containsKey(entry.cell()))check(w.state(entry.cell()).equals(ambiguous.get(entry.cell()))&&entry.status()==DomainOverlay.Status.DURABILITY_CONFLICT,"unverified overlay-looking cell never overwritten");
+   else check(w.state(entry.cell()).equals(entry.original()),"independently verified/unchanged cell restores normally");
+  }
+ }
  public static void main(String[] args)throws Exception{
   var geometry=DomainGeometry.plan(0,64,0,-64,320);check(geometry.radius()==20&&geometry.height()==12,"broad declared geometry");
   check(geometry.cells().size()<=32768&&geometry.cells().size()>10000,"bounded whole planned volume");check(new HashSet<>(geometry.cells().stream().map(DomainGeometry.Tile::cell).toList()).size()==geometry.cells().size(),"unique cells");
@@ -41,12 +53,12 @@ public final class DomainOverlayTest {
   for(boolean after:new boolean[]{false,true})for(int boundary=1;boundary<=5;boundary++){
    s=new Store();w=new World(s);if(after)s.crashAfter=boundary;else s.crashBefore=boundary;
    try{e=DomainOverlay.start(identity(1),changes(),s,null);e.place(w,2);e.requestRestore("expiry");e.restore(w,2);}catch(Crash crash){}
-   s.crashBefore=s.crashAfter=-1;if(s.durable!=null){e=DomainOverlay.recover(s.durable,s);finish(e,w);}else check(w.writes==0,"no journal means no mutation");
+   s.crashBefore=s.crashAfter=-1;if(s.durable!=null)recoverAndVerify(s,w);else check(w.writes==0,"no journal means no mutation");
   }
   for(boolean after:new boolean[]{false,true})for(int boundary=1;boundary<=4;boundary++){
    s=new Store();w=new World(s);if(after)w.crashAfter=boundary;else w.crashBefore=boundary;
    try{e=DomainOverlay.start(identity(1),changes(),s,null);e.place(w,2);e.requestRestore("expiry");e.restore(w,2);}catch(Crash crash){}
-   w.crashBefore=w.crashAfter=-1;e=DomainOverlay.recover(s.durable,s);finish(e,w);
+   w.crashBefore=w.crashAfter=-1;recoverAndVerify(s,w);
   }
   s=new Store();w=new World(s);e=DomainOverlay.start(identity(1),changes(),s,null);e.place(w,2);e.requestRestore("expiry");var cell=changes().get(0).cell();w.states.put(cell,"third-party");e.restore(w,2);check(!e.terminal()&&w.states.get(cell).equals("third-party"),"conflict preserved, never falsely terminal");w.states.put(cell,"stone");finish(e,w);
   s=new Store();w=new World(s);e=DomainOverlay.start(identity(1),changes(),s,null);e.place(w,2);e.requestRestore("expiry");w.absent.add(cell);e.restore(w,2);check(!e.terminal(),"unloaded restore stays unresolved");w.absent.clear();finish(e,w);

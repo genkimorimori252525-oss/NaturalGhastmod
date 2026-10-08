@@ -18,7 +18,7 @@ const reopen=process.argv[2]==='--reopen',recover=process.argv[2]==='--recover',
 if(process.argv.length!==((reopen||recover||crash)?4:2))throw new Error('Usage: node run-domain-probe.mjs [--reopen/--recover <owned-root> | --crash <case>]');
 let root,nonce,faultCase=crash?process.argv[3]:'';
 const boundaries=['PREPARE_BEGIN','PREPARE_FORCED','BEFORE_RENAME','AFTER_RENAME','AFTER_READBACK','PUBLISHED_BEFORE_RETURN'];
-const faultCases=[...['INIT','PLACE','RESTORE','TERMINAL'].flatMap(prefix=>boundaries.map(boundary=>`${prefix}_${boundary}`)),'BEFORE_FIRST_MUTATION','AFTER_FIRST_MUTATION','PARTIAL_PLACEMENT','BEFORE_FIRST_RESTORE','AFTER_FIRST_RESTORE','PARTIAL_RESTORATION','UNPUBLISHED_INITIAL_THIRD_PARTY','UNPUBLISHED_PENDING_THIRD_PARTY','DURABILITY_BEFORE_BARRIER','DURABILITY_TERMINAL_PREPARE_BEGIN'];
+const faultCases=[...['INIT','PLACE','RESTORE','TERMINAL'].flatMap(prefix=>boundaries.map(boundary=>`${prefix}_${boundary}`)),'BEFORE_FIRST_MUTATION','AFTER_FIRST_MUTATION','PARTIAL_PLACEMENT','BEFORE_FIRST_RESTORE','AFTER_FIRST_RESTORE','PARTIAL_RESTORATION','UNPUBLISHED_INITIAL_THIRD_PARTY','UNPUBLISHED_PENDING_THIRD_PARTY','DURABILITY_BEFORE_BARRIER','DURABILITY_TERMINAL_PREPARE_BEGIN','PREPLACEMENT_THIRD_PARTY','REJECTED_BEFORE_CONFLICT_PUBLICATION'];
 if(crash&&!faultCases.includes(faultCase))throw new Error('DOMAIN_PROBE_FAULT_CASE');
 if(reopen||recover){
  root=await realpath(process.argv[3]);if(path.dirname(root)!==await realpath(parent)||!path.basename(root).startsWith('domain-probe-'))throw new Error('DOMAIN_PROBE_REOPEN_PATH');

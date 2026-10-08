@@ -76,7 +76,11 @@ public final class SoutouGhastDomainAttack {
    if(s.phase()==DomainLifecycle.Phase.PLACING||!exit&&(s.phase()==DomainLifecycle.Phase.ENDING||s.phase()==DomainLifecycle.Phase.EXIT_HOLD)){ghast.setCharging(false);return ground.hold();}
    var domainRegion=new CombatAnchor.Region(new FlightVector(plan.centerX()+.5,plan.floorY(),plan.centerZ()+.5),new FlightVector(17,8,17),regionGeneration,CombatAnchor.Reason.ACQUIRED);
    return ground.tick(target,observed,domainRegion,sample,offense,exit,offense);
-  }catch(IOException|RuntimeException error){failed=true;decision=reason(error);ghast.setCharging(false);return ground.hold();}
+  }catch(IOException|RuntimeException error){
+   boolean restoring=DomainEncounterFailure.requestRestore(life,coordinator,handle);
+   failed=true;decision=(restoring?"RESTORE_REQUESTED:":"RESTORE_UNRESOLVED:")+reason(error);
+   ghast.setCharging(false);return ground.hold();
+  }
  }
  private void apply(DomainLifecycle.State state)throws IOException{
   if(state.armPlacement()&&!coordinator.armPlacement(handle)){var aborted=life.abort("ARM_REJECTED");if(aborted.requestRestore())coordinator.requestRestore(handle,aborted.reason());}

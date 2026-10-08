@@ -51,7 +51,9 @@ public final class DomainOverlay {
   var result=new DomainOverlay(saved,store);
   if(saved.phase()!=Phase.VERIFIED_TERMINAL){
    // A prior in-memory restoration does not prove the native chunk write reached storage.
-   List<Entry> entries=saved.entries().stream().map(e->e.status()==Status.RESTORED&&e.mutationIntent()?e.with(Status.DURABILITY_CONFLICT):e).toList();
+   // Unverified write-ahead intent is not proof of an applied operation. A crash can precede
+   // classification of an overlay-looking edit to a known rejected/unattempted cell.
+   List<Entry> entries=saved.entries().stream().map(e->e.mutationIntent()&&(e.status()==Status.RESTORED||e.status()==Status.PENDING)?e.with(Status.DURABILITY_CONFLICT):e).toList();
    result.write(new Journal(saved.identity(),Phase.RESTORING,entries,0,"RESTART_RECONCILIATION"));
   }return result;
  }
@@ -64,16 +66,27 @@ public final class DomainOverlay {
   requireRunning();requireBudget(budget);if(current.phase()!=Phase.PLACING)return;
   if(current.entries().isEmpty()){write(copy(Phase.ACTIVE,current.entries(),0,"PLACEMENT_VERIFIED"));return;}
   int start=current.cursor(),end=Math.min(current.entries().size(),start+budget);List<Entry> entries=new ArrayList<>(current.entries());
-  for(int i=start;i<end;i++)entries.set(i,entries.get(i).with(Status.PENDING));
-  write(copy(Phase.PLACING,entries,start,"PLACEMENT_PENDING"));
   try{
+   // Validate the complete intended batch before any cell acquires write-ahead ownership.
    for(int i=start;i<end;i++){
     Entry e=entries.get(i);
     if(!world.loaded(e.cell())||!world.state(e.cell()).equals(e.original())||world.occupied(e.cell(),e.overlay())){
      write(copy(Phase.RESTORING,entries,0,"PLACEMENT_CONTEXT_CHANGED"));return;
     }
+   }
+   for(int i=start;i<end;i++)entries.set(i,entries.get(i).with(Status.PENDING));
+   write(copy(Phase.PLACING,entries,start,"PLACEMENT_PENDING"));
+   for(int i=start;i<end;i++){
+    Entry e=entries.get(i);
+    if(!world.loaded(e.cell())||!world.state(e.cell()).equals(e.original())||world.occupied(e.cell(),e.overlay())){
+     for(int j=i;j<end;j++)entries.set(j,entries.get(j).with(Status.DURABILITY_CONFLICT));
+     write(copy(Phase.RESTORING,entries,0,"PLACEMENT_CONTEXT_CHANGED"));return;
+    }
     world.set(e.cell(),e.overlay());
-    if(!world.loaded(e.cell())||!world.state(e.cell()).equals(e.overlay())){write(copy(Phase.RESTORING,entries,0,"PLACEMENT_READBACK_CHANGED"));return;}
+    if(!world.loaded(e.cell())||!world.state(e.cell()).equals(e.overlay())){
+     for(int j=i;j<end;j++)entries.set(j,entries.get(j).with(Status.DURABILITY_CONFLICT));
+     write(copy(Phase.RESTORING,entries,0,"PLACEMENT_READBACK_CHANGED"));return;
+    }
     entries.set(i,e.with(Status.APPLIED));
    }
    write(copy(end==entries.size()?Phase.ACTIVE:Phase.PLACING,entries,end==entries.size()?0:end,"PLACEMENT_VERIFIED"));
