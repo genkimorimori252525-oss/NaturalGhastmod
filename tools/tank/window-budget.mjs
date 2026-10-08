@@ -12,6 +12,11 @@ export function planGroundWindow(preflight,now){
  if(preflight?.status!=='READY'||lease?.status!=='SUFFICIENT'||lease.requiredMs!==30000||!Number.isFinite(lease.remainingMs)||lease.remainingMs<30000||!Number.isSafeInteger(now))throw Error('GROUND_WINDOW_BUDGET_NOT_ESTABLISHED');
  return Object.freeze({maxTicks:180,maxWallMs:15000,postDeathMaxTicks:0,wallDeadlineEpochMs:now+15000,reserveMs:15000});
 }
+export function planDomainWindow(preflight,now){
+ const lease=preflight?.leaseCheck;
+ if(preflight?.status!=='READY'||lease?.status!=='SUFFICIENT'||lease.requiredMs!==75000||!Number.isFinite(lease.remainingMs)||lease.remainingMs<75000||!Number.isSafeInteger(now))throw Error('DOMAIN_WINDOW_BUDGET_NOT_ESTABLISHED');
+ return Object.freeze({maxTicks:1200,maxWallMs:60000,postDeathMaxTicks:200,wallDeadlineEpochMs:now+60000,reserveMs:15000});
+}
 /** Final roster shares the five-second finalization allocation, never cleanup/margin. */
 export function finalRosterDeadline(plan,now){
  const cutoff=plan?.wallDeadlineEpochMs+5000;
