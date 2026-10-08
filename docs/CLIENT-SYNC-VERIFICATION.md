@@ -37,3 +37,5 @@ Raw spawns/joins/clientRows/serverRows arrays independently equal native results
 | fixture.json |5db741d169e05b5f244bf46112398166c2b8abe7642c7c2e8fd5ee559031f294|
 
 Controlled re-track, genuine late connection/re-spawn, delayed owner arrival, human input/cues/balance, unobserved natural selectors, arbitrary unload/crash behavior and full release remain separate gates. Ordinary mid-flight Lob admission does not waive them. Astra defers controlled untracking/new connection mechanisms in this unit; record the boundaries rather than adding them solely to obtain broader PASS.
+
+Subsequent [controlled native re-tracking](RETRACKING-VERIFICATION.md) verifies actual old-instance removal/ID absence, continued native server clocks and new-client pairing/current state. It does not prove genuine late connection/delayed owner arrival or retroactively widen this passive receipt.
