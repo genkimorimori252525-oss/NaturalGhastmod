@@ -24,6 +24,7 @@ if(reopen){
 }else{
  root=await realpath(await mkdtemp(path.join(parent,'domain-probe-')));nonce=randomUUID();await writeFile(path.join(root,'probe-owner.txt'),`${nonce}\n${revision}\n`,{flag:'wx'});
  for(const folder of ['runtime','universe','sidecar-resources/data/natural_domain_probe/structures'])await mkdir(path.join(root,folder),{recursive:true});
+ await writeFile(path.join(root,'runtime/server.properties'),'level-type=minecraft:flat\ngenerate-structures=false\nlevel-seed=0\nspawn-animals=false\nspawn-monsters=false\nspawn-npcs=false\n',{flag:'wx'});
  const int=n=>{const b=Buffer.alloc(4);b.writeInt32BE(n);return b;};
  const name=s=>{const bytes=Buffer.from(s,'utf8'),n=Buffer.alloc(2);n.writeUInt16BE(bytes.length);return Buffer.concat([n,bytes]);};
  const tag=(type,key,data)=>Buffer.concat([Buffer.from([type]),name(key),data]);
@@ -44,10 +45,12 @@ const ownedPids=()=>{
 if(ownedPids().length)throw new Error('DOMAIN_PROBE_ALREADY_RUNNING');
 const logPath=path.join(root,`${scenario}.log`),log=createWriteStream(logPath,{flags:'wx'});let size=0,timedOut=false,overflow=false,stopError='';
 const child=spawn('powershell.exe',['-NoLogo','-NoProfile','-Command','& ./gradlew.bat -I tools/tank/domain-probe.gradle runGameTestServer --no-daemon; exit $LASTEXITCODE'],{cwd:repo,env,windowsHide:true,stdio:['ignore','pipe','pipe']});
+env.NATURAL_DOMAIN_PROBE_CHILD_PID=String(child.pid);
 const stop=()=>{
  timedOut=true;
- // Stop only Java processes attested by this unique private nonce/property; never a global Java kill.
- const code="Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:NATURAL_DOMAIN_PROBE_NONCE) -and $_.CommandLine.Contains('naturalghast.domainProbe.root') } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop }";
+ // Include the private Gradle descendant tree: a preparation timeout must not launch Java later.
+ // Revalidate PID/creation identity before stopping; never select unrelated Gradle/Java processes.
+ const code="$all=@(Get-CimInstance Win32_Process); $owned=[Collections.Generic.HashSet[uint32]]::new(); [void]$owned.Add([uint32]$env:NATURAL_DOMAIN_PROBE_CHILD_PID); $ordered=[Collections.Generic.List[object]]::new(); do { $added=$false; foreach($item in $all){if($owned.Contains([uint32]$item.ParentProcessId) -and $owned.Add([uint32]$item.ProcessId)){ $ordered.Add($item); $added=$true }} } while($added); for($i=$ordered.Count-1;$i -ge 0;$i--){$item=$ordered[$i];$live=Get-CimInstance Win32_Process -Filter ('ProcessId='+$item.ProcessId); if($live -and $live.CreationDate -eq $item.CreationDate -and $live.ParentProcessId -eq $item.ParentProcessId){Stop-Process -Id $item.ProcessId -Force -ErrorAction Stop}}";
  try{execFileSync('powershell.exe',['-NoLogo','-NoProfile','-Command',code],{env,windowsHide:true,timeout:15000});}catch(error){stopError=error.name;}finally{child.kill();}
 };
 const accept=chunk=>{size+=chunk.length;if(size<=8*1024*1024)log.write(chunk);else if(!overflow){overflow=true;stop();}};child.stdout.on('data',accept);child.stderr.on('data',accept);

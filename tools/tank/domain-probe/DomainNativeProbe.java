@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.level.GameRules;
 import net.minecraftforge.gametest.*;
 
 /** Explicit private native reliability sidecar; no mock Player, natural selector or camera control. */
@@ -36,6 +37,7 @@ public final class DomainNativeProbe {
    world=level.getServer().getWorldPath(LevelResource.ROOT).toRealPath();if(!world.equals(expected))throw new IOException("DOMAIN_PROBE_WORLD");
    check(net.minecraft.SharedConstants.getCurrentVersion().getName().equals("1.20.1")&&net.minecraftforge.versions.forge.ForgeVersion.getVersion().equals("47.4.10")&&Runtime.version().feature()==17,"TANK_CORE_VERSION");
    check(level.players().isEmpty(),"NO_PLAYER_OR_MOCK_INPUT");dimension=level.dimension().location().toString();plan=DomainGeometry.plan(64,16,64,level.getMinBuildHeight(),level.getMaxBuildHeight());started=level.getGameTime();
+   level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false,level.getServer());
    // Fixture-only explicit preload: bounded16 planned chunks plus one kernel chunk, never inside adapter.
    for(int x=2;x<=5;x++)for(int z=2;z<=5;z++)level.getChunk(x,z);level.getChunk(7,4);
    if(scenario.equals("reopen-terminal")){
