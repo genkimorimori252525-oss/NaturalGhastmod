@@ -11,13 +11,21 @@ import static java.nio.file.StandardOpenOption.*;
 
 /** Four fixed slots per dimension. Only published canonical journals authorize world changes. */
 public final class DomainJournalRepository implements AutoCloseable {
+ // No configuration/public injection path. Deterministic fault trials live only in the sidecar.
+ enum PublicationBoundary {PREPARE_BEGIN,PREPARE_FORCED,BEFORE_RENAME,AFTER_RENAME,AFTER_READBACK,PUBLISHED_BEFORE_RETURN}
+ @FunctionalInterface interface PublicationObserver {void at(PublicationBoundary boundary,DomainOverlay.Journal next)throws IOException;}
+ private static final PublicationObserver NOOP=(boundary,next)->{};
  private static final byte[] MARKER="NATURALGHAST_DOMAIN_V1\n".getBytes(StandardCharsets.UTF_8);
  private final Path world,root;private final Thread writer=Thread.currentThread();
  private final FileChannel channel;private final FileLock lock;private final Map<Path,Slot> slots=new HashMap<>();
  private final Object worldKey,rootKey,lockKey;
+ private final PublicationObserver observer;
  private boolean closed,failed;
- private DomainJournalRepository(Path world,Path root,FileChannel channel,FileLock lock)throws IOException{this.world=world;this.root=root;this.channel=channel;this.lock=lock;worldKey=fileKey(world);rootKey=fileKey(root);lockKey=fileKey(root.resolve("writer.lock"));}
+ private DomainJournalRepository(Path world,Path root,FileChannel channel,FileLock lock,PublicationObserver observer)throws IOException{this.world=world;this.root=root;this.channel=channel;this.lock=lock;this.observer=Objects.requireNonNull(observer);worldKey=fileKey(world);rootKey=fileKey(root);lockKey=fileKey(root.resolve("writer.lock"));}
  public static DomainJournalRepository open(Path world)throws IOException{
+  return open(world,NOOP);
+ }
+ static DomainJournalRepository open(Path world,PublicationObserver observer)throws IOException{
   if(!world.isAbsolute())throw new IOException("DOMAIN_ABSOLUTE_WORLD_REQUIRED");
   Path canonical=world.toRealPath();if(!canonical.equals(world.normalize()))throw new IOException("DOMAIN_WORLD_ALIAS");safeAncestors(canonical);
   Path data=directory(canonical.resolve("data")),root=directory(data.resolve("naturalghast-domain-v1")),marker=root.resolve("owner.txt");
@@ -31,7 +39,7 @@ public final class DomainJournalRepository implements AutoCloseable {
   try{lock=channel.tryLock();if(lock==null)throw new IOException("DOMAIN_WRITER_LOCKED");}
   catch(IOException|OverlappingFileLockException error){channel.close();throw new IOException("DOMAIN_WRITER_LOCKED",error);}
   DomainJournalRepository repo;
-  try{repo=new DomainJournalRepository(canonical,root,channel,lock);}catch(IOException|RuntimeException error){try{lock.release();}finally{channel.close();}throw error;}
+  try{repo=new DomainJournalRepository(canonical,root,channel,lock,observer);}catch(IOException|RuntimeException error){try{lock.release();}finally{channel.close();}throw error;}
   try{repo.loadAll();return repo;}catch(IOException|RuntimeException error){repo.close();throw error;}
  }
  public Slot slot(String dimension,int index)throws IOException{
@@ -82,7 +90,7 @@ public final class DomainJournalRepository implements AutoCloseable {
    check();boolean publicationStarted=false;try{
     DomainOverlay.Journal current=read();if(!Objects.equals(current,expected))throw new IOException("DOMAIN_STALE_PREDECESSOR");validateIdentity(next);transition(expected,next);
     if(Files.exists(prepared,NOFOLLOW_LINKS))throw new IOException("DOMAIN_UNRECONCILED_PREPARATION");
-    byte[] bytes=DomainJournalCodec.encode(next,observed);publicationStarted=true;forceNew(prepared,bytes);replace(prepared,path,observed,bytes);observed=hash(bytes);
+    byte[] bytes=DomainJournalCodec.encode(next,observed);publicationStarted=true;observer.at(PublicationBoundary.PREPARE_BEGIN,next);forceNew(prepared,bytes);observer.at(PublicationBoundary.PREPARE_FORCED,next);replace(prepared,path,observed,bytes,next);observed=hash(bytes);observer.at(PublicationBoundary.PUBLISHED_BEFORE_RETURN,next);
    }catch(IOException|RuntimeException error){if(publicationStarted||Files.exists(prepared,NOFOLLOW_LINKS))failed=true;throw error;}
   }
   private DomainOverlay.Journal validate(byte[] bytes)throws IOException{var journal=DomainJournalCodec.decode(bytes);validateIdentity(journal);return journal;}
@@ -134,10 +142,12 @@ public final class DomainJournalRepository implements AutoCloseable {
   if(!DomainJournalCodec.string(p,"kind").equals("PREPARATION_CLASSIFICATION")||!Set.of("OBSOLETE_PUBLISHED_PREPARATION","ABANDONED_UNPUBLISHED_PREPARATION").contains(DomainJournalCodec.string(p,"classification")))throw new IOException("DOMAIN_DIAGNOSTIC_KIND");
   for(String key:List.of("candidateSha256","canonicalSha256","candidatePredecessorSha256")){String hash=DomainJournalCodec.string(p,key);if(!hash.matches("[a-f0-9]{64}")&&!hash.equals(DomainJournalCodec.ABSENT))throw new IOException("DOMAIN_DIAGNOSTIC_HASH");}
  }
- private static void replace(Path prepared,Path target,String predecessor,byte[] bytes)throws IOException{
+ private void replace(Path prepared,Path target,String predecessor,byte[] bytes)throws IOException{replace(prepared,target,predecessor,bytes,null);}
+ private void replace(Path prepared,Path target,String predecessor,byte[] bytes,DomainOverlay.Journal next)throws IOException{
   if(!hash(optional(target)).equals(predecessor)||!Arrays.equals(read(prepared),bytes))throw new IOException("DOMAIN_ATOMIC_PREDECESSOR_CHANGED");
-  safeAncestors(target.getParent());Files.move(prepared,target,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);
+  safeAncestors(target.getParent());if(next!=null)observer.at(PublicationBoundary.BEFORE_RENAME,next);Files.move(prepared,target,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);if(next!=null)observer.at(PublicationBoundary.AFTER_RENAME,next);
   if(!Arrays.equals(read(target),bytes))throw new IOException("DOMAIN_ATOMIC_READBACK_CHANGED");
+  if(next!=null)observer.at(PublicationBoundary.AFTER_READBACK,next);
  }
  private static void reclaim(Path path,String expected)throws IOException{if(!hash(read(path)).equals(expected))throw new IOException("DOMAIN_RECLAIM_CHANGED");safeAncestors(path.getParent());Files.delete(path);}
  private static String hash(byte[] bytes){return bytes==null?DomainJournalCodec.ABSENT:DomainJournalCodec.sha(bytes);}

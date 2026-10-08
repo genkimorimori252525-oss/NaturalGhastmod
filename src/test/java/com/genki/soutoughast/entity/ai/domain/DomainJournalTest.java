@@ -81,6 +81,17 @@ public final class DomainJournalTest {
    var next=journal(0,2);slot.persist(terminal,next);check(slot.read().equals(next),"verified terminal slot reused at increased generation");
    var threadError=new java.util.concurrent.atomic.AtomicReference<Throwable>();Thread worker=new Thread(()->{try{slot.read();}catch(Throwable error){threadError.set(error);}});worker.start();worker.join(2000);check(!worker.isAlive()&&threadError.get() instanceof IOException,"single writer thread enforced");
   }
+  for(var boundary:DomainJournalRepository.PublicationBoundary.values()){
+   Path interrupted=Files.createTempDirectory("domain-boundary-"+boundary.name()+"-").toRealPath();
+   try(var repo=DomainJournalRepository.open(interrupted)){repo.slot("minecraft:overworld",0).persist(null,original);}
+   var pending=new DomainOverlay.Journal(original.identity(),DomainOverlay.Phase.PLACING,original.entries().stream().map(e->new DomainOverlay.Entry(e.cell(),e.original(),e.overlay(),DomainOverlay.Status.PENDING)).toList(),0,"PROBE_PENDING");
+   class Abrupt extends Error{}
+   try(var repo=DomainJournalRepository.open(interrupted,(observed,next)->{if(observed==boundary&&next.reason().equals("PROBE_PENDING"))throw new Abrupt();})){
+    try{repo.slot("minecraft:overworld",0).persist(original,pending);throw new AssertionError("boundary did not interrupt");}catch(Abrupt expected){checks++;}
+   }
+   boolean published=Set.of(DomainJournalRepository.PublicationBoundary.AFTER_RENAME,DomainJournalRepository.PublicationBoundary.AFTER_READBACK,DomainJournalRepository.PublicationBoundary.PUBLISHED_BEFORE_RETURN).contains(boundary);
+   try(var repo=DomainJournalRepository.open(interrupted)){var slot=repo.slot("minecraft:overworld",0);check(slot.read().equals(published?pending:original),"boundary canonical authority: "+boundary);check(!Files.exists(staging(slot.path())),"boundary classified preparation before reclamation: "+boundary);}
+  }
   System.out.println("PASS: "+checks+" actual Domain journal/atomic lock/codec checks; native restart gates NOT_RUN");
  }
 }
