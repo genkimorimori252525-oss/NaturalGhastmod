@@ -7,9 +7,11 @@ $hostClasspath=(Get-Content -LiteralPath $ClasspathFile)[1].Trim('"')
 $classpath="$root/build/classes/java/main;$hostClasspath"
 $arguments=@('--release','17','-encoding','UTF-8','-proc:none','-cp',$classpath,'-d',$output,
     "$root/src/main/java/com/genki/soutoughast/entity/projectile/StandardProvenance.java",
+    "$root/src/main/java/com/genki/soutoughast/entity/projectile/ClientProjectileOwner.java",
     "$root/src/main/java/com/genki/soutoughast/entity/projectile/CommittedTrajectoryCodec.java",
     "$root/src/main/java/com/genki/soutoughast/entity/ai/CommittedPathClearance.java",
     "$root/src/test/java/com/genki/soutoughast/entity/projectile/StandardProjectileTest.java",
+    "$root/src/test/java/com/genki/soutoughast/entity/projectile/ClientProjectileOwnerTest.java",
     "$root/src/test/java/com/genki/soutoughast/entity/projectile/GroundProjectileTest.java",
     "$root/src/test/java/com/genki/soutoughast/entity/projectile/CommittedProjectileTest.java")
 $arguments+=@(Get-ChildItem -LiteralPath "$root/src/main/java/com/genki/soutoughast/entity/ai/flight" -Filter '*.java'|ForEach-Object FullName)
@@ -30,3 +32,7 @@ $groundRun=Join-Path $output 'ground-run.args'
 [IO.File]::WriteAllLines($groundRun,@('-ea','-cp',$runClasspath,'com.genki.soutoughast.entity.projectile.GroundProjectileTest'))
 & "$JavaHome/bin/java.exe" "@$groundRun"
 if($LASTEXITCODE){throw 'Ground mapped assertions failed'}
+$ownerRun=Join-Path $output 'owner-run.args'
+[IO.File]::WriteAllLines($ownerRun,@('-ea','-cp',$runClasspath,'com.genki.soutoughast.entity.projectile.ClientProjectileOwnerTest'))
+& "$JavaHome/bin/java.exe" "@$ownerRun"
+if($LASTEXITCODE){throw 'Client owner state assertions failed'}

@@ -33,6 +33,7 @@ public class StandardSoutouFireball extends Fireball implements IEntityAdditiona
     private UUID origin,deflector,directVictim;
     private boolean playerDeflected,bossAttempted;
     private int returns,age;
+    private final ClientProjectileOwner<Entity> clientOwner=new ClientProjectileOwner<>();
 
     public StandardSoutouFireball(EntityType<? extends StandardSoutouFireball> type,Level level){super(type,level);}
     public StandardSoutouFireball(SoutouGhast owner,Vec3 position,Vec3 direction){
@@ -44,6 +45,17 @@ public class StandardSoutouFireball extends Fireball implements IEntityAdditiona
     }
     @Override protected void defineSynchedData(){super.defineSynchedData();entityData.define(FLIGHT,new CompoundTag());}
     @Override public float getPickRadius(){return PICK_RADIUS;}
+    @Override public Entity getOwner(){
+        if(!level().isClientSide)return super.getOwner();
+        if(clientOwner==null)return null; // Superclass construction may call virtual methods.
+        if(isRemoved()){clientOwner.clear();return null;}
+        return clientOwner.resolve(level().getGameTime(),level()::getEntity,
+                owner->!owner.isRemoved()&&owner.level()==level()&&owner.getId()==clientOwner.id());
+    }
+    @Override public void onRemovedFromWorld(){
+        if(level().isClientSide)clientOwner.clear();
+        super.onRemovedFromWorld();
+    }
     public boolean isPlayerDeflected(){return playerDeflected&&getOwner() instanceof Player p&&p.getUUID().equals(deflector);}
     public boolean isOwnReturn(Entity boss){return getOwner() instanceof Player p&&provenance().matchesReturn(boss.getUUID(),p.getUUID());}
     public boolean isAttributedOwnReturn(DamageSource source,Entity boss){return source.getDirectEntity()==this&&source.getEntity()==getOwner()&&isOwnReturn(boss);}
@@ -103,7 +115,12 @@ public class StandardSoutouFireball extends Fireball implements IEntityAdditiona
     private void applyFlight(CompoundTag data){
         xPower=data.getDouble("px");yPower=data.getDouble("py");zPower=data.getDouble("pz");
         setDeltaMovement(data.getDouble("vx"),data.getDouble("vy"),data.getDouble("vz"));
-        Entity owner=level().getEntity(data.getInt("owner"));if(owner!=null)setOwner(owner);
+        if(level().isClientSide){
+            clientOwner.update(data.getInt("owner"));
+            getOwner(); // Ordinary ticking retries if the owner has not arrived yet.
+        }else{
+            Entity owner=level().getEntity(data.getInt("owner"));if(owner!=null)setOwner(owner);
+        }
     }
     private void syncFlight(){entityData.set(FLIGHT,flightData());}
     protected final void refreshFlightSync(){syncFlight();}
