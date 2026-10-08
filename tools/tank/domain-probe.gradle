@@ -1,0 +1,31 @@
+// Private init script: the sidecar never enters the normal product source set/JAR.
+gradle.beforeProject { p ->
+    p.afterEvaluate {
+        def probeRoot = System.getenv('NATURAL_DOMAIN_PROBE_ROOT')
+        def nonce = System.getenv('NATURAL_DOMAIN_PROBE_NONCE')
+        def sourceRevision = System.getenv('NATURAL_DOMAIN_PROBE_SOURCE')
+        def scenario = System.getenv('NATURAL_DOMAIN_PROBE_SCENARIO')
+        if (!probeRoot || !nonce || !sourceRevision || !(scenario in ['baseline', 'reopen-terminal'])) throw new GradleException('DOMAIN_PROBE_ENVIRONMENT')
+        def owned = new File(probeRoot).canonicalFile
+        def allowed = new File(p.projectDir, 'build/tank').canonicalFile
+        if (owned.parentFile != allowed || !owned.name.startsWith('domain-probe-') || !nonce.matches('[a-f0-9-]{36}') || !sourceRevision.matches('[a-f0-9]{40}')) throw new GradleException('DOMAIN_PROBE_PATH')
+        if (new File(owned, 'probe-owner.txt').getText('UTF-8') != nonce + '\n' + sourceRevision + '\n') throw new GradleException('DOMAIN_PROBE_OWNER')
+        def sidecar = p.sourceSets.create('domainProbe') {
+            java.srcDir new File(p.projectDir, 'tools/tank/domain-probe')
+            resources.srcDir new File(owned, 'sidecar-resources')
+            compileClasspath += p.sourceSets.main.output + p.sourceSets.main.compileClasspath
+            runtimeClasspath += p.sourceSets.main.runtimeClasspath
+        }
+        p.tasks.named('compileDomainProbeJava').configure { dependsOn p.tasks.named('classes') }
+        p.minecraft.runs.gameTestServer {
+            workingDirectory new File(owned, 'runtime')
+            property 'forge.enabledGameTestNamespaces', 'natural_domain_probe'
+            property 'naturalghast.domainProbe.root', owned.path
+            property 'naturalghast.domainProbe.nonce', nonce
+            property 'naturalghast.domainProbe.source', sourceRevision
+            property 'naturalghast.domainProbe.scenario', scenario
+            args '--universe', new File(owned, 'universe').path, '--world', 'domain-owned', '--nogui'
+            mods { soutou_ghast { source sidecar } }
+        }
+    }
+}
