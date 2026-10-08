@@ -50,7 +50,9 @@ try{
  const resources=path.join(trial,'probe-resource');await fs.mkdir(path.join(resources,'META-INF'),{recursive:true});
  await fs.writeFile(path.join(resources,'META-INF/mods.toml'),'modLoader="javafml"\nloaderVersion="[47,)"\nlicense="Private verification"\n[[mods]]\nmodId="naturalghast_complete_feints_probe"\nversion="1"\ndisplayName="Finite explicit feint composer probe"\n',{flag:'wx'});
  await write(path.join(resources,'pack.mcmeta'),{pack:{pack_format:15,description:'Finite explicit feint composer'}});
- const probe=path.join(inputs,'complete-feints-probe.jar');java('jar',['--create','--file',probe,'-C',classes,'com/genki/soutoughast/entity/ai','-C',resources,'.']);
+ const probe=path.join(inputs,'complete-feints-probe.jar');java('jar',['--create','--file',probe,'-C',classes,'com/genki/soutoughast/tank','-C',resources,'.']);
+ const packages=file=>new Set(java('jar',['--list','--file',file]).toString().split(/\r?\n/).filter(n=>n.endsWith('.class')).map(n=>n.slice(0,n.lastIndexOf('/'))));
+ const productPackages=packages(product);assert([...packages(probe)].every(n=>!productPackages.has(n)),'Private probe/product split package');
  report.productHash=sha(await fs.readFile(product));report.probeHash=sha(await fs.readFile(probe));report.fixtureHash=sha(await fs.readFile(path.join(trial,'fixture.json')));
  const init=path.join(trial,'native.init.gradle');
  await fs.writeFile(init,`gradle.beforeProject { p ->\n p.plugins.withId('net.minecraftforge.gradle') {\n p.dependencies.add('runtimeOnly',p.files('${product.replaceAll('\\','/')}','${probe.replaceAll('\\','/')}'))\n p.afterEvaluate { p.minecraft.runs.client.workingDirectory p.file('${path.join(trial,'game').replaceAll('\\','/')}')\n p.tasks.matching { it.name=='runClient' }.configureEach { task -> task.environment System.getenv().findAll { k,v -> k.startsWith('KNEEKURA_DEBUG_') } } }\n }\n}\n`,{flag:'wx'});

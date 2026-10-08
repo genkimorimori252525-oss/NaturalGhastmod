@@ -1,7 +1,8 @@
-package com.genki.soutoughast.entity.ai;
+package com.genki.soutoughast.tank;
 
 import com.genki.soutoughast.entity.ModEntities;
 import com.genki.soutoughast.entity.SoutouGhast;
+import com.genki.soutoughast.entity.ai.SoutouGhastInertialMoveControl;
 import com.genki.soutoughast.entity.ai.flight.*;
 import com.google.gson.*;
 import java.io.IOException;
@@ -33,6 +34,10 @@ public final class CompleteFeintsProbe {
  private static final String SCOPE="EXPLICIT_NEW_BOSS_COMPOSER_NATIVE_NOT_NATURAL_SELECTION_OR_HUMAN_READABILITY";
  private static final ConcurrentMap<UUID,String> names=new ConcurrentHashMap<>();private static final ConcurrentLinkedQueue<JsonObject> queue=new ConcurrentLinkedQueue<>();private static final AtomicInteger queueSize=new AtomicInteger();
  private static volatile boolean active;private static volatile String clientError;
+ private static final java.lang.reflect.Method bodyRoute=bodyRouteMethod();
+ // Read-only access from an isolated private mod package; keep the product API unchanged.
+ private static java.lang.reflect.Method bodyRouteMethod(){try{var method=SoutouGhastInertialMoveControl.class.getDeclaredMethod("hasManeuverClearance",FlightVector.class,FlightVector.class);method.setAccessible(true);return method;}catch(ReflectiveOperationException e){throw new IllegalStateException("PRIVATE_BODY_ROUTE_ACCESS",e);}}
+ private static boolean route(SoutouGhastInertialMoveControl control,FlightVector from,FlightVector to){try{return (boolean)bodyRoute.invoke(control,from,to);}catch(ReflectiveOperationException e){throw new IllegalStateException("PRIVATE_BODY_ROUTE_QUERY",e);}}
  private final List<Scenario> scenarios=new ArrayList<>();private final JsonArray cases=new JsonArray(),rows=new JsonArray(),joins=new JsonArray(),clientRows=new JsonArray(),cleanup=new JsonArray();private final List<String> errors=new ArrayList<>();
  private JsonObject request;private Path output;private long deadline;private int samples;private boolean done,canonicalPlayer,fixtureSubjectAbsent;
  private static final class Scenario {
@@ -56,7 +61,7 @@ public final class CompleteFeintsProbe {
   var boss=s.boss;var control=(SoutouGhastInertialMoveControl)boss.getMoveControl();var position=from(boss.position());
   if(!s.started){
    require(s.target.isAlive()&&boss.getSensing().hasLineOfSight(s.target),"OBSERVED_LIVING_TARGET");s.observed=from(s.target.position());
-   require(s.composer.start(TacticalEvaluator.Action.valueOf(s.name),s.observed,position,s.region,control.sampleMobility(),.99,control::hasManeuverClearance),"FULL_BODY_RECIPE_ADMISSION");s.started=true;
+   require(s.composer.start(TacticalEvaluator.Action.valueOf(s.name),s.observed,position,s.region,control.sampleMobility(),.99,(from,to)->route(control,from,to)),"FULL_BODY_RECIPE_ADMISSION");s.started=true;
   }
   s.before=position;s.velocityBefore=from(boss.getDeltaMovement());
   s.plan=s.composer.step(position,CombatAnchor.Range.COMFORTABLE,d->control.hasDirectionalClearance(d),
@@ -98,9 +103,9 @@ public final class CompleteFeintsProbe {
   s.boss=new TestGhast(level);s.boss.setPos(x,y,z);s.region=new CombatAnchor.Region(from(s.boss.position()),CombatAnchor.RADII,1,CombatAnchor.Reason.ACQUIRED);s.boss.scenario=s;names.put(s.boss.getUUID(),name);
   require(level.noCollision(s.boss,s.boss.getBoundingBox())&&level.addFreshEntity(s.boss),"NEW_NATIVE_TEST_BOSS");
   var c=entity(s.boss);c.addProperty("name",name);c.addProperty("privateControlledGoal",true);c.addProperty("width",s.boss.getBbWidth());c.addProperty("height",s.boss.getBbHeight());c.addProperty("targetUuid",s.target.getUUID().toString());c.add("region",region(s.region));
-  var control=(SoutouGhastInertialMoveControl)s.boss.getMoveControl();c.addProperty("clearBody",control.hasManeuverClearance(from(s.boss.position()),from(s.boss.position()).add(new FlightVector(0,0,-4))));
-  c.addProperty("wallRejected",!control.hasManeuverClearance(new FlightVector(48,y,z),new FlightVector(52,y,z)));
-  c.addProperty("unloadedRejected",!control.hasManeuverClearance(new FlightVector(10000,y,10000),new FlightVector(10008,y,10000)));cases.add(c);append("cases.jsonl",c);
+  var control=(SoutouGhastInertialMoveControl)s.boss.getMoveControl();c.addProperty("clearBody",route(control,from(s.boss.position()),from(s.boss.position()).add(new FlightVector(0,0,-4))));
+  c.addProperty("wallRejected",!route(control,new FlightVector(48,y,z),new FlightVector(52,y,z)));
+  c.addProperty("unloadedRejected",!route(control,new FlightVector(10000,y,10000),new FlightVector(10008,y,10000)));cases.add(c);append("cases.jsonl",c);
  }
  private void drain()throws IOException{JsonObject row;while((row=queue.poll())!=null){queueSize.decrementAndGet();if(row.remove("record").getAsString().equals("JOIN")){joins.add(row);append("joins.jsonl",row);}else{clientRows.add(row);require(clientRows.size()<=640,"CLIENT_ROW_BOUND");append("clientRows.jsonl",row);}}}
  private void finish(String status)throws IOException{
