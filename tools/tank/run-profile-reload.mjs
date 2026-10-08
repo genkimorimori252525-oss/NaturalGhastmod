@@ -61,7 +61,7 @@ try{
  await write(path.join(trial,'config.json'),config);assert.deepEqual(await inventory(original),originalRows);
  await launchDebugRun(config,lab);current=await readCurrent(config,lab);assert(current.live&&current.runtimeOwnership?.owned);report.runDir=current.runDir;
  for(const name of ['owner-envelope.json','owner-status.json'])assert(!(await fs.stat(path.join(current.runDir,'control',name)).catch(()=>null)),'ScopedOwner authority present');
- const output=path.join(current.runDir,'evidence/derived/profile-reload-integration');await fs.mkdir(output,{recursive:true});const dispatch=Date.now();
+ const output=path.join(current.runDir,'evidence/derived/profile-reload');await fs.mkdir(output,{recursive:true});const dispatch=Date.now();
  const request={nonce,world,subjectUuid:fixture.subjectUuid,playerUuid:fixture.playerUuid,maxTicks:180,maxWallMs:15000,dispatchEpochMs:dispatch};await write(path.join(output,'request.json'),request);
  let result;do{result=await read(path.join(output,'result.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;});if(result)break;await new Promise(resolve=>setTimeout(resolve,250));}while(Date.now()<dispatch+20000);
  assert(result,'Bounded native result missing');assert.equal(result.nonce,nonce);report.native=result;
