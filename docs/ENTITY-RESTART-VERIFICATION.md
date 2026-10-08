@@ -39,3 +39,5 @@ Both native stops/closed-world checks have no probe errors. CLEAN_EVIDENCE_SHUTD
 | fixture.json |5db741d169e05b5f244bf46112398166c2b8abe7642c7c2e8fd5ee559031f294|
 
 Mapped javac/geometry and51related Node checks pass; genuine product build succeeds in8seconds. Retain genuine missing-module RED and preparation compile/argument-file failures; neither preparation failure launched Minecraft. The file named native-clock-red.log actually passed and is not a demonstrated RED. One scoped Astra review found no Critical/Important issue; no repeated review or probabilistic retry. This pair closes clean-stop/new-process entity persistence only. Power-loss/crash persistence, unloaded-region behavior, exact transient combat continuation, late-client/deflection synchronization, human input/cues/balance, unobserved natural selectors and full release remain separate gates.
+
+Subsequent [passive native spawn/deflection synchronization](CLIENT-SYNC-VERIFICATION.md) verifies ordinary client admission and continuation, including first mid-flight Lob tracking. Controlled re-track/new-client late join remain open; this later receipt does not expand the persistence verdict.
