@@ -303,8 +303,6 @@ The body appears to disengage while the projectile becomes more dangerous.
 
 Avoid stacking this with another major deception at the same moment. The burst itself should usually be the primary surprise.
 
-The committed Lob recipe can add one interpolated point to its last line segment before full-height floor contact, preserving every original point and the exact endpoint. This adds one trajectory tick; it preserves the spatial arc rather than identical timing. The unchanged full-path/native-ray validator, speed bound,97-point cap and four exact terminal colliders still apply. Unrefinable paths remain subject to rejection. One finite integer-endpoint trial proves the declared stone impact, native explosion and END removal; production Goal/human/readability/native-negative scope remains open. [Terminal plan](../superpowers/plans/2026-10-09-lob-terminal-subdivision.md)/[receipt](../LOB-TERMINAL-VERIFICATION.md).
-
 #### Deflection
 
 If the player deflects before the burst, the return should be rewarded rather than invalidated.
@@ -520,6 +518,8 @@ Lob receives extra tactical value when:
 It should not magically pass through roofs. If there is no viable ballistic corridor, the attack is invalid.
 
 Initial remembered-cover implementation uses only the same target's last visible eye/landing snapshot. It permits one attempt per LOS-loss episode within10actual game ticks, requires loaded terrain obstruction toward that stored eye and a fully validated Lob arc, and expires after40ticks including launch. A lost visible charge restarts the complete cover tell; freeze the remembered endpoint/recipe at admission, emit the distinct cue at19 and launch at30 from the actual muzzle after full revalidation. Regained LOS, target/clock/context/ownership discontinuity or invalid geometry cancels; rejection never fires hidden Standard or refreshes hidden target coordinates. Existing variation and600tick Lob repetition penalty remain authoritative. [Implementation plan](../superpowers/plans/2026-10-09-remembered-cover-lob.md)/[scoped native receipt](../COVER-LOB-VERIFICATION.md) distinguish actual native perception with declared fresh fixture geometry from production Goal/human hiding/readability acceptance.
+
+The committed Lob recipe can add one interpolated point to its last line segment before full-height floor contact, preserving every original point and the exact endpoint. This adds one trajectory tick; it preserves the spatial arc rather than identical timing. The unchanged full-path/native-ray validator, speed bound,97-point cap and four exact terminal colliders still apply. Unrefinable paths remain subject to rejection. One finite integer-endpoint trial proves the declared stone impact, native explosion and END removal; production Goal/human/readability/native-negative scope remains open. [Terminal plan](../superpowers/plans/2026-10-09-lob-terminal-subdivision.md)/[receipt](../LOB-TERMINAL-VERIFICATION.md).
 
 #### Deflection
 
