@@ -35,6 +35,7 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 @Mod("naturalghast_cover_lob_probe")
 public final class CoverLobProbe {
  private static final String SCOPE="NEW_PRIVATE_STATIC_COVER_NATIVE_PERCEPTION_NOT_PLAYER_INPUT_OR_PRODUCTION_GOAL";
+ static final Vec3 TARGET_START=new Vec3(42.5,224,26.5);
  private static final ConcurrentLinkedQueue<JsonObject> queue=new ConcurrentLinkedQueue<>();private static final AtomicInteger queueSize=new AtomicInteger();
  private static volatile boolean active;private static volatile UUID bossUuid;private static volatile String observerError;
  private final JsonArray rows=new JsonArray(),shots=new JsonArray(),joins=new JsonArray(),clientRows=new JsonArray(),cleanup=new JsonArray(),wallCleanup=new JsonArray();
@@ -57,7 +58,7 @@ public final class CoverLobProbe {
   @Override protected void registerGoals(){goalSelector.addGoal(1,new Goal(){
    {setFlags(EnumSet.of(Flag.MOVE));}
    @Override public boolean canUse(){return true;}@Override public boolean requiresUpdateEveryTick(){return true;}
-   @Override public void tick(){if(active&&s!=null&&s.hidden&&s.navigationCalls==0){s.navigationCalls++;if(!getNavigation().moveTo(42,224,38,1))observerError="NATIVE_NAVIGATION_REJECTED";}}
+   @Override public void tick(){if(active&&s!=null&&s.hidden&&s.navigationCalls==0){s.navigationCalls++;if(!getNavigation().moveTo(TARGET_START.x,TARGET_START.y,TARGET_START.z+12,1))observerError="NATIVE_NAVIGATION_REJECTED";}}
   });}
  }
  private static void execute(Scenario s){
@@ -70,6 +71,7 @@ public final class CoverLobProbe {
   var memory=(RememberedCoverLob)inspect(attack,"cover");var state=attack.state();var row=new JsonObject();
   row.addProperty("goalTick",++s.goalTicks);row.addProperty("phase",state.phase().name());row.addProperty("chargeTick",state.ticks());row.addProperty("fire",state.fire());row.addProperty("emitted",attack.firedCount()>before);row.addProperty("fired",attack.firedCount());row.addProperty("visible",visible);row.addProperty("coverActive",memory.active());
   row.addProperty("age",memory.age());row.addProperty("choice",attack.selectedProfile().name());row.addProperty("lastFired",attack.lastFiredProfile().name());row.addProperty("rejection",attack.lastRejection());row.addProperty("context",control.getMobilityContext().name());row.addProperty("navigationCalls",s.navigationCalls);row.addProperty("attackNanos",elapsed);
+  row.addProperty("lastCandidate",attack.lastCandidate());
   row.add("beforePosition",vector(boss.position()));row.add("region",region(s.region));row.addProperty("profileCueTick",attack.profileCueTick());
   if(memory.snapshot()!=null)row.add("snapshot",new Gson().toJsonTree(memory.snapshot()));
   if(attack.committedProfile()!=null)row.add("recipe",new Gson().toJsonTree(attack.committedProfile()));
@@ -101,7 +103,7 @@ public final class CoverLobProbe {
    require(level.getEntity(UUID.fromString(request.get("subjectUuid").getAsString()))==null&&level.getEntitiesOfClass(SoutouGhast.class,new AABB(0,224,0,52,248,52)).isEmpty(),"NO_CANONICAL_COMBAT_SUBJECT");fixtureSubjectAbsent=true;
    for(int y=224;y<=231;y++)for(int z=26;z<=42;z++){var pos=new BlockPos(27,y,z);require(level.hasChunkAt(pos)&&level.getBlockState(pos).isAir()&&level.getEntities(null,new AABB(pos)).isEmpty(),"NEW_STATIC_WALL_AIR");}
    for(int y=224;y<=231;y++)for(int z=26;z<=42;z++){var pos=new BlockPos(27,y,z);require(level.setBlockAndUpdate(pos,Blocks.STONE.defaultBlockState()),"NEW_STATIC_WALL_WRITE");wall.add(pos);}
-   scenario=new Scenario();var s=scenario;s.target=new TestCow(level);s.target.s=s;s.target.setPos(42,224,26);require(level.noCollision(s.target,s.target.getBoundingBox())&&level.addFreshEntity(s.target),"NEW_NATIVE_TARGET");
+   scenario=new Scenario();var s=scenario;s.target=new TestCow(level);s.target.s=s;s.target.setPos(TARGET_START);require(level.noCollision(s.target,s.target.getBoundingBox())&&level.addFreshEntity(s.target),"NEW_NATIVE_TARGET");
    s.boss=new TestGhast(level);s.boss.s=s;s.boss.setPos(12,230,23);s.region=new CombatAnchor.Region(from(s.boss.position()),CombatAnchor.RADII,1,CombatAnchor.Reason.ACQUIRED);bossUuid=s.boss.getUUID();require(level.noCollision(s.boss,s.boss.getBoundingBox())&&level.addFreshEntity(s.boss),"NEW_NATIVE_BOSS");
    actors=entity(s.boss);actors.addProperty("targetUuid",s.target.getUUID().toString());actors.addProperty("privateControlledGoals",true);actors.addProperty("targetMovement","NEW_COW_NATIVE_NAVIGATION_AFTER_ACTUAL_LOS_LOSS");actors.addProperty("bossMovement","HOLD62_THEN_CONTROLLER_DRIFT_Z_0.14_UNTIL_LOS_LOSS");actors.addProperty("width",s.boss.getBbWidth());actors.addProperty("height",s.boss.getBbHeight());actors.add("region",region(s.region));actors.add("wall",new Gson().toJsonTree(wall.stream().map(p->new int[]{p.getX(),p.getY(),p.getZ()}).toList()));Files.writeString(output.resolve("actors.json"),actors+"\n",StandardOpenOption.CREATE_NEW);return;
   }

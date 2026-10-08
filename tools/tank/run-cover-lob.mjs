@@ -37,8 +37,9 @@ try{
  for(const name of ['options.txt','resourcepacks']){const source=path.join(template.gameDir,name);if(await fs.stat(source).catch(()=>null))await fs.cp(source,path.join(trial,'game',name),{recursive:true,errorOnExist:true,force:false});}
  const cp=path.join(repository,'build/classes/java/main')+';'+report.bridgeReadiness.outputRoot+';'+(await fs.readFile(classpathFile,'utf8')).split(/\r?\n/)[1].replace(/^"|"$/g,'');
  const classes=path.join(trial,'classes');await fs.mkdir(classes);
- const sources=['TankSeedEntities.java','PrepareFlightTank.java','PrepareFeintTank.java','CoverLobProbe.java'].map(n=>path.join(repository,'tools/tank',n));
+ const sources=['TankSeedEntities.java','PrepareFlightTank.java','PrepareFeintTank.java','CoverLobProbe.java','CoverLobFixtureTest.java'].map(n=>path.join(repository,'tools/tank',n));
  java('javac',['@'+await argsFile('javac.args',['--release','17','-encoding','UTF-8','-proc:none','-cp',cp,'-d',classes,...sources])]);
+ await fs.writeFile(path.join(trial,'fixture-check.log'),java('java',['@'+await argsFile('fixture-check.args',['-ea','-cp',classes+';'+cp,'com.genki.soutoughast.tank.CoverLobFixtureTest'])]),{flag:'wx'});
  java('java',['@'+await argsFile('java.args',['-cp',classes+';'+cp,'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFeintTank',trial,parent,'DOMAIN_RELIABILITY'])]);
  const fixture=await read(path.join(trial,'fixture.json'));assert.equal(fixture.variant,'FEINT_RELIABILITY');assert.equal(fixture.newFixtureCombatSubjectOmitted,true);
  const inputs=path.join(trial,'inputs');await fs.mkdir(inputs);
