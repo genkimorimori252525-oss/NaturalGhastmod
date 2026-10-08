@@ -73,8 +73,8 @@ public final class ProfileReloadProbe {
  }
  private void create(ServerLevel level,SoutouGhast boss,ServerPlayer player)throws IOException{
   if(caseIndex==NAMES.length){finish(level,"PASS");return;}
-  int lane=caseIndex==1?5:caseIndex==3?45:12;var from=new FlightVector(caseIndex==0?26:3,caseIndex==0?238:236,caseIndex==0?42:lane);
-  var to=new FlightVector(caseIndex==0?46:49,caseIndex==3?223.75:from.y(),from.z());
+  int lane=caseIndex==1?5:caseIndex==3?45:12;var from=new FlightVector(caseIndex==0?26:caseIndex==3?3.5:3,caseIndex==0?238:236,caseIndex==0?42:caseIndex==3?45.5:lane);
+  var to=new FlightVector(caseIndex==0?46:caseIndex==3?49.5:49,caseIndex==3?223.75:from.y(),from.z());
   var path=caseIndex==1?CommittedTrajectory.burst(from,to):caseIndex==3?CommittedTrajectory.lob(from,to,6):CommittedTrajectory.curve(from,to,CommittedTrajectory.Strength.NORMAL,1);
   ball=new CommittedSoutouFireball(boss,path);var proof=CommittedPathClearance.validate(level,ball,path);require(proof.result().clear(),"LOADED_PREFLIGHT_"+proof.result().reason());ball.setPreflight(proof);
   descriptor=new JsonObject();descriptor.addProperty("name",NAMES[caseIndex]);descriptor.addProperty("uuid",ball.getUUID().toString());descriptor.addProperty("kind",path.kind().name());descriptor.addProperty("negative",caseIndex>=4);descriptor.addProperty("normalized",caseIndex==0);
