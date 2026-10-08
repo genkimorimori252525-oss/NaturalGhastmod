@@ -21,7 +21,8 @@ public final class DomainNativePersistence implements DomainPersistenceBarrier.D
  private static final Codec<PalettedContainer<BlockState>> STATES=PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY,BlockState.CODEC,PalettedContainer.Strategy.SECTION_STATES,Blocks.AIR.defaultBlockState());
  private final ServerLevel level;private final IOWorker worker;private final Map<DomainGeometry.Cell,BlockState> originals;
  private record Snapshot(DomainPersistenceBarrier.Chunk chunk,CompoundTag tag,int bytes) implements DomainPersistenceBarrier.Snapshot {}
- private DomainNativePersistence(ServerLevel level,DomainOverlay.Journal journal)throws IOException{
+ // Package-local reliability sidecars may delay delivery; the native worker stays unchanged.
+ DomainNativePersistence(ServerLevel level,DomainOverlay.Journal journal)throws IOException{
   this.level=Objects.requireNonNull(level);thread();
   if(!(level.getChunkSource().chunkMap.chunkScanner() instanceof IOWorker nativeWorker))throw new IOException("DOMAIN_NATIVE_WORKER_UNSUPPORTED");worker=nativeWorker;
   Map<String,BlockState> decoded=new HashMap<>();Map<DomainGeometry.Cell,BlockState> cells=new HashMap<>();

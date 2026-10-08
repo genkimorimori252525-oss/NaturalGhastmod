@@ -20,7 +20,7 @@ let root,nonce,faultCase=crash||nativeFault?process.argv[3]:'';
 const boundaries=['PREPARE_BEGIN','PREPARE_FORCED','BEFORE_RENAME','AFTER_RENAME','AFTER_READBACK','PUBLISHED_BEFORE_RETURN'];
 const faultCases=[...['INIT','PLACE','RESTORE','TERMINAL'].flatMap(prefix=>boundaries.map(boundary=>`${prefix}_${boundary}`)),'BEFORE_FIRST_MUTATION','AFTER_FIRST_MUTATION','PARTIAL_PLACEMENT','BEFORE_FIRST_RESTORE','AFTER_FIRST_RESTORE','PARTIAL_RESTORATION','UNPUBLISHED_INITIAL_THIRD_PARTY','UNPUBLISHED_PENDING_THIRD_PARTY','DURABILITY_BEFORE_BARRIER','DURABILITY_TERMINAL_PREPARE_BEGIN','PREPLACEMENT_THIRD_PARTY','REJECTED_BEFORE_CONFLICT_PUBLICATION'];
 if(crash&&!faultCases.includes(faultCase))throw new Error('DOMAIN_PROBE_FAULT_CASE');
-if(nativeFault&&faultCase!=='NATIVE_WRITE_LOCK')throw new Error('DOMAIN_PROBE_NATIVE_FAULT_CASE');
+if(nativeFault&&!['NATIVE_WRITE_LOCK','NATIVE_UNLOAD','DELAYED_NATIVE_ACK'].includes(faultCase))throw new Error('DOMAIN_PROBE_NATIVE_FAULT_CASE');
 if(reopen||recover){
  root=await realpath(process.argv[3]);if(path.dirname(root)!==await realpath(parent)||!path.basename(root).startsWith('domain-probe-'))throw new Error('DOMAIN_PROBE_REOPEN_PATH');
  const owner=(await readFile(path.join(root,'probe-owner.txt'),'utf8')).split('\n');nonce=owner[0];if(owner[1]!==revision||owner[2]!==''||owner.length!==3)throw new Error('DOMAIN_PROBE_REOPEN_SOURCE');
@@ -43,7 +43,7 @@ const safeDirectories=async target=>{for(let current=target;;current=path.dirnam
 await safeDirectories(root);await safeDirectories(path.join(root,'runtime'));await safeDirectories(path.join(root,'universe'));if(reopen||recover)await safeDirectories(path.join(root,'universe/domain-owned'));
 const scenario=reopen?'reopen-terminal':recover?'recover':crash?'crash':nativeFault?'native-fault':'baseline';
 const durabilityCase=faultCase.startsWith('DURABILITY_');
-const scope=nativeFault?'DIRECT_NATIVE_DOMAIN_WRITE_ERROR':(crash||recover)?(durabilityCase?'DIRECT_NATIVE_DOMAIN_DURABILITY_RESTART':'DIRECT_NATIVE_DOMAIN_INTERRUPTION_RESTART'):'DIRECT_NATIVE_DOMAIN_RELIABILITY_BASELINE';
+const scope=nativeFault?{NATIVE_WRITE_LOCK:'DIRECT_NATIVE_DOMAIN_WRITE_ERROR',NATIVE_UNLOAD:'DIRECT_NATIVE_DOMAIN_UNLOAD',DELAYED_NATIVE_ACK:'NATIVE_DRIVER_INJECTED_ACK_DELAY'}[faultCase]:(crash||recover)?(durabilityCase?'DIRECT_NATIVE_DOMAIN_DURABILITY_RESTART':'DIRECT_NATIVE_DOMAIN_INTERRUPTION_RESTART'):'DIRECT_NATIVE_DOMAIN_RELIABILITY_BASELINE';
 const env={...process.env,JAVA_HOME:javaHome,NATURAL_DOMAIN_PROBE_ROOT:root,NATURAL_DOMAIN_PROBE_NONCE:nonce,NATURAL_DOMAIN_PROBE_SOURCE:revision,NATURAL_DOMAIN_PROBE_SCENARIO:scenario,NATURAL_DOMAIN_PROBE_FAULT_CASE:faultCase};
 const ownedPids=()=>{
  const code="@(Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:NATURAL_DOMAIN_PROBE_NONCE) -and $_.CommandLine.Contains('naturalghast.domainProbe.root') } | ForEach-Object { $_.ProcessId }) -join ','";
@@ -72,7 +72,7 @@ const nativeExit73=/finished with non-zero exit value 73/.test(logBytes.toString
 const closed=!timedOut&&!overflow&&!stopError&&!remaining.length&&unchanged&&native?.nonce===nonce&&native.sourceRevision===revision&&native.scenario===scenario&&native.scope===scope;
 const durabilityCondition=durabilityCase?native?.worldFlushBeforeHalt===false&&native.overlayBaselineDurabilityVerified===true&&native.expectedPersistedBlockStates?.length===3&&native.nativeBarrierVerifiedBeforeHalt===(faultCase==='DURABILITY_TERMINAL_PREPARE_BEGIN'):native?.worldFlushBeforeHalt===true;
 const expectedCrash=crash&&closed&&exitCode!==0&&nativeExit73&&native.verdict==='EXPECTED_ABRUPT_HALT'&&native.faultCase===faultCase&&durabilityCondition;
-const faultAttested=!nativeFault||native?.actualExceptionalStoreFuture===true&&native.helperReleaseAndExitAttested===true&&native.remainingOwnedHelperProcesses===0&&native.nonterminalJournalRetained===true;
+const faultAttested=!nativeFault||native?.nonterminalJournalRetained===true&&({NATIVE_WRITE_LOCK:native.actualExceptionalStoreFuture===true&&native.helperReleaseAndExitAttested===true&&native.remainingOwnedHelperProcesses===0,NATIVE_UNLOAD:native.actualUnloadedBeforeDeadline===true&&native.adapterReloadedChunk===false,DELAYED_NATIVE_ACK:native.actualNativeStoreCompleted===true&&native.injectedDeadlineObserved===true&&native.lateAcknowledgmentRejected===true&&native.nativeWriteCancelled===false}[faultCase]);
 const pass=!crash&&closed&&exitCode===0&&native.verdict==='PASS'&&(!recover||native.faultCase===faultCase)&&faultAttested;
 const result={scope,verdict:expectedCrash?'EXPECTED_CRASH':pass?'PASS':'FAIL',nonce,sourceRevision:revision,scenario,faultCase,gradleOffline:true,forgeConnectivityProbe:false,exitCode,nativeExit73,timedOut,overflow,stopError,remainingOwnedJavaPids:remaining,sourceUnchanged:unchanged,logSha256:createHash('sha256').update(logBytes).digest('hex'),native};
 const receipt=path.join(root,`${scenario}-run.json`);await writeFile(receipt,JSON.stringify(result,null,2)+'\n',{flag:'wx'});console.log(JSON.stringify({receipt,verdict:result.verdict,exitCode,nativeChecks:native?.checks,nativeGameTicks:native?.gameTicks,remainingOwnedJavaPids:remaining}));
