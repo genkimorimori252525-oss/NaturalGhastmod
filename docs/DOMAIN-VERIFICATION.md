@@ -1,0 +1,20 @@
+# Domain source and reliability status
+
+2026-10-08. **Source foundation only; autonomous Domain disabled.** Preserve normal boss-owned20/8/20 swimming. All Grand Danmaku remains excluded. This receipt does not replace Ground/Overhead coverage or full boss acceptance.
+
+Implemented: finite radius20/height12 geometry; bounded conditional write-ahead engine; four fixed slots per dimension; canonical checksummed records with strict UTF8/key/integer/size validation; exclusive world writer lock and thread; forced atomic-only publication with predecessor/readback guards; verified-terminal generation reuse. Preparation and diagnostic metadata use fixed files, never an accumulating history. Unknown/corrupt/ambiguous records remain retained and block reconciliation.
+
+Astra decision: unpublished preparation grants no restoration authority. Classify abandonment/obsolete preparation durably before guarded reclamation; reconcile only published canonical journals. Promoting an unpublished ledger could overwrite an independent third-party block that happens to match the intended overlay. This rejected shortcut and the accepted method are recorded in the plan and commit history.
+
+Native boundary source decodes all ledger states before mutation, restricts simple vanilla full-block/air materials, checks dimensions/build/world-border bounds and loaded chunks, and immediately rechecks original state/actor occupancy. Removing a block also protects actors standing on it. Read-only canonical-plan preflight processes at most128cells per call and rejects rather than reducing oversized/unloaded/unsafe plans. There is no game-event registration or active boss caller yet.
+
+Verification:
+
+- Pure geometry/engine:615checks PASS, including simulated abrupt failures around journal/world operations, conflicts, unchanged deferred-state persistence suppression, actors, budgets and terminal reuse. These are simulations.
+- Actual local files:38checks PASS, including an independent Java process rejected by the exclusive lock, Windows no-delete-sharing denial of actual atomic replacement, unchanged predecessor, writer halt, reopen/classify/reclaim, initial unpublished abandonment, obsolete duplicates, interrupted diagnostic publication, corruption retention, ambiguous predecessor and generation/phase/original-ledger guards.
+- Actual mapped Minecraft registry:14checks PASS, including exact state/property roundtrip and unknown/dropped/defaulted/duplicate/noncanonical/oversized-state negatives. No ServerLevel is created by these checks.
+- Genuine Forge build:PASS. Build success does not attest native chunk access, mutation, persistence, process restart or combat behavior.
+
+Pending: private Forge GameTest/dedicated-server native interruption and genuine restart matrix, actual unloaded no-load proof, third-party edits/actors, slot exhaustion/reuse, overlap cancellation, normal expiry, reservations/clash, common participant floor/fit, Domain tell/landing/combat/restoration/takeoff integration and one fresh coherent whole-unit Astra source review. No autonomous activation before those reliability gates. Readability, moving Player counterplay, genuine input, applied damage, reload and late-client synchronization remain separate acceptance requirements.
+
+Mapped Forge GameTest startup uses server Main's validated world access and existing WorldStem; no world deletion was found there. Keep templates away from persisted probe cells, verify actual block/journal state after restart, and label direct adapter trials reliability evidence rather than natural boss selection. The probe must use a fresh owned world, finite process/tick bounds and explicit closure receipts.
