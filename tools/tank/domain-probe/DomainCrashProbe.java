@@ -14,6 +14,7 @@ final class DomainCrashProbe {
  private final DomainNativeProbe.Trial t;private final String fault;
  private final List<DomainGeometry.Cell> cells=List.of(new DomainGeometry.Cell(112,16,64),new DomainGeometry.Cell(113,16,64),new DomainGeometry.Cell(114,16,64));
  private DomainOverlay engine;private DomainOverlay.World world;private DomainOverlay.Journal saved;
+ private DomainPersistenceBarrier durability;
  private boolean initialized,finished;private int placements,restorations;private List<String> expectedFinal;
  private DomainCrashProbe(DomainNativeProbe.Trial trial)throws IOException{t=trial;fault=System.getProperty("naturalghast.domainProbe.faultCase","");if(!valid(fault))throw new IOException("DOMAIN_PROBE_FAULT_CASE");}
  static void run(DomainNativeProbe.Trial trial)throws IOException{var probe=new DomainCrashProbe(trial);trial.helper.onEachTick(probe::tick);}
@@ -27,7 +28,8 @@ final class DomainCrashProbe {
   try{
    if(!initialized){if(t.scenario.equals("recover")){initializeRecovery();initialized=true;}else{initializeCrash();initialized=true;}}
    if(t.scenario.equals("recover")){
-    if(engine!=null&&!engine.terminal())engine.restore(world,1);
+    if(engine!=null&&engine.journal().phase()==DomainOverlay.Phase.RESTORING)engine.restore(world,1);
+    verifyDurability();
     if(engine==null||engine.terminal()){
      for(int i=0;i<cells.size();i++)t.check(nativeState(cells.get(i)).equals(expectedFinal.get(i)),"GENUINE_RESTART_FINAL_BLOCK_STATE");
      if(engine!=null)t.check(t.repository.slot(t.dimension,0).read().phase()==DomainOverlay.Phase.VERIFIED_TERMINAL,"GENUINE_RESTART_TERMINAL_JOURNAL");
@@ -38,8 +40,12 @@ final class DomainCrashProbe {
    if(engine.journal().phase()==DomainOverlay.Phase.PLACING)engine.place(world,fault.equals("PARTIAL_PLACEMENT")?1:3);
    if(restoring&&engine.journal().phase()==DomainOverlay.Phase.ACTIVE)engine.requestRestore("PRIVATE_CRASH_RESTORE");
    if(restoring&&engine.journal().phase()==DomainOverlay.Phase.RESTORING)engine.restore(world,fault.equals("PARTIAL_RESTORATION")?1:3);
+   if(restoring)verifyDurability();
    if(engine.terminal()||!restoring&&engine.journal().phase()==DomainOverlay.Phase.ACTIVE)throw new IOException("DOMAIN_PROBE_SELECTED_BOUNDARY_NOT_REACHED");
   }catch(Exception|AssertionError error){finished=true;try{if(t.repository!=null)t.repository.close();}catch(IOException ignored){}t.repository=null;try{receipt("FAIL",error.getClass().getSimpleName(),null);}catch(IOException ignored){}t.helper.fail("DOMAIN_PRIVATE_CRASH_PROBE_FAILED: "+error.getClass().getSimpleName()+":"+error.getMessage());}
+ }
+ private void verifyDurability()throws IOException{
+  if(engine!=null&&engine.journal().phase()==DomainOverlay.Phase.RESTORED_PENDING_DURABILITY){if(durability==null)durability=DomainNativePersistence.barrier(t.level,engine.journal());engine.verifyDurability(durability);}
  }
  private void initializeCrash()throws Exception{
   for(var cell:cells)t.check(t.level.getBlockState(pos(cell)).isAir(),"FRESH_CRASH_CELL_AIR");

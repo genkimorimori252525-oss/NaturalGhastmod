@@ -21,7 +21,7 @@ public final class DomainJournalCodec {
  public static DomainOverlay.Journal decode(byte[] bytes)throws IOException{return journal(unwrap(bytes).payload());}
  static byte[] wrap(JsonObject payload,String predecessor)throws IOException{
   validateHash(predecessor);JsonObject body=new JsonObject();body.addProperty("predecessorSha256",predecessor);body.add("payload",payload);
-  JsonObject record=new JsonObject();record.addProperty("schemaVersion",1);record.add("body",body);record.addProperty("bodySha256",sha(canonical(body).getBytes(StandardCharsets.UTF_8)));
+  JsonObject record=new JsonObject();record.addProperty("schemaVersion",2);record.add("body",body);record.addProperty("bodySha256",sha(canonical(body).getBytes(StandardCharsets.UTF_8)));
   byte[] bytes=(canonical(record)+"\n").getBytes(StandardCharsets.UTF_8);if(bytes.length>MAX_BYTES)throw new IOException("DOMAIN_RECORD_SIZE_LIMIT");return bytes;
  }
  static Record unwrap(byte[] bytes)throws IOException{
@@ -29,7 +29,7 @@ public final class DomainJournalCodec {
   try{
    String text=StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
    JsonReader reader=new JsonReader(new StringReader(text));reader.setLenient(false);JsonObject root=object(value(reader,0));if(reader.peek()!=JsonToken.END_DOCUMENT)throw new IOException("DOMAIN_TRAILING_JSON");
-   keys(root,"schemaVersion","body","bodySha256");if(number(root,"schemaVersion")!=1)throw new IOException("DOMAIN_RECORD_SCHEMA");JsonObject body=object(root.get("body"));keys(body,"predecessorSha256","payload");
+   keys(root,"schemaVersion","body","bodySha256");if(number(root,"schemaVersion")!=2)throw new IOException("DOMAIN_RECORD_SCHEMA");JsonObject body=object(root.get("body"));keys(body,"predecessorSha256","payload");
    String predecessor=string(body,"predecessorSha256");validateHash(predecessor);if(!sha(canonical(body).getBytes(StandardCharsets.UTF_8)).equals(string(root,"bodySha256")))throw new IOException("DOMAIN_RECORD_CHECKSUM");
    Record result=new Record(object(body.get("payload")),predecessor);if(!Arrays.equals(bytes,wrap(result.payload(),predecessor)))throw new IOException("DOMAIN_NONCANONICAL_RECORD");return result;
   }catch(RuntimeException error){throw new IOException("DOMAIN_RECORD_INVALID",error);}
@@ -40,15 +40,16 @@ public final class DomainJournalCodec {
    JsonObject j=object(payload.get("journal"));keys(j,"identity","phase","entries","cursor","reason");JsonObject id=object(j.get("identity"));keys(id,"domain","owner","dimension","slot","generation");
    var identity=new DomainOverlay.Identity(uuid(string(id,"domain")),uuid(string(id,"owner")),string(id,"dimension"),Math.toIntExact(number(id,"slot")),number(id,"generation"));
    JsonArray rows=j.getAsJsonArray("entries");if(rows.size()>DomainOverlay.MAX_CHANGED)throw new IOException("DOMAIN_ENTRY_LIMIT");List<DomainOverlay.Entry> entries=new ArrayList<>();
-   for(JsonElement raw:rows){JsonObject e=object(raw);keys(e,"cell","original","overlay","status");JsonArray cell=e.getAsJsonArray("cell");if(cell.size()!=3)throw new IOException("DOMAIN_CELL_LENGTH");
-    entries.add(new DomainOverlay.Entry(new DomainGeometry.Cell(integer(cell.get(0)),integer(cell.get(1)),integer(cell.get(2))),string(e,"original"),string(e,"overlay"),DomainOverlay.Status.valueOf(string(e,"status"))));}
+   for(JsonElement raw:rows){JsonObject e=object(raw);keys(e,"cell","original","overlay","status","mutationIntent");JsonArray cell=e.getAsJsonArray("cell");if(cell.size()!=3)throw new IOException("DOMAIN_CELL_LENGTH");
+    JsonElement intent=e.get("mutationIntent");if(!intent.isJsonPrimitive()||!intent.getAsJsonPrimitive().isBoolean())throw new IOException("DOMAIN_MUTATION_OWNERSHIP");
+    entries.add(new DomainOverlay.Entry(new DomainGeometry.Cell(integer(cell.get(0)),integer(cell.get(1)),integer(cell.get(2))),string(e,"original"),string(e,"overlay"),DomainOverlay.Status.valueOf(string(e,"status")),intent.getAsBoolean()));}
    return new DomainOverlay.Journal(identity,DomainOverlay.Phase.valueOf(string(j,"phase")),entries,Math.toIntExact(number(j,"cursor")),string(j,"reason"));
   }catch(RuntimeException error){throw new IOException("DOMAIN_JOURNAL_INVALID",error);}
  }
  private static JsonObject journalJson(DomainOverlay.Journal j){
   JsonObject id=new JsonObject();id.addProperty("domain",j.identity().domain().toString());id.addProperty("owner",j.identity().owner().toString());id.addProperty("dimension",j.identity().dimension());id.addProperty("slot",j.identity().slot());id.addProperty("generation",j.identity().generation());
   JsonObject body=new JsonObject();body.add("identity",id);body.addProperty("phase",j.phase().name());body.addProperty("cursor",j.cursor());body.addProperty("reason",j.reason());JsonArray rows=new JsonArray();
-  for(var e:j.entries()){JsonObject row=new JsonObject();JsonArray cell=new JsonArray();cell.add(e.cell().x());cell.add(e.cell().y());cell.add(e.cell().z());row.add("cell",cell);row.addProperty("original",e.original());row.addProperty("overlay",e.overlay());row.addProperty("status",e.status().name());rows.add(row);}body.add("entries",rows);return body;
+  for(var e:j.entries()){JsonObject row=new JsonObject();JsonArray cell=new JsonArray();cell.add(e.cell().x());cell.add(e.cell().y());cell.add(e.cell().z());row.add("cell",cell);row.addProperty("original",e.original());row.addProperty("overlay",e.overlay());row.addProperty("status",e.status().name());row.addProperty("mutationIntent",e.mutationIntent());rows.add(row);}body.add("entries",rows);return body;
  }
  private static JsonElement value(JsonReader r,int depth)throws IOException{
   if(depth>12)throw new IOException("DOMAIN_JSON_DEPTH");

@@ -5,23 +5,26 @@ import java.util.*;
 /** Conditional write-ahead engine; a Store must force atomic guarded persistence before returning. */
 public final class DomainOverlay {
  public static final int MAX_CHANGED=4096,MAX_BATCH=64;
- public enum Phase {PLACING,ACTIVE,RESTORING,VERIFIED_TERMINAL}
- public enum Status {RESERVED,PENDING,APPLIED,RESTORED,DEFERRED,CONFLICT}
+ public enum Phase {PLACING,ACTIVE,RESTORING,RESTORED_PENDING_DURABILITY,VERIFIED_TERMINAL}
+ public enum Status {RESERVED,PENDING,APPLIED,RESTORED,DEFERRED,CONFLICT,DURABILITY_CONFLICT}
+ public enum DurabilityResult {PENDING,VERIFIED,CONFLICT}
+ @FunctionalInterface public interface Durability {DurabilityResult step(Journal journal)throws IOException;}
  public record Identity(UUID domain,UUID owner,String dimension,int slot,long generation) {
   public Identity {Objects.requireNonNull(domain);Objects.requireNonNull(owner);if(dimension==null||dimension.length()>128||!dimension.matches("[a-z0-9_.-]+:[a-z0-9_./-]+")||slot<0||slot>=4||generation<1)throw new IllegalArgumentException("DOMAIN_IDENTITY");}
  }
  public record Change(DomainGeometry.Cell cell,String original,String overlay) {
   public Change {Objects.requireNonNull(cell);validateState(original);validateState(overlay);if(original.equals(overlay))throw new IllegalArgumentException("DOMAIN_UNCHANGED_ENTRY");}
  }
- public record Entry(DomainGeometry.Cell cell,String original,String overlay,Status status) {
-  public Entry {new Change(cell,original,overlay);Objects.requireNonNull(status);}
-  Entry with(Status next){return new Entry(cell,original,overlay,next);}
+ public record Entry(DomainGeometry.Cell cell,String original,String overlay,Status status,boolean mutationIntent) {
+  public Entry {new Change(cell,original,overlay);Objects.requireNonNull(status);if(status==Status.RESERVED&&mutationIntent||Set.of(Status.PENDING,Status.APPLIED,Status.DURABILITY_CONFLICT).contains(status)&&!mutationIntent)throw new IllegalArgumentException("DOMAIN_MUTATION_OWNERSHIP");}
+  public Entry(DomainGeometry.Cell cell,String original,String overlay,Status status){this(cell,original,overlay,status,status!=Status.RESERVED);}
+  Entry with(Status next){return new Entry(cell,original,overlay,next,mutationIntent||next==Status.PENDING||next==Status.APPLIED);}
  }
  public record Journal(Identity identity,Phase phase,List<Entry> entries,int cursor,String reason) {
   public Journal {
    Objects.requireNonNull(identity);Objects.requireNonNull(phase);entries=List.copyOf(entries);
    if(entries.size()>MAX_CHANGED||cursor<0||cursor>entries.size()||reason==null||reason.length()>128||new HashSet<>(entries.stream().map(Entry::cell).toList()).size()!=entries.size())throw new IllegalArgumentException("DOMAIN_JOURNAL_BOUNDS");
-   if(phase==Phase.VERIFIED_TERMINAL&&entries.stream().anyMatch(e->e.status()!=Status.RESTORED))throw new IllegalArgumentException("DOMAIN_UNVERIFIED_TERMINAL");
+   if((phase==Phase.VERIFIED_TERMINAL||phase==Phase.RESTORED_PENDING_DURABILITY)&&entries.stream().anyMatch(e->e.status()!=Status.RESTORED))throw new IllegalArgumentException("DOMAIN_UNVERIFIED_TERMINAL");
    if(phase==Phase.ACTIVE&&entries.stream().anyMatch(e->e.status()!=Status.APPLIED))throw new IllegalArgumentException("DOMAIN_UNVERIFIED_ACTIVE");
   }
  }
@@ -45,10 +48,15 @@ public final class DomainOverlay {
  }
  /** Interrupted activation never resumes placement: restore every potentially changed entry first. */
  public static DomainOverlay recover(Journal saved,Store store)throws IOException{
-  var result=new DomainOverlay(saved,store);if(saved.phase()!=Phase.VERIFIED_TERMINAL)result.write(new Journal(saved.identity(),Phase.RESTORING,saved.entries(),0,"RESTART_RECONCILIATION"));return result;
+  var result=new DomainOverlay(saved,store);
+  if(saved.phase()!=Phase.VERIFIED_TERMINAL){
+   // A prior in-memory restoration does not prove the native chunk write reached storage.
+   List<Entry> entries=saved.entries().stream().map(e->e.status()==Status.RESTORED&&e.mutationIntent()?e.with(Status.DURABILITY_CONFLICT):e).toList();
+   result.write(new Journal(saved.identity(),Phase.RESTORING,entries,0,"RESTART_RECONCILIATION"));
+  }return result;
  }
  public void requestRestore(String reason)throws IOException{
-  requireRunning();if(terminal()||current.phase()==Phase.RESTORING)return;
+  requireRunning();if(terminal()||current.phase()==Phase.RESTORING||current.phase()==Phase.RESTORED_PENDING_DURABILITY)return;
   write(new Journal(current.identity(),Phase.RESTORING,current.entries(),0,reason));
   scanCursor=0;
  }
@@ -73,12 +81,16 @@ public final class DomainOverlay {
  }
  public void restore(World world,int budget)throws IOException{
   requireRunning();requireBudget(budget);if(terminal())return;if(current.phase()!=Phase.RESTORING)throw new IOException("DOMAIN_RESTORE_NOT_REQUESTED");
-  if(current.entries().isEmpty()){write(copy(Phase.VERIFIED_TERMINAL,current.entries(),0,"RESTORATION_VERIFIED"));return;}
+  if(current.entries().isEmpty()){write(copy(Phase.RESTORED_PENDING_DURABILITY,current.entries(),0,"RESTORATION_AWAITING_DURABILITY"));return;}
   List<Entry> entries=new ArrayList<>(current.entries());List<Integer> mutations=new ArrayList<>();int size=entries.size(),count=Math.min(size,budget),start=scanCursor%size;
   try{
    for(int n=0;n<count;n++){
     int i=(start+n)%size;Entry e=entries.get(i);if(e.status()==Status.RESTORED)continue;
     if(e.status()==Status.RESERVED){entries.set(i,e.with(Status.RESTORED));continue;}
+    if(e.status()==Status.DURABILITY_CONFLICT){
+     if(world.loaded(e.cell())&&world.state(e.cell()).equals(e.original()))entries.set(i,e.with(Status.RESTORED));
+     continue; // Never overwrite an ambiguous persisted post-restoration/third-party overlay.
+    }
     if(!world.loaded(e.cell())){entries.set(i,e.with(Status.DEFERRED));continue;}
     String observed=world.state(e.cell());
     if(observed.equals(e.original())){entries.set(i,e.with(Status.RESTORED));continue;}
@@ -99,7 +111,16 @@ public final class DomainOverlay {
     entries.set(i,e.with(world.loaded(e.cell())&&world.state(e.cell()).equals(e.original())?Status.RESTORED:Status.DEFERRED));
    }
    boolean complete=entries.stream().allMatch(e->e.status()==Status.RESTORED);
-   if(complete||!entries.equals(current.entries()))write(copy(complete?Phase.VERIFIED_TERMINAL:Phase.RESTORING,entries,complete?0:scanCursor,complete?"RESTORATION_VERIFIED":"RESTORATION_UNRESOLVED"));
+   if(complete||!entries.equals(current.entries()))write(copy(complete?Phase.RESTORED_PENDING_DURABILITY:Phase.RESTORING,entries,complete?0:scanCursor,complete?"RESTORATION_AWAITING_DURABILITY":"RESTORATION_UNRESOLVED"));
+  }catch(IOException|RuntimeException error){halted=true;throw error;}
+ }
+ /** Only a positive native write/flush/readback barrier may authorize terminal reuse. */
+ public void verifyDurability(Durability barrier)throws IOException{
+  requireRunning();if(current.phase()!=Phase.RESTORED_PENDING_DURABILITY)return;
+  try{
+   DurabilityResult result=Objects.requireNonNull(barrier.step(current));
+   if(result==DurabilityResult.VERIFIED)write(copy(Phase.VERIFIED_TERMINAL,current.entries(),0,"RESTORATION_DURABILITY_VERIFIED"));
+   else if(result==DurabilityResult.CONFLICT)write(copy(Phase.RESTORING,current.entries().stream().map(e->e.mutationIntent()?e.with(Status.DURABILITY_CONFLICT):e).toList(),0,"DURABILITY_CONTEXT_CHANGED"));
   }catch(IOException|RuntimeException error){halted=true;throw error;}
  }
  private Journal copy(Phase phase,List<Entry> entries,int cursor,String reason){return new Journal(current.identity(),phase,entries,cursor,reason);}

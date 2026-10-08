@@ -23,7 +23,8 @@ public final class DomainJournalTest {
   rejected(new byte[]{(byte)0xc3,(byte)0x28},"malformed UTF8");
   rejected((" "+new String(encoded,java.nio.charset.StandardCharsets.UTF_8)).getBytes(java.nio.charset.StandardCharsets.UTF_8),"noncanonical record");
   rejected(Arrays.copyOf(encoded,DomainJournalCodec.MAX_BYTES+1),"record limit");
-  rejected(new String(encoded,java.nio.charset.StandardCharsets.UTF_8).replace("\"schemaVersion\":1","\"schemaVersion\":1.0").getBytes(java.nio.charset.StandardCharsets.UTF_8),"ambiguous integral numeric form");
+  rejected(new String(encoded,java.nio.charset.StandardCharsets.UTF_8).replace("\"schemaVersion\":2","\"schemaVersion\":2.0").getBytes(java.nio.charset.StandardCharsets.UTF_8),"ambiguous integral numeric form");
+  rejected(new String(encoded,java.nio.charset.StandardCharsets.UTF_8).replace("\"schemaVersion\":2","\"schemaVersion\":1").getBytes(java.nio.charset.StandardCharsets.UTF_8),"old ownership-free schema retained/rejected, never silently migrated");
   var unknown=DomainJournalCodec.unwrap(encoded).payload().deepCopy();unknown.addProperty("unknown",true);rejected(DomainJournalCodec.wrap(unknown,DomainJournalCodec.ABSENT),"valid checksum cannot admit unknown fields");
   var fractional=DomainJournalCodec.unwrap(encoded).payload().deepCopy();fractional.getAsJsonObject("journal").getAsJsonArray("entries").get(0).getAsJsonObject().getAsJsonArray("cell").set(0,new com.google.gson.JsonPrimitive(0.5));rejected(DomainJournalCodec.wrap(fractional,DomainJournalCodec.ABSENT),"fractional coordinate");
   Path world=Files.createTempDirectory("domain-owned-world-").toRealPath();
@@ -71,12 +72,16 @@ public final class DomainJournalTest {
   Path reuse=Files.createTempDirectory("domain-terminal-reuse-").toRealPath();
   try(var repo=DomainJournalRepository.open(reuse)){
    var slot=repo.slot("minecraft:overworld",0);slot.persist(null,original);
-   var terminal=new DomainOverlay.Journal(original.identity(),DomainOverlay.Phase.VERIFIED_TERMINAL,original.entries().stream().map(e->new DomainOverlay.Entry(e.cell(),e.original(),e.overlay(),DomainOverlay.Status.RESTORED)).toList(),0,"RESTORATION_VERIFIED");
+   var terminal=new DomainOverlay.Journal(original.identity(),DomainOverlay.Phase.VERIFIED_TERMINAL,original.entries().stream().map(e->new DomainOverlay.Entry(e.cell(),e.original(),e.overlay(),DomainOverlay.Status.RESTORED,false)).toList(),0,"RESTORATION_DURABILITY_VERIFIED");
    try{slot.persist(original,terminal);throw new AssertionError("skip restoration phase");}catch(IOException expected){check(!Files.exists(staging(slot.path())),"invalid transition cannot reach publication");}
    var changed=new DomainOverlay.Journal(original.identity(),DomainOverlay.Phase.PLACING,List.of(new DomainOverlay.Entry(original.entries().get(0).cell(),"different","overlay",DomainOverlay.Status.RESERVED)),0,"START");
    try{slot.persist(original,changed);throw new AssertionError("alter original ledger");}catch(IOException expected){checks++;}
    try{slot.persist(original,journal(0,2));throw new AssertionError("reuse unresolved slot");}catch(IOException expected){checks++;}
-   var restoring=restoring(original);slot.persist(original,restoring);slot.persist(restoring,terminal);
+   var restoring=restoring(original);slot.persist(original,restoring);
+   var enlargedOwnership=new DomainOverlay.Journal(original.identity(),DomainOverlay.Phase.RESTORING,original.entries().stream().map(e->new DomainOverlay.Entry(e.cell(),e.original(),e.overlay(),DomainOverlay.Status.RESTORED,true)).toList(),0,"INVALID_OWNERSHIP");
+   try{slot.persist(restoring,enlargedOwnership);throw new AssertionError("expand ownership during cancellation");}catch(IOException expected){check(slot.read().equals(restoring),"unowned originals remain unowned under guarded publication");}
+   try{slot.persist(restoring,terminal);throw new AssertionError("skip durability-pending phase");}catch(IOException expected){checks++;}
+   var awaiting=new DomainOverlay.Journal(original.identity(),DomainOverlay.Phase.RESTORED_PENDING_DURABILITY,terminal.entries(),0,"AWAIT_DURABILITY");slot.persist(restoring,awaiting);slot.persist(awaiting,terminal);
    try{slot.persist(terminal,journal(0,1));throw new AssertionError("stale generation");}catch(IOException expected){checks++;}
    var next=journal(0,2);slot.persist(terminal,next);check(slot.read().equals(next),"verified terminal slot reused at increased generation");
    var threadError=new java.util.concurrent.atomic.AtomicReference<Throwable>();Thread worker=new Thread(()->{try{slot.read();}catch(Throwable error){threadError.set(error);}});worker.start();worker.join(2000);check(!worker.isAlive()&&threadError.get() instanceof IOException,"single writer thread enforced");

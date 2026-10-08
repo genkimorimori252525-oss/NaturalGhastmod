@@ -28,6 +28,7 @@ public final class DomainNativeProbe {
   final GameTestHelper helper;final ServerLevel level;final Path root,world;final String nonce,source,scenario,dimension;
   final DomainGeometry.Plan plan;final List<String> claims=new ArrayList<>();
   DomainJournalRepository repository;DomainWorldAdapter.Preflight preflight;DomainOverlay engine;DomainWorldAdapter adapter;
+  DomainPersistenceBarrier durability;
   int stage,fixtureCursor,verifyCursor,activeTicks,changedCells,checks;boolean finished;long started;
   Trial(GameTestHelper helper)throws Exception{
    this.helper=helper;level=helper.getLevel();root=Path.of(required("root")).toRealPath();nonce=required("nonce");source=required("source");scenario=required("scenario");
@@ -58,7 +59,15 @@ public final class DomainNativeProbe {
     if(stage==1){preflight.step(128);if(preflight.complete()){var changes=preflight.changes();changedCells=changes.size();check(changedCells>2000&&changedCells<=4096,"FULL_RADIUS20_OVERLAY_BUDGET");engine=start(0,changes);adapter=DomainWorldAdapter.forJournal(level,engine.journal());stage=2;}return;}
     if(stage==2){engine.place(adapter,64);if(engine.journal().phase()==DomainOverlay.Phase.ACTIVE){check(engine.journal().entries().stream().allMatch(e->e.status()==DomainOverlay.Status.APPLIED),"ALL_PLACEMENT_VERIFIED");stage=3;}return;}
     if(stage==3){if(++activeTicks>=400){engine.requestRestore("DIRECT_PROBE_EXPIRY");stage=4;}return;}
-    if(stage==4){engine.restore(adapter,64);if(engine.terminal()){claims.add("FULL_RADIUS20_PLACEMENT_400TICK_DIRECT_EXPIRY_RESTORATION");stage=5;}return;}
+    if(stage==4){
+     if(engine.journal().phase()==DomainOverlay.Phase.RESTORING)engine.restore(adapter,64);
+     if(engine.journal().phase()==DomainOverlay.Phase.RESTORED_PENDING_DURABILITY){
+      if(durability==null)durability=DomainNativePersistence.barrier(level,engine.journal());
+      // Actual ordinary ChunkMap save path interleaves with the same worker, not a mock save.
+      level.getChunkSource().save(false);engine.verifyDurability(durability);
+     }
+     if(engine.terminal()){claims.add("FULL_RADIUS20_PLACEMENT_400TICK_DIRECT_EXPIRY_RESTORATION");claims.add("NATIVE_STORE_ACK_FLUSH_READBACK_FINAL_FLUSH_WITH_ORDINARY_SAVE_INTERLEAVING");stage=5;}return;
+    }
     if(stage==5){
      for(int end=Math.min(plan.cells().size(),verifyCursor+128);verifyCursor<end;verifyCursor++){
       var tile=plan.cells().get(verifyCursor);BlockState expected=tile.role()==DomainGeometry.Role.FLOOR?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState();check(level.getBlockState(pos(tile.cell())).equals(expected),"EXACT_NATIVE_FULL_PLAN_ORIGINAL");
@@ -74,15 +83,15 @@ public final class DomainNativeProbe {
   }
   void kernel()throws Exception{
    var cell=new DomainGeometry.Cell(112,16,64);fixture(cell,Blocks.AIR.defaultBlockState());
-   var first=start(0,List.of(change(cell,Blocks.AIR.defaultBlockState(),Blocks.BLACKSTONE.defaultBlockState())));var nativeWorld=DomainWorldAdapter.forJournal(level,first.journal());first.place(nativeWorld,1);check(first.journal().phase()==DomainOverlay.Phase.ACTIVE,"NATIVE_SINGLE_ACTIVE");first.requestRestore("DIRECT_EXPIRY");first.restore(nativeWorld,1);check(first.terminal()&&level.getBlockState(pos(cell)).isAir(),"NATIVE_SINGLE_EXACT_RESTORE");
+   var first=start(0,List.of(change(cell,Blocks.AIR.defaultBlockState(),Blocks.BLACKSTONE.defaultBlockState())));var nativeWorld=DomainWorldAdapter.forJournal(level,first.journal());first.place(nativeWorld,1);check(first.journal().phase()==DomainOverlay.Phase.ACTIVE,"NATIVE_SINGLE_ACTIVE");first.requestRestore("DIRECT_EXPIRY");first.restore(nativeWorld,1);finishKernelDurability(first);check(first.terminal()&&level.getBlockState(pos(cell)).isAir(),"NATIVE_SINGLE_EXACT_RESTORE");
    var conflict=start(0,List.of(change(cell,Blocks.AIR.defaultBlockState(),Blocks.BLACKSTONE.defaultBlockState())));nativeWorld=DomainWorldAdapter.forJournal(level,conflict.journal());conflict.place(nativeWorld,1);fixture(cell,Blocks.COBBLESTONE.defaultBlockState());conflict.requestRestore("THIRD_PARTY");conflict.restore(nativeWorld,1);check(!conflict.terminal()&&conflict.journal().entries().get(0).status()==DomainOverlay.Status.CONFLICT&&level.getBlockState(pos(cell)).is(Blocks.COBBLESTONE),"THIRD_PARTY_EDIT_PRESERVED");
    try{start(0,List.of());throw new AssertionError("unresolved reuse");}catch(IllegalArgumentException expected){checks++;}
    // Explicit owned-fixture reconciliation after first proving the third-party edit was preserved.
-   fixture(cell,Blocks.AIR.defaultBlockState());conflict.restore(nativeWorld,1);check(conflict.terminal(),"EXPLICIT_FIXTURE_RECONCILIATION");claims.add("THIRD_PARTY_EDIT_PRESERVED_UNTIL_EXPLICIT_FIXTURE_RESET");
+   fixture(cell,Blocks.AIR.defaultBlockState());conflict.restore(nativeWorld,1);finishKernelDurability(conflict);check(conflict.terminal(),"EXPLICIT_FIXTURE_RECONCILIATION");claims.add("THIRD_PARTY_EDIT_PRESERVED_UNTIL_EXPLICIT_FIXTURE_RESET");
    actorCase(new DomainGeometry.Cell(114,16,64),false);actorCase(new DomainGeometry.Cell(116,16,64),true);restoreActor(new DomainGeometry.Cell(118,16,64));
    DomainOverlay[] occupied=new DomainOverlay[4];DomainWorldAdapter[] worlds=new DomainWorldAdapter[4];
    for(int i=0;i<4;i++){var c=new DomainGeometry.Cell(120+i,16,64);fixture(c,Blocks.AIR.defaultBlockState());occupied[i]=start(i,List.of(change(c,Blocks.AIR.defaultBlockState(),Blocks.BLACKSTONE.defaultBlockState())));worlds[i]=DomainWorldAdapter.forJournal(level,occupied[i].journal());occupied[i].place(worlds[i],1);}
-   check(repository.loadAll().size()==4,"FOUR_NATIVE_ACTIVE_SLOTS");for(int i=0;i<4;i++){try{start(i,List.of());throw new AssertionError("exhausted reuse");}catch(IllegalArgumentException expected){checks++;}occupied[i].requestRestore("KERNEL_END");occupied[i].restore(worlds[i],1);check(occupied[i].terminal(),"NATIVE_SLOT_TERMINAL");}claims.add("FOUR_SLOT_EXHAUSTION_TERMINAL_REUSE");
+   check(repository.loadAll().size()==4,"FOUR_NATIVE_ACTIVE_SLOTS");for(int i=0;i<4;i++){try{start(i,List.of());throw new AssertionError("exhausted reuse");}catch(IllegalArgumentException expected){checks++;}occupied[i].requestRestore("KERNEL_END");occupied[i].restore(worlds[i],1);finishKernelDurability(occupied[i]);check(occupied[i].terminal(),"NATIVE_SLOT_TERMINAL");}claims.add("FOUR_SLOT_EXHAUSTION_TERMINAL_REUSE");
    var far=new DomainGeometry.Cell(1_000_000,16,1_000_000);check(!level.hasChunkAt(pos(far)),"GENUINELY_UNLOADED_BEFORE");
    var ledger=new DomainOverlay.Journal(identity(3,999),DomainOverlay.Phase.PLACING,List.of(new DomainOverlay.Entry(far,DomainStateCodec.encode(Blocks.AIR.defaultBlockState()),DomainStateCodec.encode(Blocks.BLACKSTONE.defaultBlockState()),DomainOverlay.Status.RESERVED)),0,"PROBE_UNLOADED");
    var unloaded=DomainWorldAdapter.forJournal(level,ledger);check(!unloaded.loaded(far),"ADAPTER_UNLOADED");try{unloaded.state(far);throw new AssertionError("unloaded state lookup");}catch(IOException expected){checks++;}try{unloaded.set(far,ledger.entries().get(0).overlay());throw new AssertionError("unloaded mutation");}catch(IOException expected){checks++;}
@@ -91,14 +100,21 @@ public final class DomainNativeProbe {
   void actorCase(DomainGeometry.Cell cell,boolean removal)throws Exception{
    BlockState original=removal?Blocks.STONE.defaultBlockState():Blocks.AIR.defaultBlockState(),overlay=removal?Blocks.AIR.defaultBlockState():Blocks.STONE.defaultBlockState();fixture(new DomainGeometry.Cell(cell.x(),15,cell.z()),Blocks.STONE.defaultBlockState());fixture(cell,original);
    var actor=new ArmorStand(level,cell.x()+.5,cell.y()+(removal?1:0),cell.z()+.5);actor.setNoGravity(true);check(level.addFreshEntity(actor),"REAL_ARMOR_STAND_ADDED");
-   try{var guarded=start(1,List.of(change(cell,original,overlay)));var nativeWorld=DomainWorldAdapter.forJournal(level,guarded.journal());guarded.place(nativeWorld,1);check(guarded.journal().phase()==DomainOverlay.Phase.RESTORING&&level.getBlockState(pos(cell)).equals(original),removal?"ACTOR_FOOT_REMOVAL_REJECTED":"ACTOR_SOLID_PLACEMENT_REJECTED");guarded.restore(nativeWorld,1);check(guarded.terminal(),"UNMUTATED_ACTOR_CASE_TERMINAL");}finally{actor.discard();}
+   try{var guarded=start(1,List.of(change(cell,original,overlay)));var nativeWorld=DomainWorldAdapter.forJournal(level,guarded.journal());guarded.place(nativeWorld,1);check(guarded.journal().phase()==DomainOverlay.Phase.RESTORING&&level.getBlockState(pos(cell)).equals(original),removal?"ACTOR_FOOT_REMOVAL_REJECTED":"ACTOR_SOLID_PLACEMENT_REJECTED");guarded.restore(nativeWorld,1);finishKernelDurability(guarded);check(guarded.terminal(),"UNMUTATED_ACTOR_CASE_TERMINAL");}finally{actor.discard();}
    claims.add(removal?"ACTUAL_ACTOR_FOOT_REMOVAL_PROTECTED":"ACTUAL_ACTOR_SOLID_PLACEMENT_PROTECTED");
   }
   void restoreActor(DomainGeometry.Cell cell)throws Exception{
    fixture(cell,Blocks.AIR.defaultBlockState());var guarded=start(2,List.of(change(cell,Blocks.AIR.defaultBlockState(),Blocks.STONE.defaultBlockState())));var nativeWorld=DomainWorldAdapter.forJournal(level,guarded.journal());guarded.place(nativeWorld,1);
    var actor=new ArmorStand(level,cell.x()+.5,cell.y()+1,cell.z()+.5);actor.setNoGravity(true);check(level.addFreshEntity(actor),"REAL_RESTORE_ACTOR_ADDED");
    try{guarded.requestRestore("ACTOR_RESTORE");guarded.restore(nativeWorld,1);check(!guarded.terminal()&&level.getBlockState(pos(cell)).is(Blocks.STONE),"OCCUPIED_RESTORATION_DEFERRED");byte[] before=Files.readAllBytes(repository.slot(dimension,2).path());guarded.restore(nativeWorld,1);check(Arrays.equals(before,Files.readAllBytes(repository.slot(dimension,2).path())),"UNCHANGED_NATIVE_DEFERRAL_NO_REWRITE");}finally{actor.discard();}
-   guarded.restore(nativeWorld,1);check(guarded.terminal()&&level.getBlockState(pos(cell)).isAir(),"RESTORATION_AFTER_ACTOR_EXIT");claims.add("ACTUAL_ACTOR_RESTORATION_DEFER_AND_EXIT");
+   guarded.restore(nativeWorld,1);finishKernelDurability(guarded);check(guarded.terminal()&&level.getBlockState(pos(cell)).isAir(),"RESTORATION_AFTER_ACTOR_EXIT");claims.add("ACTUAL_ACTOR_RESTORATION_DEFER_AND_EXIT");
+  }
+  void finishKernelDurability(DomainOverlay value)throws IOException{
+   if(value.journal().phase()!=DomainOverlay.Phase.RESTORED_PENDING_DURABILITY)throw new IOException("DOMAIN_KERNEL_RESTORATION_NOT_READY");
+   var barrier=DomainNativePersistence.barrier(level,value.journal());long deadline=System.nanoTime()+10_000_000_000L;
+   // Direct kernel only: bounded worker wait outside natural combat, never a production tick loop.
+   while(!value.terminal()&&System.nanoTime()<deadline){value.verifyDurability(barrier);if(value.journal().phase()!=DomainOverlay.Phase.RESTORED_PENDING_DURABILITY&&!value.terminal())throw new IOException("DOMAIN_KERNEL_DURABILITY_CONFLICT");java.util.concurrent.locks.LockSupport.parkNanos(1_000_000);}
+   if(!value.terminal())throw new IOException("DOMAIN_KERNEL_DURABILITY_TIMEOUT");
   }
   DomainOverlay start(int index,List<DomainOverlay.Change> changes)throws Exception{var slot=repository.slot(dimension,index);var previous=slot.read();return DomainOverlay.start(identity(index,previous==null?1:previous.identity().generation()+1),changes,slot,previous);}
   DomainOverlay.Identity identity(int index,long generation){return new DomainOverlay.Identity(UUID.randomUUID(),UUID.fromString(nonce),dimension,index,generation);}

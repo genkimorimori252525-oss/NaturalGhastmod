@@ -28,7 +28,7 @@ public final class DomainOverlayTest {
  }
  static DomainOverlay.Identity identity(long generation){return new DomainOverlay.Identity(UUID.randomUUID(),UUID.randomUUID(),"minecraft:overworld",0,generation);}
  static List<DomainOverlay.Change> changes(){return List.of(new DomainOverlay.Change(new DomainGeometry.Cell(0,0,0),"stone","blackstone"),new DomainOverlay.Change(new DomainGeometry.Cell(1,0,0),"stone","blackstone"));}
- static void finish(DomainOverlay e,World w)throws Exception{for(int i=0;i<8&&!e.terminal();i++)e.restore(w,1);check(e.terminal(),"bounded test restoration reaches terminal");check(w.states.values().stream().allMatch("stone"::equals),"exact originals restored");}
+ static void finish(DomainOverlay e,World w)throws Exception{for(int i=0;i<10&&!e.terminal();i++){if(e.journal().phase()==DomainOverlay.Phase.RESTORED_PENDING_DURABILITY)e.verifyDurability(j->DomainOverlay.DurabilityResult.VERIFIED);else e.restore(w,1);}check(e.terminal(),"bounded test restoration reaches terminal through explicit fake barrier");check(w.states.values().stream().allMatch("stone"::equals),"exact originals restored");}
  public static void main(String[] args)throws Exception{
   var geometry=DomainGeometry.plan(0,64,0,-64,320);check(geometry.radius()==20&&geometry.height()==12,"broad declared geometry");
   check(geometry.cells().size()<=32768&&geometry.cells().size()>10000,"bounded whole planned volume");check(new HashSet<>(geometry.cells().stream().map(DomainGeometry.Tile::cell).toList()).size()==geometry.cells().size(),"unique cells");

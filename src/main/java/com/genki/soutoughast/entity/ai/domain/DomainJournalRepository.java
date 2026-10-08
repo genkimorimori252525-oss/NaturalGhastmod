@@ -127,11 +127,16 @@ public final class DomainJournalRepository implements AutoCloseable {
    if(previous!=null&&(previous.identity().slot()!=next.identity().slot()||!previous.identity().dimension().equals(next.identity().dimension())||next.identity().generation()<=previous.identity().generation()))throw new IOException("DOMAIN_SLOT_GENERATION");return;
   }
   if(!previous.identity().equals(next.identity())||previous.entries().size()!=next.entries().size())throw new IOException("DOMAIN_LEDGER_IDENTITY_CHANGED");
-  for(int i=0;i<previous.entries().size();i++){var a=previous.entries().get(i);var b=next.entries().get(i);if(!a.cell().equals(b.cell())||!a.original().equals(b.original())||!a.overlay().equals(b.overlay()))throw new IOException("DOMAIN_ORIGINAL_LEDGER_CHANGED");}
+  for(int i=0;i<previous.entries().size();i++){
+   var a=previous.entries().get(i);var b=next.entries().get(i);
+   boolean authorizedIntent=previous.phase()==DomainOverlay.Phase.PLACING&&next.phase()==DomainOverlay.Phase.PLACING&&a.status()==DomainOverlay.Status.RESERVED&&b.status()==DomainOverlay.Status.PENDING;
+   if(!a.cell().equals(b.cell())||!a.original().equals(b.original())||!a.overlay().equals(b.overlay())||a.mutationIntent()&&!b.mutationIntent()||!a.mutationIntent()&&b.mutationIntent()&&!authorizedIntent)throw new IOException("DOMAIN_ORIGINAL_LEDGER_CHANGED");
+  }
   boolean allowed=switch(previous.phase()){
-   case PLACING->next.phase()!=DomainOverlay.Phase.VERIFIED_TERMINAL;
+   case PLACING->Set.of(DomainOverlay.Phase.PLACING,DomainOverlay.Phase.ACTIVE,DomainOverlay.Phase.RESTORING).contains(next.phase());
    case ACTIVE->next.phase()==DomainOverlay.Phase.RESTORING;
-   case RESTORING->next.phase()==DomainOverlay.Phase.RESTORING||next.phase()==DomainOverlay.Phase.VERIFIED_TERMINAL;
+   case RESTORING->next.phase()==DomainOverlay.Phase.RESTORING||next.phase()==DomainOverlay.Phase.RESTORED_PENDING_DURABILITY;
+   case RESTORED_PENDING_DURABILITY->next.phase()==DomainOverlay.Phase.RESTORING||next.phase()==DomainOverlay.Phase.VERIFIED_TERMINAL;
    case VERIFIED_TERMINAL->false;
   };if(!allowed)throw new IOException("DOMAIN_PHASE_TRANSITION");
  }
