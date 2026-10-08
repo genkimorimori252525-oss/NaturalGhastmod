@@ -11,6 +11,11 @@ public final class StandardAttack {
     public State state(){return state;}
     public void invalidateTarget(){if(phase!=Phase.RECOVER)reset();}
     public void reset(){phase=Phase.IDLE;ticks=0;quiet=60;direction=FlightVector.ZERO;publish(false);}
+    /** Caller validates a fresh cover Lob first; never inherit a partial charge or recovery. */
+    public boolean beginCover(FlightVector observedAim){
+        if(phase!=Phase.IDLE||observedAim==null||observedAim.length()<=1e-9)return false;
+        phase=Phase.CHARGE;ticks=0;direction=observedAim.normalized();publish(false);return true;
+    }
     public State step(FlightVector observedAim,boolean eligible){
         boolean valid=eligible&&observedAim!=null&&observedAim.length()>1e-9;
         if(phase==Phase.RECOVER){if(++ticks>=20){phase=Phase.IDLE;ticks=0;quiet=80;}return publish(false);}

@@ -26,3 +26,5 @@ Base `0a33e05`; authoritative v0.6 projectile sections. User authorizes non-danm
 - [x] Publish decisions/receipts/remaining gates on scoped GitHub branches; record useful Tank friction. This is an implementation unit, not full-boss completion.
 
 Development-unit receipt: [committed profiles](../../COMMITTED-PROFILES-VERIFICATION.md). Native acceptance covers Lob only; all other gates remain explicit. No full-boss completion.
+
+2026-10-09: the initial cover deferral above is superseded only for the bounded observed-memory implementation in [remembered-cover Lob](2026-10-09-remembered-cover-lob.md). It does not authorize hidden target tracking, stale shots, roofs, or hidden Standard fallback; that unit carries its own native scope/remaining gates.

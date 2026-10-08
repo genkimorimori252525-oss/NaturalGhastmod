@@ -7,6 +7,12 @@ public final class ProjectileSelector {
     public void tick(){for(int i=0;i<recent.length;i++)if(recent[i]>0)recent[i]--;}
     public void reset(){java.util.Arrays.fill(recent,0);}
     public void record(Choice choice){recent[choice.ordinal()]=600;}
+    /** STANDARD means decline, never permission to shoot an unseen target. */
+    public Choice chooseCover(MobilityContext.Kind context,double range,double variation){
+        if(context==null||context==MobilityContext.Kind.GROUND_FORCED||!Double.isFinite(range)||range<12||range>64||!Double.isFinite(variation))return Choice.STANDARD;
+        double score=1.4*(1-.75*recent[Choice.LOB.ordinal()]/600.0)+.12*Math.sin(variation*6.28+Choice.LOB.ordinal()*2);
+        return score>1?Choice.LOB:Choice.STANDARD;
+    }
     public Choice choose(MobilityContext.Kind context,double range,FlightVector observedVelocity,int stationaryTicks,double variation){
         return choose(context,range,observedVelocity,stationaryTicks,variation,false);
     }

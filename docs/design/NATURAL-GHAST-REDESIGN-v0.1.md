@@ -2,7 +2,7 @@
 
 Revision: v0.6
 Date: 2026-10-08
-Updated: 2026-10-09 (natural-flow relocation clarification and first observed Dodge implementation)
+Updated: 2026-10-09 (natural-flow relocation, observed Dodge and remembered-cover Lob implementation)
 
 The user's2026-10-08 clarification supersedes v0.5's player-camera-relative anchor. A combat anchor is a broad, boss-owned world-space region, retained during combat and reselected only when necessary. The user has explicitly accepted its current swimming and authorized further non-danmaku development. Separate controlled camera/moving-Player/LOS scenarios remain limited as recorded. See [the correction design](../superpowers/specs/2026-10-08-combat-region-swimming-design.md), [verification receipt](../COMBAT-REGION-SWIMMING-VERIFICATION.md) and [next tactical unit](../superpowers/plans/2026-10-08-observed-tactics.md). Grand Danmaku implementation is excluded by the current user instruction, including runtime adapters.
 
@@ -516,6 +516,8 @@ Lob receives extra tactical value when:
 - the player repeatedly holds a stationary firing position.
 
 It should not magically pass through roofs. If there is no viable ballistic corridor, the attack is invalid.
+
+Initial remembered-cover implementation uses only the same target's last visible eye/landing snapshot. It permits one attempt per LOS-loss episode within10actual game ticks, requires loaded terrain obstruction toward that stored eye and a fully validated Lob arc, and expires after40ticks including launch. A lost visible charge restarts the complete cover tell; freeze the remembered endpoint/recipe at admission, emit the distinct cue at19 and launch at30 from the actual muzzle after full revalidation. Regained LOS, target/clock/context/ownership discontinuity or invalid geometry cancels; rejection never fires hidden Standard or refreshes hidden target coordinates. Existing variation and600tick Lob repetition penalty remain authoritative. [Implementation plan](../superpowers/plans/2026-10-09-remembered-cover-lob.md); native acceptance remains pending until its scoped receipt exists.
 
 #### Deflection
 

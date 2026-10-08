@@ -22,6 +22,15 @@ import java.util.List;
 public final class CommittedPathClearance {
     public record Terminal(BlockPos position,BlockState state) {}
     public record Proof(TrajectoryValidation.Result result,List<Terminal> terminal) {}
+    /** Check every possibly queried chunk before a bounded native terrain clip. */
+    public static boolean loadedRay(Level level,Vec3 from,Vec3 to){
+        if(from==null||to==null||!Double.isFinite(from.lengthSqr())||!Double.isFinite(to.lengthSqr())||from.distanceToSqr(to)>4096)return false;
+        if(Math.min(from.y,to.y)<level.getMinBuildHeight()||Math.max(from.y,to.y)>=level.getMaxBuildHeight())return false;
+        for(int cx=Mth.floor(Math.min(from.x,to.x)-2)>>4;cx<=Mth.floor(Math.max(from.x,to.x)+2)>>4;cx++)
+            for(int cz=Mth.floor(Math.min(from.z,to.z)-2)>>4;cz<=Mth.floor(Math.max(from.z,to.z)+2)>>4;cz++)
+                if(!level.hasChunk(cx,cz))return false;
+        return true;
+    }
     public static AABB sweptBox(FlightVector from,FlightVector to){
         return new AABB(from.x()-.5,from.y(),from.z()-.5,from.x()+.5,from.y()+1,from.z()+.5)
                 .expandTowards(to.x()-from.x(),to.y()-from.y(),to.z()-from.z());
