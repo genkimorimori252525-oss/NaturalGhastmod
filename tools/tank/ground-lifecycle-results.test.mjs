@@ -1,0 +1,43 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {analyzeGroundLifecycle,groundLifecycleScope} from './ground-lifecycle-results.mjs';
+
+const region={generation:1,x:26,y:225,z:32,rx:20,ry:8,rz:20};
+function fixture(){
+ const rows=[];let tick=500, y=224;
+ const add=(stage,count,fn=()=>({}))=>{for(let elapsed=1;elapsed<=count;elapsed++)rows.push({tick:++tick,stage,elapsed,phase:'GROUNDED',reason:'READABLE_PAUSE',x:26,y,z:32,vx:0,vy:0,vz:0,intent:'BRAKE',support:true,mask:255,fired:1,region:{...region},playerHealth:20,bossHealth:100,...fn(elapsed)});};
+ add('WAIT_GROUND',2);
+ add('FLOOR_LOST',8,()=>({phase:'SAFE_HOLD',reason:'SAFE_HOLD',support:false}));
+ add('RESTORED',3);
+ add('TRANSIENT',10,()=>({mask:511}));
+ add('RECLOSED',5);
+ add('SUSTAINED',20,n=>({mask:511,phase:n===20?'TAKEOFF':'GROUNDED'}));
+ add('ASCENT',12,n=>{y+=.32;return {mask:511,y,vy:.32,phase:n===12?'AIR':'TAKEOFF',intent:'MOVE'};});
+ const changes=[['FLOOR_OPEN',2,1],['FLOOR_RESTORE',10,1],['CEILING_OPEN_TRANSIENT',13,2704],['CEILING_CLOSE',23,2704],['CEILING_OPEN_SUSTAINED',28,2704]].map(([kind,index,count])=>({kind,tick:rows[index].tick-1,count,prevalidated:true,readback:true}));
+ const request={nonce:'bounded',maxTicks:240,maxWallMs:20000};
+ const result={scope:groundLifecycleScope,status:'PASS',nonce:request.nonce,canonicalPlayer:true,errors:[],rows,changes,restoration:{floor:'RESTORED',ceiling:'RETAINED_ACTOR_BLOCKED',ceilingRestoredCells:2688,ceilingActorBlockedCells:16,ceilingConflictCells:0},overrides:false};
+ return {result,request};
+}
+const verdict=f=>analyzeGroundLifecycle(f.result,f.request);
+test('accepts finite actual-controller Ground lifecycle evidence',()=>assert.equal(verdict(fixture()).status,'PASS'));
+const reject=(name,change)=>test(name,()=>{const f=fixture();change(f);assert.equal(verdict(f).status,'FAIL');});
+reject('rejects takeoff during transient clearance',f=>f.result.rows.find(r=>r.stage==='TRANSIENT').phase='TAKEOFF');
+reject('rejects takeoff before twenty clear samples',f=>f.result.rows.find(r=>r.stage==='SUSTAINED'&&r.elapsed===19).phase='TAKEOFF');
+reject('rejects missing reclosed reset interval',f=>f.result.rows=f.result.rows.filter(r=>r.stage!=='RECLOSED'));
+reject('rejects support-loss offense',f=>f.result.rows.find(r=>r.stage==='FLOOR_LOST'&&r.elapsed===4).fired++);
+reject('rejects offense on the first unsupported tick',f=>f.result.rows.filter(r=>r.stage==='FLOOR_LOST').forEach(r=>r.fired++));
+reject('rejects support-loss motion intent',f=>f.result.rows.find(r=>r.stage==='FLOOR_LOST').intent='MOVE');
+reject('rejects unresolved floor restoration',f=>f.result.restoration.floor='RETAINED');
+reject('rejects absent native displacement',f=>f.result.rows.filter(r=>r.stage==='ASCENT').forEach(r=>r.y=224));
+reject('rejects teleport while reported velocity is small',f=>f.result.rows.find(r=>r.stage==='ASCENT').x+=2);
+reject('rejects changed retained region',f=>f.result.rows.find(r=>r.stage==='ASCENT').region.generation++);
+reject('rejects region reselection on first floor-loss tick',f=>f.result.rows.filter(r=>r.stage!=='WAIT_GROUND').forEach(r=>r.region.generation++));
+reject('rejects observed healing',f=>f.result.rows[6].playerHealth++);
+reject('rejects exhausted tick budget',f=>f.request.maxTicks=20);
+reject('rejects stale request identity',f=>f.result.nonce='other');
+reject('rejects unverified mutation',f=>f.result.changes[0].readback=false);
+reject('rejects missing actual clearance',f=>f.result.rows.find(r=>r.stage==='SUSTAINED').mask=255);
+reject('rejects health or input override',f=>f.result.overrides=true);
+reject('rejects fabricated Player',f=>f.result.canonicalPlayer=false);
+reject('rejects duplicate tick',f=>f.result.rows[5].tick=f.result.rows[4].tick);
+reject('rejects hidden ceiling conflicts',f=>f.result.restoration.ceilingConflictCells=1);
