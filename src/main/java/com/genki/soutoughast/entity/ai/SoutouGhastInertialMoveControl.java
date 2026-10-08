@@ -58,6 +58,17 @@ public final class SoutouGhastInertialMoveControl extends MoveControl {
         return ghast.level().noCollision(ghast,clearanceBox(ghast.getBoundingBox(),sweep));
     }
 
+    boolean hasManeuverClearance(FlightVector from,FlightVector to){
+        var displacement=to.subtract(from);if(displacement.length()>32)return false;
+        var body=ghast.getBoundingBox().move(to(from).subtract(ghast.position()));
+        var sweep=clearanceBox(body,to(displacement));
+        int minX=net.minecraft.util.Mth.floor(sweep.minX)>>4,maxX=net.minecraft.util.Mth.floor(sweep.maxX-1e-7)>>4;
+        int minZ=net.minecraft.util.Mth.floor(sweep.minZ)>>4,maxZ=net.minecraft.util.Mth.floor(sweep.maxZ-1e-7)>>4;
+        if((maxX-minX+1)*(maxZ-minZ+1)>16)return false;
+        for(int x=minX;x<=maxX;x++)for(int z=minZ;z<=maxZ;z++)if(!ghast.level().hasChunk(x,z))return false;
+        return ghast.level().noCollision(ghast,sweep);
+    }
+
     @Override
     public void tick() {
         if (ghast.level().isClientSide) return;

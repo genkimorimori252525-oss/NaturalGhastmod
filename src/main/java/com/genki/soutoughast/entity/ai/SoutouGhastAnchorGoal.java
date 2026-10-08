@@ -77,7 +77,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
         FlightVector observedVelocity=visible?SoutouGhastInertialMoveControl.from(target.getDeltaMovement()):null;
         double variation=ghast.getStandardAttack().engaged()?0:ghast.getRandom().nextDouble();
         var plan = brain.step(anchor,visible?lastObservedPosition:null,observedVelocity,boss,visible,
-                control().getMobilityContext(),sample,variation,control()::hasDirectionalClearance,
+                control().getMobilityContext(),sample,variation,control()::hasDirectionalClearance,control()::hasManeuverClearance,
                 ()->planner.step(anchor,lastObservedPosition,boss,FlightVector.ZERO,
                         control().getMobilityContext(),sample,variation,control()::hasDirectionalClearance));
         control().setTacticalState(brain.state());

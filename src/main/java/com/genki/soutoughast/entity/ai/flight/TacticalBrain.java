@@ -2,6 +2,7 @@ package com.genki.soutoughast.entity.ai.flight;
 
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.BiPredicate;
 
 /** Quiet swimming is authoritative; observed-only feints never own or relocate the region. */
 public final class TacticalBrain {
@@ -19,6 +20,11 @@ public final class TacticalBrain {
     public MovementPlanner.Plan step(CombatAnchor anchor,FlightVector observedPosition,FlightVector observedVelocity,
             FlightVector boss,boolean visible,MobilityContext.Kind context,MobilityContext.Sample sample,double variation,
             Predicate<FlightVector> clearance,Supplier<MovementPlanner.Plan> ordinary){
+        return step(anchor,observedPosition,observedVelocity,boss,visible,context,sample,variation,clearance,null,ordinary);
+    }
+    public MovementPlanner.Plan step(CombatAnchor anchor,FlightVector observedPosition,FlightVector observedVelocity,
+            FlightVector boss,boolean visible,MobilityContext.Kind context,MobilityContext.Sample sample,double variation,
+            Predicate<FlightVector> clearance,BiPredicate<FlightVector,FlightVector> route,Supplier<MovementPlanner.Plan> ordinary){
         memory.tick();if(quiet>0)quiet--;
         var region=anchor.region();
         if(region==null||region.generation()!=generation){composer.cancel();generation=region==null?-1:region.generation();quiet=240;}
@@ -32,7 +38,7 @@ public final class TacticalBrain {
             var range=anchor.evaluate(observedPosition,FlightVector.ZERO,boss).range();
             var choice=evaluator.choose(context,range,observedVelocity,variation,memory);
             quiet=40;
-            if(!composer.start(choice,observedPosition,boss,region,sample,variation))return ordinary.get();
+            if(!composer.start(choice,observedPosition,boss,region,sample,variation,route))return ordinary.get();
             memory.record(choice);
         }
         var range=visible?anchor.evaluate(observedPosition,FlightVector.ZERO,boss).range():CombatAnchor.Range.COMFORTABLE;

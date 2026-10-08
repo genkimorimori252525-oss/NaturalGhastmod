@@ -23,8 +23,9 @@ public final class ObservedTacticsTest {
     private static void composition(){
         var anchor=new CombatAnchor();anchor.evaluate(TARGET,FlightVector.ZERO,START);var region=anchor.region();
         var normal=new MovementPlanner.Plan(MovementPrimitive.DRIFT,FlightController.Intent.move(new FlightVector(1,0,0),.1),START,CombatAnchor.Range.COMFORTABLE,true);
-        for(var action:TacticalEvaluator.Action.values()){
-            if(action==TacticalEvaluator.Action.DRIFT)continue;
+        // The original four retain their exact84-tick contract; extra recipes have separate tests.
+        for(var action:new TacticalEvaluator.Action[]{TacticalEvaluator.Action.FALSE_APPROACH,TacticalEvaluator.Action.FALSE_RETREAT,
+                TacticalEvaluator.Action.LATERAL_FAKE,TacticalEvaluator.Action.VERTICAL_FAKE}){
             var composer=new ManeuverComposer();
             check(composer.start(action,TARGET,START,region,OPEN,.99),"recipe has feasible region endpoints: "+action);
             FlightVector locked=null;
