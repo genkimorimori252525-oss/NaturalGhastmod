@@ -1,0 +1,14 @@
+# Controlled delayed owner availability
+
+Execute inline under existing authorization. Base ac1d675; the previous unit made verified native re-tracking progress. Preserve accepted broad retained-region swimming and danmaku exclusion.
+
+Compact Astra approves controlled owner availability, with genuine late connection separate. Only a newly created active test SoutouGhast has its native ChunkMap tracker temporarily removed; canonical boss/Player remain untouched. Require actual StopTracking, old client object removed AND ID absent, four unavailable-owner client rows, one actual native re-admission and bounded resolution. An already Player-normalized Curve must stop reporting the old Player immediately after the ordinary boss-return update, even while the new owner is absent. No direct packets/reflection, fake Player, actor overrides or selector weakening.
+
+Mapped Projectile.setOwner(null) is a no-op; getOwner resolves UUID only on ServerLevel. Current applyFlight loses an unavailable owner ID and retains a previous cached owner. This is a source hypothesis until a pinned private native RED reproduces it. If confirmed, retain authoritative client ID, retry at most one lookup per client tick, clear on owner-zero/removal/subsequent updates; preserve server semantics and existing packet/NBT format. Do not assume vanilla null assignment clears UUID/cache.
+
+Finite private TANK_CORE/DOMAIN_RELIABILITY copy, max240ticks/20seconds, bounded observations. Test Standard/Ground/Curve born while test owner absent plus actual-Player normalized Curve synthetically returned to that absent owner. All continue ordinary native movement and loaded lifetime. Restore only this probe's demonstrated removed tracker, using the reviewed TrackerReaddIntent ordering; uncertain invocation never retries. Own process/evidence closure and original85/acceptedJAR raw hashes remain mandatory. Probe excluded from product.
+
+- [x] Analyzer missing-module RED,25 contracts/mapped javac/syntax pass. One compact scoped Astra review found incorrect Ground inertia in analyzer; realistic1.9/zero-power fixture RED, one correction uses inertia1 and rejects decay. No re-review. Product remains unchanged for pinned native RED.
+- [ ] Clean pinned native RED before product change, retained immutable failure receipt.
+- [ ] Minimal client-only fix if reproduced; mapped regression and fresh pinned GREEN.
+- [ ] English receipt/AF0045, GitHub decision history and guarded feedback mirror. Genuine late connection, human input/readability/balance and remaining release gates stay open.
