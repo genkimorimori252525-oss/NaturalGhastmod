@@ -29,6 +29,7 @@ public final class DomainNativeProbe {
   final DomainGeometry.Plan plan;final List<String> claims=new ArrayList<>();
   DomainJournalRepository repository;DomainWorldAdapter.Preflight preflight;DomainOverlay engine;DomainWorldAdapter adapter;
   DomainPersistenceBarrier durability;
+  DomainCoordinatorProbe coordinatorProbe;
   int stage,fixtureCursor,verifyCursor,activeTicks,changedCells,checks;boolean finished;long started;
   Trial(GameTestHelper helper)throws Exception{
    this.helper=helper;level=helper.getLevel();root=Path.of(required("root")).toRealPath();nonce=required("nonce");source=required("source");scenario=required("scenario");
@@ -75,11 +76,17 @@ public final class DomainNativeProbe {
      if(verifyCursor==plan.cells().size()){
       for(var saved:repository.loadAll()){var nativeWorld=DomainWorldAdapter.forJournal(level,saved);for(var e:saved.entries())check(nativeWorld.state(e.cell()).equals(e.original()),"EXACT_NATIVE_LEDGER_ORIGINAL");}
       check(repository.loadAll().stream().allMatch(j->j.phase()==DomainOverlay.Phase.VERIFIED_TERMINAL),"ALL_SLOTS_TERMINAL");
+      if(scenario.equals("baseline")){repository.close();repository=null;coordinatorProbe=new DomainCoordinatorProbe(this);stage=6;return;}
       level.getServer().saveEverything(true,true,true);repository.close();repository=null;
       claims.add(scenario.equals("baseline")?"NATIVE_NORMAL_TERMINAL":"GENUINE_REOPEN_TERMINAL_JOURNAL_AND_BLOCKS");receipt("PASS",null);finished=true;helper.succeed();
      }
     }
-   }catch(Exception|AssertionError error){finished=true;try{if(repository!=null)repository.close();}catch(IOException ignored){}try{receipt("FAIL",error);}catch(IOException ignored){}helper.fail("DOMAIN_PRIVATE_PROBE_FAILED: "+error.getClass().getSimpleName()+":"+error.getMessage());}
+    if(stage==6&&coordinatorProbe.tick()){
+     coordinatorProbe.close();coordinatorProbe=null;repository=DomainJournalRepository.open(world);
+     check(repository.loadAll().size()==4&&repository.loadAll().stream().allMatch(j->j.phase()==DomainOverlay.Phase.VERIFIED_TERMINAL),"NATIVE_CLASH_NO_INCOMING_SLOT_AND_ALL_TERMINAL");
+     level.getServer().saveEverything(true,true,true);repository.close();repository=null;claims.add("NATIVE_NORMAL_TERMINAL");receipt("PASS",null);finished=true;helper.succeed();
+    }
+   }catch(Exception|AssertionError error){finished=true;try{if(coordinatorProbe!=null)coordinatorProbe.close();}catch(IOException ignored){}try{if(repository!=null)repository.close();}catch(IOException ignored){}try{receipt("FAIL",error);}catch(IOException ignored){}helper.fail("DOMAIN_PRIVATE_PROBE_FAILED: "+error.getClass().getSimpleName()+":"+error.getMessage());}
   }
   void kernel()throws Exception{
    var cell=new DomainGeometry.Cell(112,16,64);fixture(cell,Blocks.AIR.defaultBlockState());

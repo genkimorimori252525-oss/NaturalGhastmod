@@ -18,7 +18,7 @@ const reopen=process.argv[2]==='--reopen',recover=process.argv[2]==='--recover',
 if(process.argv.length!==((reopen||recover||crash)?4:2))throw new Error('Usage: node run-domain-probe.mjs [--reopen/--recover <owned-root> | --crash <case>]');
 let root,nonce,faultCase=crash?process.argv[3]:'';
 const boundaries=['PREPARE_BEGIN','PREPARE_FORCED','BEFORE_RENAME','AFTER_RENAME','AFTER_READBACK','PUBLISHED_BEFORE_RETURN'];
-const faultCases=[...['INIT','PLACE','RESTORE','TERMINAL'].flatMap(prefix=>boundaries.map(boundary=>`${prefix}_${boundary}`)),'BEFORE_FIRST_MUTATION','AFTER_FIRST_MUTATION','PARTIAL_PLACEMENT','BEFORE_FIRST_RESTORE','AFTER_FIRST_RESTORE','PARTIAL_RESTORATION','UNPUBLISHED_INITIAL_THIRD_PARTY','UNPUBLISHED_PENDING_THIRD_PARTY'];
+const faultCases=[...['INIT','PLACE','RESTORE','TERMINAL'].flatMap(prefix=>boundaries.map(boundary=>`${prefix}_${boundary}`)),'BEFORE_FIRST_MUTATION','AFTER_FIRST_MUTATION','PARTIAL_PLACEMENT','BEFORE_FIRST_RESTORE','AFTER_FIRST_RESTORE','PARTIAL_RESTORATION','UNPUBLISHED_INITIAL_THIRD_PARTY','UNPUBLISHED_PENDING_THIRD_PARTY','DURABILITY_BEFORE_BARRIER','DURABILITY_TERMINAL_PREPARE_BEGIN'];
 if(crash&&!faultCases.includes(faultCase))throw new Error('DOMAIN_PROBE_FAULT_CASE');
 if(reopen||recover){
  root=await realpath(process.argv[3]);if(path.dirname(root)!==await realpath(parent)||!path.basename(root).startsWith('domain-probe-'))throw new Error('DOMAIN_PROBE_REOPEN_PATH');
@@ -41,7 +41,8 @@ if(!/^[a-f0-9-]{36}$/.test(nonce))throw new Error('DOMAIN_PROBE_NONCE');
 const safeDirectories=async target=>{for(let current=target;;current=path.dirname(current)){const state=await lstat(current);if(!state.isDirectory()||state.isSymbolicLink())throw new Error('DOMAIN_PROBE_UNSAFE_DIRECTORY');if(path.dirname(current)===current)break;}};
 await safeDirectories(root);await safeDirectories(path.join(root,'runtime'));await safeDirectories(path.join(root,'universe'));if(reopen||recover)await safeDirectories(path.join(root,'universe/domain-owned'));
 const scenario=reopen?'reopen-terminal':recover?'recover':crash?'crash':'baseline';
-const scope=(crash||recover)?'DIRECT_NATIVE_DOMAIN_INTERRUPTION_RESTART':'DIRECT_NATIVE_DOMAIN_RELIABILITY_BASELINE';
+const durabilityCase=faultCase.startsWith('DURABILITY_');
+const scope=(crash||recover)?(durabilityCase?'DIRECT_NATIVE_DOMAIN_DURABILITY_RESTART':'DIRECT_NATIVE_DOMAIN_INTERRUPTION_RESTART'):'DIRECT_NATIVE_DOMAIN_RELIABILITY_BASELINE';
 const env={...process.env,JAVA_HOME:javaHome,NATURAL_DOMAIN_PROBE_ROOT:root,NATURAL_DOMAIN_PROBE_NONCE:nonce,NATURAL_DOMAIN_PROBE_SOURCE:revision,NATURAL_DOMAIN_PROBE_SCENARIO:scenario,NATURAL_DOMAIN_PROBE_FAULT_CASE:faultCase};
 const ownedPids=()=>{
  const code="@(Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:NATURAL_DOMAIN_PROBE_NONCE) -and $_.CommandLine.Contains('naturalghast.domainProbe.root') } | ForEach-Object { $_.ProcessId }) -join ','";
@@ -66,7 +67,8 @@ const remaining=ownedPids();let native=null;try{native=JSON.parse(await readFile
 const logBytes=await readFile(logPath);const unchanged=git('rev-parse','HEAD')===revision&&!git('status','--porcelain');
 const nativeExit73=/finished with non-zero exit value 73/.test(logBytes.toString('utf8'));
 const closed=!timedOut&&!overflow&&!stopError&&!remaining.length&&unchanged&&native?.nonce===nonce&&native.sourceRevision===revision&&native.scenario===scenario&&native.scope===scope;
-const expectedCrash=crash&&closed&&exitCode!==0&&nativeExit73&&native.verdict==='EXPECTED_ABRUPT_HALT'&&native.faultCase===faultCase&&native.worldFlushBeforeHalt===true;
+const durabilityCondition=durabilityCase?native?.worldFlushBeforeHalt===false&&native.overlayBaselineDurabilityVerified===true&&native.expectedPersistedBlockStates?.length===3&&native.nativeBarrierVerifiedBeforeHalt===(faultCase==='DURABILITY_TERMINAL_PREPARE_BEGIN'):native?.worldFlushBeforeHalt===true;
+const expectedCrash=crash&&closed&&exitCode!==0&&nativeExit73&&native.verdict==='EXPECTED_ABRUPT_HALT'&&native.faultCase===faultCase&&durabilityCondition;
 const pass=!crash&&closed&&exitCode===0&&native.verdict==='PASS'&&(!recover||native.faultCase===faultCase);
 const result={scope,verdict:expectedCrash?'EXPECTED_CRASH':pass?'PASS':'FAIL',nonce,sourceRevision:revision,scenario,faultCase,exitCode,nativeExit73,timedOut,overflow,stopError,remainingOwnedJavaPids:remaining,sourceUnchanged:unchanged,logSha256:createHash('sha256').update(logBytes).digest('hex'),native};
 const receipt=path.join(root,`${scenario}-run.json`);await writeFile(receipt,JSON.stringify(result,null,2)+'\n',{flag:'wx'});console.log(JSON.stringify({receipt,verdict:result.verdict,exitCode,nativeChecks:native?.checks,nativeGameTicks:native?.gameTicks,remainingOwnedJavaPids:remaining}));

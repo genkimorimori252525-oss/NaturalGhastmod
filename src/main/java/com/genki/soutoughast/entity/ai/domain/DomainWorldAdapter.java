@@ -44,7 +44,7 @@ public final class DomainWorldAdapter implements DomainOverlay.World {
  }
  private void owned(DomainGeometry.Cell cell)throws IOException{thread(level);if(!entries.containsKey(cell))throw new IOException("DOMAIN_NATIVE_UNJOURNALED_CELL");bounds(level,cell);}
  private void requireLoaded(DomainGeometry.Cell cell)throws IOException{if(!loaded(cell))throw new IOException("DOMAIN_NATIVE_UNLOADED");}
- private static void thread(ServerLevel level)throws IOException{if(!level.getServer().isSameThread())throw new IOException("DOMAIN_NATIVE_SERVER_THREAD");}
+ private static void thread(ServerLevel level)throws IOException{if(!level.getServer().isSameThread()||level.getServer().getLevel(level.dimension())!=level)throw new IOException("DOMAIN_NATIVE_SERVER_THREAD_OR_LEVEL");}
  private static BlockPos pos(DomainGeometry.Cell cell){return new BlockPos(cell.x(),cell.y(),cell.z());}
  private static void bounds(ServerLevel level,DomainGeometry.Cell cell)throws IOException{
   if(Math.abs((long)cell.x())>=30_000_000||Math.abs((long)cell.z())>=30_000_000||cell.y()<level.getMinBuildHeight()||cell.y()>=level.getMaxBuildHeight()||!level.getWorldBorder().isWithinBounds(pos(cell)))throw new IOException("DOMAIN_NATIVE_BOUNDS");
