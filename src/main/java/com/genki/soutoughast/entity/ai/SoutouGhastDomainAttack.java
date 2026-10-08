@@ -14,6 +14,10 @@ public final class SoutouGhastDomainAttack {
  private final SoutouGhast ghast;private final DomainLifecycle life=new DomainLifecycle();
  private DomainPreparation prepared;private DomainGeometry.Plan plan;private DomainCoordinator coordinator;private DomainCoordinator.Handle handle;
  private UUID subject;private long regionGeneration;private int retry;private boolean failed;private String decision="AUTONOMY_GATED";
+ private int preparationStart=-1,preparationComplete=-1,checkedCells;private long candidates,selectionOpportunities;
+ public record PreparationDiagnostics(int startTick,int completeTick,int checkedCells,int quietTicks,int recentTicks,long candidates,long selectionOpportunities){}
+ /** Fixed-size current diagnostics; no accumulated history or authority. */
+ public PreparationDiagnostics preparationDiagnostics(){var d=ghast.getMajorDirector();return new PreparationDiagnostics(preparationStart,preparationComplete,checkedCells,d.quietTicks(),d.recentTicks(),candidates,selectionOpportunities);}
  public SoutouGhastDomainAttack(SoutouGhast ghast){this.ghast=ghast;}
  public boolean active(){return life.active();}
  public DomainLifecycle.State state(){return life.state();}
@@ -25,11 +29,18 @@ public final class SoutouGhastDomainAttack {
     ||ghast.getOverheadAttack().active()||ghast.getGroundCombat().state().phase()==GroundCombat.Phase.LANDING||ghast.getGroundCombat().state().phase()==GroundCombat.Phase.TAKEOFF){prepared=null;decision="PARTICIPANT_OR_MODE";return false;}
   var writer=DomainRuntime.current(level.getServer());if(writer==null||!writer.ready()){prepared=null;decision="RECONCILIATION_PENDING";return false;}
   try{
-   if(prepared!=null&&!prepared.participant().equals(player.getUUID()))prepared=null;
-   if(prepared==null){if(retry>0){retry--;return false;}prepared=new DomainPreparation(ghast,player,region);}
-   if(!prepared.complete())prepared.step(region,visible);else prepared.validate(region,visible);
-   if(!prepared.complete()){decision="READ_ONLY_PREPARATION";return false;}
    var director=ghast.getMajorDirector();
+   if(prepared!=null&&!prepared.participant().equals(player.getUUID()))prepared=null;
+   if(prepared==null){
+    if(!director.canPrepareDomain(DomainPreparation.PREFLIGHT_TICKS)){decision="PREPARATION_COOLDOWN";return false;}
+    if(retry>0){retry--;return false;}prepared=new DomainPreparation(ghast,player,region);
+    preparationStart=level.getServer().getTickCount();preparationComplete=-1;checkedCells=0;if(candidates<Long.MAX_VALUE)candidates++;
+   }
+   if(!prepared.complete())prepared.step(region,visible);else prepared.validate(region,visible);
+   checkedCells=prepared.checkedCells();
+   if(!prepared.complete()){decision="READ_ONLY_PREPARATION";return false;}
+   if(preparationComplete<0)preparationComplete=level.getServer().getTickCount();
+   if(director.quietTicks()==0&&director.recentTicks()==0&&!busy&&selectionOpportunities<Long.MAX_VALUE)selectionOpportunities++;
    if(!director.shouldBeginDomain(true,busy,ghast.getRandom().nextDouble())){decision=director.decision();return false;}
    var changes=prepared.commit(region,visible);
    var admission=writer.begin(UUID.randomUUID(),ghast.getUUID(),level.dimension().location().toString(),prepared.plan(),changes);

@@ -18,6 +18,7 @@ $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/Committe
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ProjectileSelectionTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/OverheadBombingTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/GroundCombatTest.java"
+$sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/DomainGroundPolicyTest.java"
 $sources += "$root/tools/tank/ObservationFailureBoundary.java"
 $sources += "$root/tools/tank/ObservationFailureBoundaryTest.java"
 & "$JavaHome/bin/javac.exe" --release 17 -encoding UTF-8 -d $output @sources
@@ -40,5 +41,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Projectile selection/validation assertions fai
 if ($LASTEXITCODE -ne 0) { throw 'Overhead/director assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.GroundCombatTest
 if ($LASTEXITCODE -ne 0) { throw 'Ground movement/cadence assertions failed.' }
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.DomainGroundPolicyTest
+if ($LASTEXITCODE -ne 0) { throw 'Domain preparation/shared-major assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.tank.ObservationFailureBoundaryTest
 if ($LASTEXITCODE -ne 0) { throw 'Observer failure containment assertions failed.' }

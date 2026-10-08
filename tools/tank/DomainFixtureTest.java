@@ -1,10 +1,14 @@
 package com.genki.soutoughast.tank;
 import com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFlightTank;
 import net.minecraft.nbt.CompoundTag;
+import com.genki.soutoughast.entity.ai.domain.DomainGeometry;
+import com.genki.soutoughast.entity.ai.domain.DomainPreparation;
 import java.util.*;
 public final class DomainFixtureTest {
  public static void main(String[] args){
   int checked=0,floor=0;Map<String,CompoundTag> sections=new HashMap<>();
+  int planned=DomainGeometry.plan(26,224,26,-64,320).cells().size();
+  if((planned+127)/128!=DomainPreparation.PREFLIGHT_TICKS)throw new AssertionError("cooldown scheduling must match actual canonical scan duration");checked++;
   for(int x=6;x<=46;x++)for(int z=6;z<=46;z++)if((x-26)*(x-26)+(z-26)*(z-26)<=400){
    int cx=Math.floorDiv(x,16),cz=Math.floorDiv(z,16);String key=cx+":"+cz;
    CompoundTag section=sections.computeIfAbsent(key,k->PrepareFlightTank.section(13,cx,cz,true,false,true));

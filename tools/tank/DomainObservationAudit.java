@@ -35,6 +35,8 @@ public final class DomainObservationAudit {
    var transition=new JsonObject();transition.addProperty("tick",boss.level().getGameTime());transition.addProperty("phase",phase);transition.add("journals",journals);Files.writeString(output.resolve("domain-transitions.jsonl"),transition+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);
   }
   row.addProperty("domainPhase",phase);row.addProperty("domainTicks",state.ticks());row.addProperty("domainReason",state.reason());row.addProperty("domainDecision",boss.getDomainAttack().decision());row.addProperty("domainOffenseAllowed",state.offenseAllowed());row.addProperty("domainArmPlacement",state.armPlacement());row.addProperty("domainTakeoffRequested",state.requestTakeoff());row.addProperty("domainGrounded",boss.getGroundCombat().grounded());row.addProperty("domainAutonomousPrototype",DomainRuntime.released());row.add("domainJournals",journals);
+  var diagnostic=boss.getDomainAttack().preparationDiagnostics();var preparation=new JsonObject();
+  preparation.addProperty("startServerTick",diagnostic.startTick());preparation.addProperty("completeServerTick",diagnostic.completeTick());preparation.addProperty("checkedCells",diagnostic.checkedCells());preparation.addProperty("quietTicks",diagnostic.quietTicks());preparation.addProperty("recentTicks",diagnostic.recentTicks());preparation.addProperty("candidates",diagnostic.candidates());preparation.addProperty("selectionOpportunities",diagnostic.selectionOpportunities());row.add("domainPreparation",preparation);
  }
  public static JsonObject snapshot(ServerLevel level)throws IOException{
   if(!level.getServer().isSameThread())throw new IOException("DOMAIN_OBSERVATION_THREAD");Path world=level.getServer().getWorldPath(LevelResource.ROOT).toRealPath();

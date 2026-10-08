@@ -1,5 +1,7 @@
 # Finite natural Domain observation
 
+Current decision: first natural trial `flight-1PUfO3` had valid read-only readiness but no product admission/selection opportunity before natural Player death. Preserve PARTIAL analyzer/FAIL harness. Follow compact Astra: align new128tick preparation with shared quiet/recent≤128 rather than initial240tick entry or waiting for zero. Keep200tick age/safety/ordinary swimming/probability. Record preparation timing/cooldown/opportunities in bounded supplementary rows, then one fresh unchanged-fixture trial. [Evidence and ruling](../../DOMAIN-PREPARATION-OBSERVATION.md).
+
 Authority: reversible-domain plan/redesign v0.6 and compact Astra rollout ruling. Grand Danmaku excluded. Preserve the accepted manual swimming JAR/world, normal20/8/20 retained region and single movement controller.
 
 ## Prerequisites

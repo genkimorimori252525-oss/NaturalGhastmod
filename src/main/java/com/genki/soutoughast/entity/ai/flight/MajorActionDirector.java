@@ -8,6 +8,11 @@ public final class MajorActionDirector {
     public String decision(){return decision;}
     public int quietTicks(){return quiet;}
     public int recentTicks(){return recent;}
+    /** Start finite read-only scans late enough to finish near shared eligibility. */
+    public boolean canPrepareDomain(int scanTicks){
+        if(scanTicks<1||scanTicks>200)throw new IllegalArgumentException("DOMAIN_PREPARATION_WINDOW");
+        return !active&&quiet<=scanTicks&&recent<=scanTicks;
+    }
     public void tick(boolean ordinaryCombat){if(ordinaryCombat&&quiet>0)quiet--;if(recent>0)recent--;}
     public boolean shouldBegin(MobilityContext.Kind context,boolean observedClearance,boolean offensiveBusy,double range,double variation){
         if(active)return reject("MAJOR_ACTIVE");

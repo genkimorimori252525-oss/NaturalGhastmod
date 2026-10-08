@@ -14,6 +14,7 @@ import net.minecraft.world.phys.AABB;
 
 /** One read-only, finite candidate. Never freezes ordinary movement or grants mutation authority. */
 public final class DomainPreparation {
+ public static final int PREFLIGHT_TICKS=128; // ceil(canonical16341 cells /128 cells per tick).
  private final SoutouGhast boss;private final ServerPlayer player;private final ServerLevel level;
  private final long regionGeneration;private final int createdTick;private final DomainGeometry.Plan plan;
  private final DomainWorldAdapter.Preflight preflight;private boolean discarded;
@@ -32,6 +33,7 @@ public final class DomainPreparation {
  public UUID participant(){return player.getUUID();}
  public FlightVector landing(){return new FlightVector(boss.getX(),plan.floorY(),boss.getZ());}
  public boolean complete(){return !discarded&&preflight.complete();}
+ public int checkedCells(){return preflight.checkedCells();}
  public void step(CombatAnchor.Region region,boolean visible)throws IOException{
   try{validate(region,visible);preflight.step(128);}catch(IOException|RuntimeException error){discarded=true;throw error;}
  }
