@@ -10,10 +10,11 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** One exclusive world writer per server. No activation until the remaining native gates pass. */
+/** One exclusive world writer per server. Development prototype after scoped reliability gates. */
 @Mod.EventBusSubscriber(modid=SoutouGhastMod.MODID)
 public final class DomainRuntime {
- private static final boolean AUTONOMOUS_RELEASED=false;
+ // Development branch only: natural combat/readability/input acceptance remains separate.
+ private static final boolean AUTONOMOUS_RELEASED=true;
  private static final Map<MinecraftServer,DomainNativeCoordinator> writers=new IdentityHashMap<>();
  private static final Set<MinecraftServer> failed=Collections.newSetFromMap(new IdentityHashMap<>());
  private DomainRuntime(){}

@@ -12,7 +12,8 @@ import {analyzeStandard} from './standard-results.mjs';
 import {analyzeProfiles,readShotRows} from './profile-results.mjs';
 import {analyzeOverhead} from './major-results.mjs';
 import {analyzeGround} from './ground-results.mjs';
-import {planOverheadWindow,planGroundWindow,remainingWindowBudget,finalRosterDeadline} from './window-budget.mjs';
+import {analyzeDomain} from './domain-results.mjs';
+import {planOverheadWindow,planGroundWindow,planDomainWindow,remainingWindowBudget,finalRosterDeadline} from './window-budget.mjs';
 
 // Explicit opt-in integration with an existing registered TANK_CORE host.
 const option = name => { const i = process.argv.indexOf('--' + name); if (i < 0 || !process.argv[i + 1]) throw Error('Missing --' + name); return path.resolve(process.argv[i + 1]); };
@@ -22,8 +23,10 @@ const singleCellSeal=process.argv.includes('--single-cell-seal');
 const profiles=process.argv.includes('--profile-fireball');
 const overhead=process.argv.includes('--overhead-bombing');
 const ground=process.argv.includes('--ground-combat');
+const domain=process.argv.includes('--domain-combat');
 assert(!(ground&&(overhead||profiles)),'Ground scope must be exclusive');
-const bounded=overhead||ground;
+assert(!(domain&&(overhead||ground||profiles)),'Domain scope must be exclusive');
+const bounded=overhead||ground||domain;
 const standard=bounded||profiles||process.argv.includes('--standard-fireball');
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const template = JSON.parse(await fs.readFile(templateFile));
@@ -65,6 +68,7 @@ if(ground)report.limitations=['Explicit max180tick AND15second genuine20HP survi
  'Fullblock integer support only; slabs/stairs, dynamic floor edits, deliberate ledge encounters, genuine-input counterplay and native takeoff NOT_RUN.',
  'Damage listeners precede final health writes; END health changes include combined native causes, not isolated damage acceptance. Reload/late-client input gates remain separate.'];
 console.log('TRIAL ' + trial);
+if(domain)report.limitations=['Explicit1200tick AND60second centered actual20HP survival Player Domain prototype; no healing/input/camera/selector override.','Read-only native readiness; safe retention or partial lifecycle is not completed restoration.','Moving counterplay, readability, input, balance, reload and late-client synchronization remain separate.'];
 let originalRows = [], current, runtime;
 async function inventory(root, relative = '') {
     const rows = [];
@@ -84,7 +88,7 @@ try {
     let targetBuild;
     try {
         targetBuild = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-            '& $env:NATURALGHAST_VERIFY_WRAPPER compileJava build --no-daemon --console=plain; exit $LASTEXITCODE'],
+            "& $env:NATURALGHAST_VERIFY_WRAPPER compileJava build --offline '-Dnet.minecraftforge.gradle.check.certs=false' --no-daemon --console=plain; exit $LASTEXITCODE"],
             {cwd: repository, windowsHide: true, stdio: ['ignore','pipe','pipe'], maxBuffer: 16 * 1024 * 1024,
                 env: {...process.env, JAVA_HOME: javaHome, NATURALGHAST_VERIFY_WRAPPER: path.join(repository, 'gradlew.bat')}});
     } catch (error) {
@@ -107,14 +111,14 @@ try {
     const classpath = savedArgs.split(/\r?\n/)[1].replace(/^"|"$/g, '');
     const classes = path.join(trial, 'classes'); await fs.mkdir(classes);
     const exec = (tool, args) => execFileSync(path.join(javaHome, 'bin', tool + '.exe'), args, {cwd: trial, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']});
-    const sources = ['TankSeedEntities.java', 'PrepareFlightTank.java', 'ObserveFlightTank.java','ObservationFailureBoundary.java'].map(name => path.join(repository, 'tools/tank', name));
+    const sources = ['TankSeedEntities.java', 'PrepareFlightTank.java', 'ObserveFlightTank.java','ObservationFailureBoundary.java','DomainObservationAudit.java'].map(name => path.join(repository, 'tools/tank', name));
     // The registered argument file can include an older product checkout; current verified classes take precedence.
     const compileCp = path.join(repository, 'build/classes/java/main')+';'+report.bridgeReadiness.outputRoot+';'+classpath;
     const compileArgs = path.join(trial, 'javac.args');
     await fs.writeFile(compileArgs, ['--release', '17', '-encoding', 'UTF-8', '-cp', compileCp, '-d', classes, ...sources].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('javac', ['@' + compileArgs]);
     const prepareArgs = path.join(trial, 'java.args');
-    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFlightTank', trial, privateParent,...(ground?['GROUND_COMBAT']:overhead?['OVERHEAD_BOMBING']:standard?['STANDARD_FIREBALL']:singleCellSeal?['SINGLE_CELL_SEAL']:[])].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
+    await fs.writeFile(prepareArgs, ['-cp', classes + ';' + compileCp, 'com.github.tartaricacid.touhoulittlemaid.sim.debug.PrepareFlightTank', trial, privateParent,...(domain?['DOMAIN_COMBAT']:ground?['GROUND_COMBAT']:overhead?['OVERHEAD_BOMBING']:standard?['STANDARD_FIREBALL']:singleCellSeal?['SINGLE_CELL_SEAL']:[])].map(x => '"' + x.replaceAll('\\', '/') + '"').join('\n'), {flag: 'wx'});
     exec('java', ['@' + prepareArgs]);
     const inputs = path.join(trial, 'inputs'), privateDir = path.join(trial, 'private');
     await fs.mkdir(inputs); await fs.mkdir(privateDir);
@@ -141,10 +145,10 @@ try {
         build_artifact_hash: buildHash, source_revision: sourceRevision, dirty_hash: sha(dirty), config_hash: sha(configMaterial), resource_hash: resourceHash};
     const experiment = 'naturalghast-' + path.basename(trial);
     // Offline aperture stays sealed on the initial eye ray until this one mutation.
-    const windowCells=[[9,ground?226:228,6]];
+    const windowCells=domain?[[26,228,26]]:[[9,ground?226:228,6]];
     const actions=windowCells.map((position,i)=>({action_id:'open-'+String(i).padStart(2,'0'),operation:'set_block',position,block:'minecraft:air'}));
     const request = {schema_version: 1, experiment_id: experiment, generation: 1, target,
-        arena: {arena_id: experiment, baseline_hash: fixture.baselineHash, bounds: {min: [7,224,6], max: [13,235,13]}, preset: 'private-flight-mobility'},
+        arena: {arena_id: experiment, baseline_hash: fixture.baselineHash, bounds: domain?{min:[24,224,26],max:[30,235,34]}:{min: [7,224,6], max: [13,235,13]}, preset: 'private-flight-mobility'},
         subjects: [{subject_id: 'ghast', entity_type: 'soutou_ghast:soutou_ghast', uuid: fixture.subjectUuid}], initial_state: [], actions,
         observation_scopes: [{kind: 'ENTITY_UUID', lanes: ['SERVER_ENTITY_STATE'], level: 'L1', subject_id: 'ghast'}],
         visual_rig: {mode: 'none'}, assertions: [{assertion_id: 'idle-health', expected: fixture.subjectHealth, field: 'health', kind: 'structured', operator: 'equals', subject_id: 'ghast'}],
@@ -181,10 +185,14 @@ try {
     config.readyTimeoutMs = 240000;
     config.launch.command = path.resolve(host, template.launch.command);
     config.launch.args = privateFlightLaunchArgs(template.launch.args,host,initScript);
+    // This finite private invocation uses already cached host dependencies only.
+    if(!config.launch.args.includes('--offline'))config.launch.args.push('--offline');
+    config.launch.args.push('-Dnet.minecraftforge.gradle.check.certs=false');
     config.launch.env = {JAVA_HOME: javaHome, KNEEKURA_DEBUG_MOD_PROFILE: 'TANK_CORE', NATURALGHAST_PRIVATE_GAME_DIR: path.join(trial, 'game')};
     if(standard)config.launch.env.KNEEKURA_DEBUG_NATURAL_STANDARD='1';
     if(overhead)config.launch.env.KNEEKURA_DEBUG_NATURAL_OVERHEAD='1';
     if(ground)config.launch.env.KNEEKURA_DEBUG_NATURAL_GROUND='1';
+    if(domain)config.launch.env.KNEEKURA_DEBUG_NATURAL_DOMAIN='1';
     config.ownerControl = {requestHash, operatorRegistration: {trustedRoot: privateDir, relativePath: 'operator.json', sha256: sha(await fs.readFile(operatorFile))}};
     await write(path.join(trial, 'config.json'), config);
     await registerBridgeRequest({runtimeRoot: config.runtimeRoot, registration: {schemaVersion: 1, trustedRoot: inputs,
@@ -232,12 +240,12 @@ try {
             const preWindowDeadline=Date.now()+10000;let preWindow;
             do{
                 await runtime.ingestAvailable();const observations=retainedObservations;retainedObservations=await runtime.store.readObservations();
-                preWindow=await readTankContext({...contextFor(observations),timeBudget:{experimentMs:ground?15000:50000,finalizationMs:5000,cleanupMs:5000,marginMs:5000}});
+                preWindow=await readTankContext({...contextFor(observations),timeBudget:{experimentMs:domain?60000:ground?15000:50000,finalizationMs:5000,cleanupMs:5000,marginMs:5000}});
                 if(preWindow.preflight.status==='READY')break;await sleep(250);
             }while(Date.now()<preWindowDeadline);
-            report.windowPreflight=preWindow.preflight;windowPlan=(ground?planGroundWindow:planOverheadWindow)(preWindow.preflight,Date.now());report.windowPlan=windowPlan;
+            report.windowPreflight=preWindow.preflight;windowPlan=(domain?planDomainWindow:ground?planGroundWindow:planOverheadWindow)(preWindow.preflight,Date.now());report.windowPlan=windowPlan;
             if(overhead)await write(path.join(derived,'request-major-frames.json'),{scope:'TWO_EXPLICIT_FRAMES_NATURAL_DOWNWARD_AND_FINAL',maxFrames:2,sourceRevision,requestHash});
-            await write(path.join(derived,'request-window.json'),{scope:ground?'ONE_EXPLICIT_FINITE_NATURAL_GROUND_WINDOW':'ONE_EXPLICIT_FINITE_NATURAL_OVERHEAD_WINDOW',...windowPlan,sourceRevision,requestHash});
+            await write(path.join(derived,'request-window.json'),{scope:domain?'ONE_EXPLICIT_FINITE_NATURAL_DOMAIN_WINDOW':ground?'ONE_EXPLICIT_FINITE_NATURAL_GROUND_WINDOW':'ONE_EXPLICIT_FINITE_NATURAL_OVERHEAD_WINDOW',...windowPlan,sourceRevision,requestHash});
         }else if(standard)await write(path.join(derived,'request-window.json'),{scope:'ONE_EXPLICIT_180_TICK_NATURAL_SHOT_WINDOW',sourceRevision,requestHash});
         await write(path.join(derived,'request-frame.json'),{scope:'ONE_EXPLICIT_SUPPLEMENTARY_FRAME',sourceRevision,requestHash});
         const deadline = bounded?windowPlan.wallDeadlineEpochMs+2000:Date.now()+65000;
@@ -265,16 +273,19 @@ try {
         if(standard){
             report.finalRoster=await roster(1);
             const clients=await readShotRows(path.join(derived,'client-projectiles.jsonl'));
-            if(ground){
+            if(domain){
+                const end=await json(path.join(derived,'window-end.json'));
+                report.standard=analyzeDomain({rows,request:windowPlan,end,finalJournals:end.domainJournals,readiness:await json(path.join(derived,'domain-readiness.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;})},fixture.subjectUuid,fixture.playerUuid);
+            }else if(ground){
                 report.standard=analyzeGround({rows,clients,events:await readShotRows(path.join(derived,'release-death-events.jsonl')),damage:await readShotRows(path.join(derived,'ground-damage.jsonl')),clientGround:await json(path.join(derived,'client-ground.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;}),end:await json(path.join(derived,'window-end.json')),request:windowPlan},fixture.subjectUuid,fixture.playerUuid);
             }else if(overhead){
                 report.standard=analyzeOverhead({rows,clients,paths:await readShotRows(path.join(derived,'profile-paths.jsonl')),impacts:await readShotRows(path.join(derived,'bomb-impacts.jsonl')),events:await readShotRows(path.join(derived,'release-death-events.jsonl')),
                     pose:await json(path.join(derived,'downward-frame.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;}),end:await json(path.join(derived,'window-end.json')),request:windowPlan,
                     downwardFramePresent:!!await fs.stat(path.join(derived,'downward-frame.png')).catch(error=>{if(error.code==='ENOENT')return null;throw error;})},fixture.subjectUuid,fixture.playerUuid);
             }else report.standard=profiles?analyzeProfiles(rows,clients,fixture.subjectUuid,await readShotRows(path.join(derived,'profile-paths.jsonl'))):analyzeStandard(rows,clients,fixture.subjectUuid);
-            await write(path.join(derived,ground?'ground-summary.json':overhead?'major-summary.json':profiles?'profile-summary.json':'standard-summary.json'),report.standard);
+            await write(path.join(derived,domain?'domain-summary.json':ground?'ground-summary.json':overhead?'major-summary.json':profiles?'profile-summary.json':'standard-summary.json'),report.standard);
             report.playerOutcome={initialHealth:rows[0].playerHealth,finalHealth:rows.at(-1).playerHealth,finalPosition:[rows.at(-1).playerX,rows.at(-1).playerY,rows.at(-1).playerZ]};
-            assert.equal(report.standard.status,'PASS',report.standard.failures.join(','));
+            assert.equal(report.standard.status,'PASS',[...report.standard.failures,...(report.standard.missing??[])].join(','));
         }else{
             assert(rows.every(row=>Math.abs(row.playerX-9.5)<.001&&Math.abs(row.playerY-224)<.001&&Math.abs(row.playerZ-3.5)<.001&&Math.abs(row.playerYaw)<.001&&Math.abs(row.playerPitch+18)<.001),'Static player fixture changed');
             report.flight=analyzeSwimming(rows,fixture.playerUuid);await write(path.join(derived,'flight-summary.json'),report.flight);
@@ -293,7 +304,7 @@ try {
             report.cleanup=finish.stopped.cleanup;report.shutdown=finish.shutdown;report.finalization=finish.finalization;
             report.nativeFinalizationReason=finish.reason;
             assert.equal(finish.status,'PASS',finish.reason);
-            if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope=ground?'PASS_DEVELOPMENT_STATIC_PLAYER_GROUND':overhead?'PASS_DEVELOPMENT_STATIC_PLAYER_OVERHEAD':profiles?'PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY':standard?'PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY':'PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
+            if(report.nativeScope==='CHECKS_PASSED_FINALIZATION_PENDING')report.nativeScope=domain?'PASS_DEVELOPMENT_NATURAL_DOMAIN_LIFECYCLE':ground?'PASS_DEVELOPMENT_STATIC_PLAYER_GROUND':overhead?'PASS_DEVELOPMENT_STATIC_PLAYER_OVERHEAD':profiles?'PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY':standard?'PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY':'PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT';
         }
     }
 } catch (error) {
@@ -302,7 +313,7 @@ try {
     console.log('FAIL ' + error.message.split('\n')[0]);
 } finally {
     if (originalRows.length) { try { await verifyOriginal(); report.originalFilesVerified = originalRows.length; } catch (error) { report.failures.push(error.message); } }
-    report.status=report.failures.length||!['PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT','PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY','PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY','PASS_DEVELOPMENT_STATIC_PLAYER_OVERHEAD','PASS_DEVELOPMENT_STATIC_PLAYER_GROUND'].includes(report.nativeScope)?'FAIL':'PASS';
+    report.status=report.failures.length||!['PASS_STATIC_PLAYER_OBSERVED_TACTICAL_MOVEMENT','PASS_DEVELOPMENT_NATURAL_STANDARD_SHOT_ONLY','PASS_DEVELOPMENT_NATURAL_COMMITTED_PROFILE_ONLY','PASS_DEVELOPMENT_STATIC_PLAYER_OVERHEAD','PASS_DEVELOPMENT_STATIC_PLAYER_GROUND','PASS_DEVELOPMENT_NATURAL_DOMAIN_LIFECYCLE'].includes(report.nativeScope)?'FAIL':'PASS';
     await write(path.join(trial, 'report.json'), report);
 }
 process.exitCode = report.failures.length ? 1 : 0;

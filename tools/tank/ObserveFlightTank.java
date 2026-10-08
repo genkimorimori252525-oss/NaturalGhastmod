@@ -24,8 +24,9 @@ public final class ObserveFlightTank {
  private static boolean standard(){return "1".equals(System.getenv("KNEEKURA_DEBUG_NATURAL_STANDARD"));}
  private static boolean overhead(){return "1".equals(System.getenv("KNEEKURA_DEBUG_NATURAL_OVERHEAD"));}
  private static boolean ground(){return "1".equals(System.getenv("KNEEKURA_DEBUG_NATURAL_GROUND"));}
- private static boolean bounded(){return overhead()||ground();}
- private static int sampleLimit(){return overhead()?900:standard()?180:900;}
+ private static boolean domain(){return "1".equals(System.getenv("KNEEKURA_DEBUG_NATURAL_DOMAIN"));}
+ private static boolean bounded(){return overhead()||ground()||domain();}
+ private static int sampleLimit(){return domain()?1200:overhead()?900:standard()?180:900;}
  private static int deathSample=-1;
  private static int impacts;
  private static volatile long wallDeadline=-1;
@@ -40,21 +41,21 @@ public final class ObserveFlightTank {
   if(wallDeadline<0){
    var file=output().resolve("request-window.json");if(!Files.exists(file)||Files.size(file)>4096)return false;
    try{var request=JsonParser.parseString(Files.readString(file)).getAsJsonObject();
-    if(!request.has("wallDeadlineEpochMs")||!request.has("maxTicks")||!request.has("maxWallMs")||request.get("maxTicks").getAsInt()!=sampleLimit()||request.get("maxWallMs").getAsInt()!=(ground()?15000:50000))return false;
+    if(!request.has("wallDeadlineEpochMs")||!request.has("maxTicks")||!request.has("maxWallMs")||request.get("maxTicks").getAsInt()!=sampleLimit()||request.get("maxWallMs").getAsInt()!=(domain()?60000:ground()?15000:50000))return false;
     wallDeadline=request.get("wallDeadlineEpochMs").getAsLong();
    }catch(JsonParseException pending){return false;}
   }
   return wallDeadline>0&&System.currentTimeMillis()<wallDeadline;
  }
  private static void endWindow(String reason,long tick)throws Exception{
-  if(ready)return;JsonObject end=new JsonObject();end.addProperty("samples",samples);end.addProperty("tick",tick);end.addProperty("reason",reason);end.addProperty("deathSample",deathSample);Files.createDirectories(output());Files.writeString(output().resolve("window-end.json"),end+"\n",StandardOpenOption.CREATE_NEW);ready=true;
+  if(ready)return;JsonObject end=new JsonObject();end.addProperty("samples",samples);end.addProperty("tick",tick);end.addProperty("reason",reason);end.addProperty("deathSample",deathSample);Files.createDirectories(output());if(domain()){var server=net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();if(server!=null)end.add("domainJournals",DomainObservationAudit.snapshot(server.overworld()));}Files.writeString(output().resolve("window-end.json"),end+"\n",StandardOpenOption.CREATE_NEW);ready=true;
  }
  private static void reportFailure(long tick){
   if(failureReported)return;failureReported=true;
   try{JsonObject failure=new JsonObject();failure.addProperty("status","OBSERVER_FAILED_GAMEPLAY_CONTINUES");failure.addProperty("error",boundary.failure());failure.addProperty("tick",tick);Files.createDirectories(output());Files.writeString(output().resolve("observer-failure.json"),failure+"\n",StandardOpenOption.CREATE_NEW);endWindow("OBSERVER_FAILURE",tick);}catch(Exception unavailable){ready=true;}
  }
  private static void appendEvent(JsonObject row)throws Exception{
-  if(eventCount>=8)throw new IllegalStateException("RELEASE_DEATH_EVENT_BOUND_EXCEEDED");
+  if(eventCount>=(domain()?32:8))throw new IllegalStateException("RELEASE_DEATH_EVENT_BOUND_EXCEEDED");
   eventCount++;row.addProperty("order",++eventOrder);Files.createDirectories(output());Files.writeString(output().resolve("release-death-events.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);
  }
  private static boolean owned()throws Exception{
@@ -94,7 +95,7 @@ public final class ObserveFlightTank {
   public static void joined(net.minecraftforge.event.entity.EntityJoinLevelEvent event){boundary.run(()->{
    if(!active()||!bounded()||ready||event.getLevel().isClientSide||!Files.exists(output().resolve("request-window.json"))||!withinOverheadWindow()||!owned())return;
    if(!(event.getEntity() instanceof StandardSoutouFireball bomb)||!(bomb.getOwner() instanceof SoutouGhast boss)||!boss.getUUID().equals(UUID.fromString("67676767-1007-4000-8000-000000000001")))return;
-   if(ground()?!(bomb instanceof com.genki.soutoughast.entity.projectile.GroundSoutouFireball):!(bomb instanceof CommittedSoutouFireball special)||special.flight()==null||special.flight().path().kind()!=com.genki.soutoughast.entity.ai.flight.CommittedTrajectory.Kind.BOMB)return;
+   if(ground()||domain()?!(bomb instanceof com.genki.soutoughast.entity.projectile.GroundSoutouFireball):!(bomb instanceof CommittedSoutouFireball special)||special.flight()==null||special.flight().path().kind()!=com.genki.soutoughast.entity.ai.flight.CommittedTrajectory.Kind.BOMB)return;
    var target=boss.getTarget();JsonObject row=new JsonObject();row.addProperty("event","RELEASE_JOIN_LISTENER");row.addProperty("tick",boss.level().getGameTime());row.addProperty("uuid",bomb.getUUID().toString());row.addProperty("canceledAtListener",event.isCanceled());
    row.addProperty("targetUuid",target==null?null:target.getUUID().toString());row.addProperty("targetType",target==null?null:BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString());row.addProperty("targetAlive",target!=null&&target.isAlive());row.addProperty("targetHealth",target==null?0:target.getHealth());row.addProperty("lineOfSight",target!=null&&boss.getSensing().hasLineOfSight(target));
    if(target!=null){row.addProperty("targetX",target.getX());row.addProperty("targetY",target.getY());row.addProperty("targetZ",target.getZ());}row.addProperty("bossX",boss.getX());row.addProperty("bossY",boss.getY());row.addProperty("bossZ",boss.getZ());row.addProperty("majorPitch",boss.majorPitch());appendEvent(row);
@@ -155,13 +156,18 @@ public final class ObserveFlightTank {
    }
    row.addProperty("width",ghast.getBbWidth());row.addProperty("height",ghast.getBbHeight());row.addProperty("health",ghast.getHealth());
    if(standard()){
-    if(ground()){
+    if(ground()||domain()){
      var mode=ghast.getGroundCombat();var groundState=mode.state();var groundAttack=mode.attackState();
      row.addProperty("groundPhase",groundState.phase().name());row.addProperty("groundReason",groundState.reason());row.addProperty("groundTaunt",groundState.taunt());row.addProperty("groundActive",mode.active());row.addProperty("grounded",mode.grounded());
      row.addProperty("groundSupport",new com.genki.soutoughast.entity.ai.GroundClearance(ghast).supportedRoute(SoutouGhastInertialMoveControl.from(ghast.position()),SoutouGhastInertialMoveControl.from(ghast.position())));
      row.addProperty("groundAttackPhase",groundAttack.phase().name());row.addProperty("groundAttackTicks",groundAttack.ticks());row.addProperty("groundFire",groundAttack.fire());row.addProperty("groundFiredCount",mode.firedCount());
      row.addProperty("groundLastProjectileUuid",mode.lastProjectileUuid()==null?null:mode.lastProjectileUuid().toString());
      row.addProperty("groundPresentation",ghast.groundPresentation());row.addProperty("overheadActive",ghast.getOverheadAttack().active());
+    }
+    if(domain()){
+     Files.createDirectories(output());DomainObservationAudit.observe(ghast,player,output(),row);
+     if(deathSample<0&&player!=null&&!player.isAlive())deathSample=samples;
+     row.addProperty("windowStage",deathSample<0?"COMBAT":"POST_DEATH_RECOVERY");
     }
     var attack=ghast.getStandardAttack();var state=attack.state();
     row.addProperty("mobGriefing",ghast.level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING));
@@ -215,8 +221,8 @@ public final class ObserveFlightTank {
    }
    Files.createDirectories(output());Files.writeString(output().resolve("flight.jsonl"),row+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);samples++;
    if(ground()&&player!=null&&!player.isAlive()){endWindow("PLAYER_DEATH",ghast.level().getGameTime());return;}
-   if(overhead()&&deathSample>=0){
-    boolean recovered=!ghast.getOverheadAttack().active(),bounded=samples-deathSample>=200;
+   if((overhead()||domain())&&deathSample>=0){
+    boolean recovered=domain()?!ghast.getDomainAttack().active():!ghast.getOverheadAttack().active(),bounded=samples-deathSample>=200;
     if(recovered||bounded)endWindow(recovered?"PLAYER_DEATH_RECOVERY_COMPLETE":"PLAYER_DEATH_RECOVERY_TIMEOUT",ghast.level().getGameTime());
    }
    if(samples>=sampleLimit()){
