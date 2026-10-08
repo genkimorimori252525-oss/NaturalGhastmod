@@ -8,10 +8,12 @@ Compact Astra correction: prepare travel-facing look during climb; actual yaw/pi
 
 - [x] User-sequence runtime RED -> orientation-gate/high-climb/turn-before-descent/blocked-descent/upper-band momentum handoff/controller/ordinary planner regressions GREEN.
 - [x] Revised mapped/build/probe/analyzer tests and one compact source review for the new human specification.
-- [ ] Fresh finite native orientation/three-stage transit/height-entry handoff plus12ordinary-planner continuation rows; preserve a07c551/AMAUI0 as historical old-scope proof only.
-- [ ] Append corrected receipt/AF0048/guide, publish decisions and guarded original MD mirrors.
+- [x] Fresh finite native orientation/three-stage transit/height-entry handoff plus12ordinary-planner continuation rows; preserve a07c551/AMAUI0 as historical old-scope proof only.
+- [x] Append corrected receipt/AF0048/guide, publish decisions and guarded original MD mirrors.
 
 Revised pre-native: genuine MISSING_USER_ASCEND_TRAVEL_FACE_TURN_DESCEND_HANDOFF runtime RED and old-analyzer/new-sequence RED;1444core assertions/all preserved regressions,25revised/72related Node checks, private mapped compilation/syntax and genuine22second offline build PASS. One compact review of the new human specification reports no Important/Critical; no re-review. Finite revised native window360ticks25seconds, max400client rows/128queue; record actual server look/yaw/pitch/body yaw, real client body pose, moving height handoff and12ordinary-planner continuation rows. Private Goal/controller/LookControl execution is distinct from production Goal admission and human readability.
+
+Current nativebe62dda/Iye2HN PASS once:280samples/279server279client rows, TELL12/CLIMB86/CROSS83/BRAKE4/TURN43/DESCEND38/HANDOFF1/NORMAL12,37.5route/311budget. Actual server/client travel-facing crossing and target-facing descent; upper-band handoff atY237.597 versus centerY230 preservesvY-.119817, then12ordinary-planner continuations. Independent3raw/7supplement/3material/7canonical/historical85count/acceptedJAR PASS; cleanACK/VERIFIED_EXIT814ms/EVIDENCE_COMPLETE37rows2lanes/zero errors,drops,partials,captures. [Current appended receipt](../../OVERHEAD-REANCHOR-VERIFICATION.md#current-user-correction--be62dda--reanchor-iye2hn). Natural/full production Goal admission, moving human Player and visual readability remain unproved.
 
 ## Historical first implementation (a07c551; superseded movement)
 
@@ -24,7 +26,7 @@ Implementation choices: distinct pure transit helper and narrow AnchorGoal integ
 - [x] Genuine missing-action/core RED -> finite transit/arrival/commit/abort/dynamic obstacle/generation/identity/cooldown tests -> implementation/controller simulation GREEN; preserve all core regressions.
 - [x] Mapped Goal integration/build; one compact scoped Astra source review and at most one Important/Critical fix pass, no re-review.
 - [x] Finite private native transit/new-actor trial or specific retained feasibility failure; honest controlled versus natural/readability scope and owned closure.
-- [ ] Independent integrity, English receipt/AF0048/guide/GitHub and guarded original MD mirrors.
+- [x] Independent integrity and historical English receipt/AF0048 retained; current corrected guide/receipt/GitHub and guarded original MD mirrors close documentation separately.
 
 Domain/rally/cover/input/readability/new-client/arbitrary crash gates remain distinct. Grand Danmaku/Ground barrage/fans remain deferred. No product dependency, save or packet format change, generic actor override or ongoing observation.
 

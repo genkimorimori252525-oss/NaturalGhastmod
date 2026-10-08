@@ -1,6 +1,6 @@
 # Rare overhead re-anchor
 
-**Historical first implementation:** the a07c551/AMAUI0 receipt below proves the earlier transit scope only. The user's subsequent2026-10-09 correction supersedes its travel-facing/altitude/final-stop behavior: high gentle ascent, actual travel-facing passage, behind-target TURN, gentle descent and momentum-preserving height-band handoff. Revised implementation/native evidence is pending; do not use this historical PASS as acceptance of the correction. See [current plan](superpowers/plans/2026-10-09-overhead-reanchor.md).
+**Current correction verified:** be62dda/Iye2HN implements and verifies high gentle ascent, actual travel-facing passage, behind-target TURN, gentle descent and momentum-preserving height-band handoff in the explicit private helper/controller scope. See the appended current receipt and [plan](superpowers/plans/2026-10-09-overhead-reanchor.md). The a07c551/AMAUI0 sections below remain historical earlier-scope evidence; they do not validate the corrected movement.
 
 Recorded2026-10-09 Asia/Tokyo; raw native timestamps2026-10-08 UTC. Producta07c551/LAB056b46c/host7f149609. Scope **EXPLICIT_NEW_BOSS_TRANSIT_NOT_NATURAL_SELECTION_OR_HUMAN_READABILITY**. Implementation/core/build and one explicit native transit PASS. Production AnchorGoal admission, natural frequency and human readability are not native acceptance claims.
 
@@ -41,3 +41,31 @@ Immutable local trial `build/tank/reanchor-AMAUI0`; external ledger `reanchor-au
 Natural selection/actual AnchorGoal admission, moving-Player interpretation, native negative/abort transitions, readability/input/balance and full release remain distinct. Core negative cases do not establish native faults; renderer identity does not establish visible cues. Accepted swimming is preserved without another acceptance claim. Cover preference/Rally feint/detached mob-eye remain deferred under recorded prerequisites; Grand Danmaku and Ground barrage/fans stay excluded.
 
 AF0048/Tank guide record the reusable lesson: separate route admission, temporary region exit, physical braked arrival, guarded publication and subsequent retained-region behavior. A private helper transit must not be relabeled natural AI integration, and a late camera snapshot must not replace coordinate/motion history.
+
+## Current user correction — be62dda / reanchor-Iye2HN
+
+2026-10-09 Asia/Tokyo; LAB1da8b67/host7f149609. The user clarified travel-facing passage followed by target-facing descent, with ordinary combat resuming inside the broad region instead of stopping at its center. Compact Astra adopts actual alignment gates and bounded three-leg loaded-body routes; the human clarification supersedes the earlier final brake. Existing LookControl owns rotation; the controller remains the sole velocity writer. Freeze the reference center/route, ascend to at least16blocks above the observed target body, cross facing travel, brake only at the high behind-arrival stage, turn toward the visible same target and descend gently. The first radius<=.95entry publishes the candidate20/8/20region with MOVE and downward velocity preserved. The production Goal resumes ordinary logic next tick. No final brake, hold or center chase.
+
+Genuine user-sequence runtime RED and old-analyzer/new-sequence RED precede1444core assertions, all preserved regressions,25revised/72related Node checks, mapped probe compilation/syntax and genuine22second cached offline build PASS. One compact review of the corrected specification reports no Important/Critical; no re-review. No new dependency/save/packet format, camera/input tracking, attack/danmaku/fan or accepted ordinary-swimming change.
+
+One fresh finite native trial PASS:280samples/279server rows/279client rows over13927ms, frozen37.499999952route and311tick conservative budget:
+
+`TELL12 -> CLIMB86 -> CROSS83 -> BRAKE4 -> TURN43 -> DESCEND38 -> HANDOFF1 -> NORMAL12`
+
+Actual server yaw/pitch/body yaw,4/3degree rotation limits, native travel/displacement and exact mapped aiStep sub-.003velocity operation reconcile. CROSS body bottom remains>=16above the observed top; target-facing TURN begins only after physical behind arrival.63finite client travel rows face the heading;22client descent rows face the actual target. These are native pose/motion metadata, not rendered-pixel or human readability acceptance.
+
+At tick267 the pre-handoff body is(26,237.597267367,18.044073697), within the new upper band but>7blocks above its center. Downward velocity remains-.119817060before/after publication. New center(26,230,18), generation1->2 and TACTICAL_RELOCATION preserve20/8/20radii.12following ordinary-planner/controller rows retain physical continuation; no final center stop. The explicit new private Goal uses the production helper, actual LookControl/controller/native travel, loaded4x4predicate and guarded commit. It does not exercise production AnchorGoal admission or natural selection. Its observed target is a new Cow with normal native AI; the real survival Player and canonical actors are unmodified. Moving human-Player interpretation remains unproved.
+
+Both owned actors are discarded; Cow health10 is unchanged. Independent3raw arrays/actors equality,7supplement hashes,3materials,7canonical artifacts, historical original85files/full count and accepted JAR match. CleanACK/VERIFIED_EXIT814ms/EVIDENCE_COMPLETE37observations2lanes, zero errors,drops,queues,partials,captures. Finalized/original worlds are inspected as bytes only. No repeated trial or ongoing recording.
+
+| Current material | SHA256 |
+| --- | --- |
+| report.json | d8e111fa912c7fca2bf8c729b1dcd04b24b504f728d36a132f65198d64bc7d87 |
+| product JAR | f68a46d88e6e60ac8ded6f24d0abcf9df5b69610d65ea402ed44a46ddc82a62b |
+| private probe JAR | d8f9ed04f36a4039c2922e4afbbfc6e83fc70b60ca24a57dc65f3b3e8915b106 |
+| fixture.json | 7d86b1d3bc2be23085ecf5e2e9fd6c8b3a6fe15f26c22a1129b437a597e8a62f |
+| result.json | 687e43ab7f05a61dd9ac2bb7919a2b5704bddad16f685eba98a4383bf3b2d6cd |
+| rows.jsonl | 199f9634173dc332b5af62250471bbe362ba78cd05dd15aa6e8a299bebe00e57 |
+| independent reanchor-user-audit.json | da88fa3aa76b36618356fed19bf668a185640c715404f726e5fb82b9f35658ce |
+
+Production admission/natural frequency, native abort/fault cases, moving-Player behavior, visible presentation/input/balance and full boss/release remain separate gates. The reusable feedback correction is to test requested look, actual server/client body pose and subsequent momentum separately from route coordinates; a retained region's center is not an obligatory stopping point.
