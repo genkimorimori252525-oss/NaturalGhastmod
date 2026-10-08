@@ -2,6 +2,7 @@
 
 Revision: v0.6
 Date: 2026-10-08
+Updated: 2026-10-09 (natural-flow relocation clarification and first observed Dodge implementation)
 
 The user's2026-10-08 clarification supersedes v0.5's player-camera-relative anchor. A combat anchor is a broad, boss-owned world-space region, retained during combat and reselected only when necessary. The user has explicitly accepted its current swimming and authorized further non-danmaku development. Separate controlled camera/moving-Player/LOS scenarios remain limited as recorded. See [the correction design](../superpowers/specs/2026-10-08-combat-region-swimming-design.md), [verification receipt](../COMBAT-REGION-SWIMMING-VERIFICATION.md) and [next tactical unit](../superpowers/plans/2026-10-08-observed-tactics.md). Grand Danmaku implementation is excluded by the current user instruction, including runtime adapters.
 
@@ -30,6 +31,8 @@ Typical lifecycle:
 `ANCHOR VOLUME -> TEMPORARY MANEUVER -> BRAKE -> RETURN -> ANCHOR VOLUME`
 
 After avoiding an attack, Soutou Ghast should often resume swimming within the same retained region as if nothing happened.
+
+First observed Dodge implementation uses bounded visible projectile motion, fallible same-region lateral evasion and ordinary recovery through the sole controller. Initial damaging-class coverage/tuning and controlled native evidence are recorded in [the Dodge receipt](../OBSERVED-DODGE-VERIFICATION.md); human readability and full class coverage remain open. Do not replace normal swimming with constant perfect interception or use the boss's own fireball family to bypass Rally rules.
 
 ## Combat-region ownership and readability
 
@@ -1053,11 +1056,13 @@ Examples:
 
 A notable rare behavior is **Overhead Re-anchor**:
 
-1. Soutou Ghast accelerates out of its retained Combat Anchor Volume;
-2. it passes above the player's head;
-3. it continues behind the player rather than immediately returning;
-4. a new world-space Combat Anchor Volume is selected beyond the Player using observed geometry and explicitly committed;
-5. combat resumes from the new anchor.
+1. From its current swimming position and momentum, Soutou Ghast gently rises high; it need not return to the region center or stop first.
+2. It faces its travel direction while passing high above the observed Player position.
+3. Only after reaching behind the Player does it turn toward that visible same Player.
+4. It gently descends toward a frozen broad candidate region selected from observed geometry.
+5. On entering that region's upper height/volume band, commit it and resume ordinary combat with momentum preserved. The center is a reference, not a mandatory arrival/stop point.
+
+This2026-10-09 user clarification supersedes earlier Player-facing transit or final braked-center behavior. [Current relocation implementation/evidence](../OVERHEAD-REANCHOR-VERIFICATION.md) retains historical receipts separately.
 
 This maneuver should be low-frequency because the normal design goal is to keep the fight readable and reduce unnecessary camera spinning.
 
