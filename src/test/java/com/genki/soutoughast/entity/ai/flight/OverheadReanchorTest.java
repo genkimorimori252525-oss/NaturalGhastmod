@@ -10,11 +10,21 @@ public final class OverheadReanchorTest {
     public static void main(String[] args){
         if(java.util.Arrays.stream(OverheadReanchor.Phase.values()).noneMatch(x->x.name().equals("DESCEND")))throw new AssertionError("MISSING_USER_ASCEND_TRAVEL_FACE_TURN_DESCEND_HANDOFF");
         if(java.util.Arrays.stream(CombatAnchor.Reason.values()).noneMatch(x->x.name().equals("TACTICAL_RELOCATION")))throw new AssertionError("MISSING_PLANNED_OVERHEAD_REANCHOR");
-        geometry();simulation();orientationGates();abort();commitGuards();director();
+        geometry();movingNoncentralStart();simulation();orientationGates();abort();commitGuards();director();
         System.out.println("PASS: "+checks+" overhead re-anchor/controller assertions");
     }
     private static CombatAnchor anchor(){var a=new CombatAnchor();a.observe(TARGET,OBSERVED,START,false);return a;}
     private static OverheadReanchor transit(CombatAnchor a){var m=new OverheadReanchor();check(m.begin(TARGET,OBSERVED,1.8,START,a.region(),(x,y)->true),"admit bounded frozen route");return m;}
+    private static void movingNoncentralStart(){
+        var a=anchor();var region=a.region();var start=new FlightVector(3,6,12);var velocity=new FlightVector(.12,.01,-.04);
+        var m=new OverheadReanchor();check(start.subtract(region.center()).length()>10,"start naturally away from reference center");
+        check(m.begin(TARGET,OBSERVED,1.8,start,region,(from,to)->true),"no exact-center or zero-speed admission condition");
+        check(m.overhead().x()==start.x()&&m.overhead().z()==start.z(),"rise begins above current swim position");
+        var state=m.step(TARGET,true,region,start,velocity,180,0,OBSERVED.subtract(start),(from,to)->true);
+        var next=new FlightController().step(velocity,state.intent());
+        check(state.phase()==OverheadReanchor.Phase.TELL&&next.length()>.05&&next.y()>velocity.y(),"existing momentum transitions into gentle rise without stopping");
+        check(next.subtract(velocity).length()<=Math.hypot(.11,.045)+1e-9&&a.region().equals(region),"same controller and retained region remain authoritative");
+    }
     private static void geometry(){
         var a=anchor();var m=transit(a);check(m.overhead().y()>=17.8&&m.destination().z()==-8&&m.candidateCenter().y()==START.y(),"high passage and frozen region altitude");check(m.routeLength()<=48&&m.budget()<=320,"all three legs and conservative time bounded");
         check(!m.begin(TARGET,OBSERVED,1.8,START,a.region(),(x,y)->true),"active admission cannot replace route");

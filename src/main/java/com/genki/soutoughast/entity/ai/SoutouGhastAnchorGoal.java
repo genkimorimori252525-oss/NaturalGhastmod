@@ -24,11 +24,13 @@ public final class SoutouGhastAnchorGoal extends Goal {
     private final MovementPlanner planner = new MovementPlanner();
     private final TacticalBrain brain = new TacticalBrain();
     private final OverheadReanchor relocation = new OverheadReanchor();
+    private final SoutouGhastProjectileDodge dodge;
     private UUID relocationSubject;
     private long relocationGeneration;
 
     public SoutouGhastAnchorGoal(SoutouGhast ghast) {
         this.ghast = ghast;
+        this.dodge = new SoutouGhastProjectileDodge(ghast);
         setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
@@ -67,7 +69,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
         }
         var sample = control().sampleMobility();
         if(com.genki.soutoughast.entity.ai.domain.DomainRuntime.released())ghast.getOverheadAttack().ordinaryTick(visible);
-        boolean groundBusy=ghast.getStandardAttack().engaged()||brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT;
+        boolean groundBusy=dodge.active()||ghast.getStandardAttack().engaged()||brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT;
         if(ghast.getDomainAttack().tryBegin(target,visible,anchor.region(),groundBusy)){
             brain.reset();planner.reset();applyDomain(target,visible,sample);return;
         }
@@ -75,11 +77,17 @@ public final class SoutouGhastAnchorGoal extends Goal {
             brain.reset();planner.reset();ghast.getStandardAttack().reset();applyGround(target,visible,sample);return;
         }
         if(!com.genki.soutoughast.entity.ai.domain.DomainRuntime.released())ghast.getOverheadAttack().ordinaryTick(visible);
-        boolean busy=ghast.getStandardAttack().engaged()||brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT;
+        boolean busy=dodge.active()||ghast.getStandardAttack().engaged()||brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT;
         if(ghast.getOverheadAttack().tryBegin(target,visible,anchor.region(),busy)){
             brain.reset();planner.reset();ghast.getStandardAttack().reset();applyMajor(target,visible);return;
         }
         if(tryRelocation(target,visible,busy,boss)){applyRelocation(target,visible);return;}
+        var dodgePlan=dodge.tick(target,visible,anchor.region(),brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT);
+        if(dodgePlan!=null){
+            brain.reset();planner.reset();control().setTacticalState(TacticalBrain.State.idle());control().setMovementPlan(dodgePlan);
+            if(visible)((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(target.getEyePosition().subtract(ghast.getEyePosition()));
+            ghast.getStandardAttack().tick(target,visible,true);return;
+        }
         // No live geometry or velocity is read after LOS loss. Committed recipes use locked waypoints.
         FlightVector observedVelocity=visible?SoutouGhastInertialMoveControl.from(target.getDeltaMovement()):null;
         double variation=ghast.getStandardAttack().engaged()?0:ghast.getRandom().nextDouble();
@@ -175,6 +183,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
     public void stop() {
         observedSubject = null;
         relocation.reset();relocationSubject=null;
+        dodge.reset();
         lastObservedPosition=null;
         anchor.clear();control().setCombatRegion(null);
         planner.reset();
