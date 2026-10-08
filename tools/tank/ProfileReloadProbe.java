@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import net.minecraft.nbt.*;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.*;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.storage.LevelResource;
@@ -58,6 +59,9 @@ public final class ProfileReloadProbe {
     checks.addProperty("ownerResolved",ball.getOwner()==(caseIndex==0?player:boss));checks.addProperty("preflightEqual",ball.preflight().equals(saved.getCompound("ProfilePreflight")));
     var again=new CompoundTag();ball.provenance().write(again);var original=new CompoundTag();StandardProvenance.read(saved).write(original);checks.addProperty("provenanceEqual",again.equals(original));checks.addProperty("unregisteredBeforeLoad",true);
     for(String key:checks.keySet())require(checks.get(key).getAsBoolean(),"RELOAD_"+key);
+   }else{
+    var buffer=new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+    try{ball.writeSpawnData(buffer);require(buffer.readNbt()!=null&&buffer.readNbt()==null&&buffer.readableBytes()==0,"INVALID_SPAWN_REJECT_MARKER");checks.addProperty("invalidSpawnRejectMarker",true);}finally{buffer.release();}
    }
    descriptor.add("checks",checks);require(level.addFreshEntity(ball),"RELOAD_ADD");waiting=false;loaded=true;nativeTicks=0;row(level,"LOAD");return;
   }

@@ -75,7 +75,11 @@ public final class CommittedSoutouFireball extends StandardSoutouFireball {
     @Override public void onSyncedDataUpdated(EntityDataAccessor<?> key){
         super.onSyncedDataUpdated(key);if(PROFILE.equals(key)&&level().isClientSide)applyProfile(entityData.get(PROFILE),false);
     }
-    @Override public void writeSpawnData(FriendlyByteBuf buffer){super.writeSpawnData(buffer);buffer.writeNbt(CommittedTrajectoryCodec.write(flight));}
+    @Override public void writeSpawnData(FriendlyByteBuf buffer){
+        super.writeSpawnData(buffer);
+        // Tracking can request a spawn packet before the first discard tick after an invalid reload.
+        buffer.writeNbt(invalid||flight==null?null:CommittedTrajectoryCodec.write(flight));
+    }
     @Override public void readSpawnData(FriendlyByteBuf buffer){super.readSpawnData(buffer);var data=buffer.readNbt();if(data==null)invalid=true;else applyProfile(data,true);}
     @Override public void addAdditionalSaveData(CompoundTag tag){super.addAdditionalSaveData(tag);if(flight!=null)tag.put("CommittedProfile",CommittedTrajectoryCodec.write(flight));tag.put("ProfilePreflight",preflight.copy());}
     @Override public void readAdditionalSaveData(CompoundTag tag){

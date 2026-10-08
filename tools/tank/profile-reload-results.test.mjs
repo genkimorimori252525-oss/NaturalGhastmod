@@ -8,7 +8,7 @@ function fixture(){
  const cases=names.map((name,i)=>({name,uuid:'projectile-'+i,kind:name==='BURST'?'BURST':name==='LOB'?'LOB':'CURVE',negative:i>=4,normalized:i===0,points:Array.from({length:11},(_,j)=>[3+j,236,5]),savedIndex:i===0?0:9,checks:{stateEqual:true,ownerResolved:true,preflightEqual:true,provenanceEqual:true,unregisteredBeforeLoad:true}}));
  const rows=cases.flatMap((c,i)=>{
   const r=(event,index,x)=>({case:c.name,uuid:c.uuid,event,index,x,y:236,z:5,tick:100+i*5+(event==='LOAD'?1:event==='NATIVE'?2:event==='REMOVED'?3:0),normalized:c.normalized,alive:event!=='REMOVED',ownerUuid:'owner',positionError:0});
-  if(c.negative){const end=r('REMOVED',1,4);end.tick--;return [r('LOAD',1,4),end];}
+  if(c.negative){c.checks.invalidSpawnRejectMarker=true;const end=r('REMOVED',1,4);end.tick--;return [r('LOAD',1,4),end];}
   return [r('SAVE',c.savedIndex,c.normalized?4:12),r('LOAD',c.savedIndex,c.normalized?4:12),r('NATIVE',c.normalized?0:10,c.normalized?5:13),r('REMOVED',c.normalized?0:10,c.normalized?5:13)];
  });
  const request={nonce:'nonce',maxTicks:180,maxWallMs:15000};

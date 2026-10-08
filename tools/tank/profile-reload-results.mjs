@@ -12,7 +12,7 @@ export function analyzeProfileReload(rows,result,request){
  for(const c of cases){
   const rs=rows.filter(r=>r.case===c.name),load=rs.find(r=>r.event==='LOAD'),removed=rs.find(r=>r.event==='REMOVED'),native=rs.filter(r=>r.event==='NATIVE');
   check(load&&removed&&removed.tick>load.tick&&removed.alive===false,'LIFECYCLE_'+c.name);
-  if(c.negative){check(native.length===0&&removed&&load&&removed.tick-load.tick===1,'FAIL_CLOSED_'+c.name);continue;}
+  if(c.negative){check(c.checks?.invalidSpawnRejectMarker===true&&native.length===0&&removed&&load&&removed.tick-load.tick===1,'FAIL_CLOSED_'+c.name);continue;}
   check(c.savedIndex===(c.normalized?0:9),'INTERIOR_SAVE_'+c.name);
   check(c.checks&&['stateEqual','ownerResolved','preflightEqual','provenanceEqual','unregisteredBeforeLoad'].every(k=>c.checks[k]===true),'LOAD_EQUALITY_'+c.name);
   check(rs.some(r=>r.event==='SAVE')&&native.length>0&&load?.index===c.savedIndex,'SAVE_CONTINUATION_'+c.name);
