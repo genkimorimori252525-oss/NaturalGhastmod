@@ -15,7 +15,8 @@ function fixture(){
    for(let j=0;j<budget;j++){
     const moving=['TELEGRAPH','COMMIT','REVEAL'].includes(phase),dx=waypoint.x-position.x,dz=waypoint.z-position.z,distance=Math.hypot(dx,dz);
     if(moving&&phase!=='TELEGRAPH'&&!(phase==='COMMIT'&&name==='DOUBLE_FAKE')&&distance<=.7)break;
-    const before={...position},velocityBefore={...velocity},speed=Math.hypot(velocity.x,velocity.z);
+    const before={...position};velocity=Object.fromEntries(Object.entries(velocity).map(([k,v])=>[k,Math.abs(v)<.003?0:v]));
+    const velocityBefore={...velocity},speed=Math.hypot(velocity.x,velocity.z);
     if(!moving)velocity=speed<=.035?{x:0,y:0,z:0}:{x:velocity.x*(speed-.035)/speed,y:0,z:velocity.z*(speed-.035)/speed};
     else {
      const cap=phase==='TELEGRAPH'||phase==='COMMIT'&&name==='DOUBLE_FAKE'?.14:.32,wanted=Math.min(cap,Math.sqrt(.07*Math.max(0,distance-.4))),desired={x:dx/distance*wanted,z:dz/distance*wanted};
@@ -31,6 +32,8 @@ function fixture(){
  return {result,request:{nonce:'n'}};
 }
 test('accept explicit controlled composer scope with three complete sequences',()=>{const f=fixture();assert.deepEqual(analyzeCompleteFeints(f.result,f.request).failures,[]);});
+test('native LivingEntity deadzone fixture actually exercises component zeroing',()=>{const f=fixture(),trace=f.result.rows.filter(x=>x.name==='PASS_BY_FAKE');assert(trace.some((r,i)=>i&&['x','y','z'].some(k=>trace[i-1].velocity[k]!==0&&Math.abs(trace[i-1].velocity[k])<.003&&r.velocityBefore[k]===0)));assert.equal(analyzeCompleteFeints(f.result,f.request).status,'PASS');});
+test('reject losing a component outside the exact native deadzone',()=>{const f=fixture(),r=f.result.rows.find(x=>Math.abs(x.velocityBefore.x)>.01);r.velocityBefore={...r.velocityBefore,x:0};assert.equal(analyzeCompleteFeints(f.result,f.request).status,'FAIL');});
 for(const [name,mutate] of [
  ['wrong authority',f=>f.result.nonce='bad'],['natural selection claim',f=>f.result.scope='NATURAL_SELECTION'],['canonical overrides',f=>f.result.canonicalOverrides=true],['canonical fixture boss present',f=>f.result.fixtureSubjectAbsent=false],['cleanup failure',f=>f.result.cleanup[0].status='FAIL'],['wrong body',f=>f.result.cases[0].width=1],['missing route negative',f=>f.result.cases[0].wallRejected=false],['missing native client',f=>f.result.joins.pop()],['wrong renderer',f=>f.result.joins[0].renderer='Other'],['missing live client continuation',f=>f.result.clientRows.pop()],['teleport',f=>f.result.rows[0].before.x=-999],['changed region',f=>f.result.rows[0].region={...f.result.rows[0].region,generation:2}],['live homing geometry',f=>f.result.rows[1].observedTarget={x:1,y:0,z:18}],['body unloaded',f=>f.result.rows[0].loaded=false],['timeout',f=>f.result.rows[0].goalTick=161],['wrong goal clock',f=>f.result.rows[1].goalTick=9],['missing reveal',f=>f.result.rows=f.result.rows.filter(x=>x.name!=='PASS_BY_FAKE'||x.phase!=='REVEAL')],['abort commits',f=>f.result.rows.find(x=>x.name==='ABORT_FAKE').committed=true],['pass never crosses',f=>{for(const r of f.result.rows.filter(x=>x.name==='PASS_BY_FAKE'))r.position={x:0,y:6,z:28};}],['false complete',f=>f.result.rows.at(-1).completed=false]
 ])test('reject '+name,()=>{const f=fixture();mutate(f);assert.equal(analyzeCompleteFeints(f.result,f.request).status,'FAIL');});

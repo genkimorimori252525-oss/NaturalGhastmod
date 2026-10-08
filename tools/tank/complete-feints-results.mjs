@@ -2,6 +2,8 @@ export const completeFeintsScope='EXPLICIT_NEW_BOSS_COMPOSER_NATIVE_NOT_NATURAL_
 const names=['PASS_BY_FAKE','DOUBLE_FAKE','ABORT_FAKE'];
 const sequences=[['TELEGRAPH','COMMIT','BRAKE','REVEAL','BRAKE','RETURN'],['TELEGRAPH','COMMIT','BRAKE','REVEAL','BRAKE','REVEAL','BRAKE','RETURN'],['TELEGRAPH','BRAKE','RETURN']];
 const axes=['x','y','z'],finite=v=>v&&axes.every(k=>Number.isFinite(v[k])),distance=(a,b)=>Math.hypot(...axes.map(k=>a[k]-b[k])),same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+// LivingEntity.aiStep zeros each sub-.003 component before Mob Goal/controller execution.
+const goalVelocity=v=>Object.fromEntries(axes.map(k=>[k,Math.abs(v[k])<.003?0:v[k]]));
 export function analyzeCompleteFeints(result,request){
  const failures=[],check=(ok,label)=>{if(!ok)failures.push(label);};
  check(result?.scope===completeFeintsScope&&result.status==='PASS'&&result.nonce===request?.nonce&&result.canonicalPlayer===true&&result.fixtureSubjectAbsent===true&&result.canonicalOverrides===false&&result.samples>0&&result.samples<=240&&Array.isArray(result.errors)&&!result.errors.length,'AUTHORITY');
@@ -23,7 +25,7 @@ export function analyzeCompleteFeints(result,request){
    check(r.uuid===c.uuid&&r.id===c.id&&r.registered===true&&r.loaded===true&&r.blocked===false,'NATIVE_BODY_'+name);
    check(r.goalTick===i+1&&r.goalTick<=160&&(i===0||r.tick===trace[i-1].tick+1),'CLOCK_'+name);
    check(same(r.region,c.region)&&same(r.observedTarget,trace[0].observedTarget)&&axes.reduce((sum,k)=>sum+((r.position[k]-c.region.center[k])/c.region.radii[k])**2,0)<=1+1e-6,'FROZEN_REGION_GEOMETRY_'+name);
-   check(axes.every(k=>Math.abs(r.position[k]-r.before[k]-r.velocity[k])<1e-6)&&Math.hypot(...axes.map(k=>r.velocity[k]))<=.650001&&distance(r.velocity,r.velocityBefore)<=Math.hypot(.11,.045)+1e-6&&(i===0||distance(r.before,trace[i-1].position)<1e-6&&distance(r.velocityBefore,trace[i-1].velocity)<1e-6),'NATIVE_MOTION_'+name);
+   check(axes.every(k=>Math.abs(r.position[k]-r.before[k]-r.velocity[k])<1e-6)&&Math.hypot(...axes.map(k=>r.velocity[k]))<=.650001&&distance(r.velocity,r.velocityBefore)<=Math.hypot(.11,.045)+1e-6&&(i===0||distance(r.before,trace[i-1].position)<1e-6&&distance(r.velocityBefore,goalVelocity(trace[i-1].velocity))<1e-6),'NATIVE_MOTION_'+name);
    check(r.completed===(i===trace.length-1)&&r.committed===(name!=='ABORT_FAKE'&&r.goalTick>24),'COMMIT_COMPLETION_'+name);
   }
   check(same(groups.map(x=>x.phase),sequences[index])&&groups[0]?.rows.length===24&&groups.filter(x=>x.phase==='BRAKE').every(x=>x.rows.length===12)&&groups.at(-1)?.rows.length===16,'SEQUENCE_'+name);
