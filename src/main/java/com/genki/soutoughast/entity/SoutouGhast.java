@@ -6,6 +6,8 @@ import com.genki.soutoughast.entity.ai.SoutouGhastFlightLookControl;
 import com.genki.soutoughast.entity.ai.SoutouGhastStandardAttack;
 import com.genki.soutoughast.entity.ai.SoutouGhastOverheadAttack;
 import com.genki.soutoughast.entity.ai.SoutouGhastGroundCombat;
+import com.genki.soutoughast.entity.ai.SoutouGhastDomainAttack;
+import com.genki.soutoughast.entity.ai.flight.MajorActionDirector;
 import com.genki.soutoughast.entity.projectile.StandardSoutouFireball;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.tags.DamageTypeTags;
@@ -57,12 +59,16 @@ public class SoutouGhast extends Ghast {
     }
 
     private static final int LAST_SEEN_MEMORY_TICKS = 80;
+    private final MajorActionDirector majorDirector=new MajorActionDirector();
+    public MajorActionDirector getMajorDirector(){return majorDirector;}
     private final SoutouGhastStandardAttack standardAttack=new SoutouGhastStandardAttack(this);
     public SoutouGhastStandardAttack getStandardAttack(){return standardAttack;}
     private final SoutouGhastOverheadAttack overheadAttack=new SoutouGhastOverheadAttack(this);
     public SoutouGhastOverheadAttack getOverheadAttack(){return overheadAttack;}
     private final SoutouGhastGroundCombat groundCombat=new SoutouGhastGroundCombat(this);
     public SoutouGhastGroundCombat getGroundCombat(){return groundCombat;}
+    private final SoutouGhastDomainAttack domainAttack=new SoutouGhastDomainAttack(this);
+    public SoutouGhastDomainAttack getDomainAttack(){return domainAttack;}
     private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> GROUNDED=net.minecraft.network.syncher.SynchedEntityData.defineId(SoutouGhast.class,net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
     public boolean groundPresentation(){return entityData.get(GROUNDED);}
     private static final net.minecraft.network.syncher.EntityDataAccessor<Float> MAJOR_PITCH=net.minecraft.network.syncher.SynchedEntityData.defineId(SoutouGhast.class,net.minecraft.network.syncher.EntityDataSerializers.FLOAT);

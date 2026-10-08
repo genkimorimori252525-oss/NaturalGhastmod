@@ -25,10 +25,20 @@ public final class DomainCoordinatorTest {
   public DomainOverlay.Durability durability(DomainOverlay.Journal j){return saved->DomainOverlay.DurabilityResult.VERIFIED;}
  }
  static DomainGeometry.Plan plan(int x,int y){return DomainGeometry.plan(x,y,0,-64,320);}
- static DomainCoordinator.Admission begin(DomainCoordinator c,UUID owner,int x,int y,List<DomainOverlay.Change> changes)throws Exception{return c.begin(UUID.randomUUID(),owner,"minecraft:overworld",plan(x,y),changes);}
+ static DomainCoordinator.Admission reserve(DomainCoordinator c,UUID owner,int x,int y,List<DomainOverlay.Change> changes)throws Exception{return c.begin(UUID.randomUUID(),owner,"minecraft:overworld",plan(x,y),changes);}
+ static DomainCoordinator.Admission begin(DomainCoordinator c,UUID owner,int x,int y,List<DomainOverlay.Change> changes)throws Exception{var a=reserve(c,owner,x,y,changes);if(a.outcome()==DomainCoordinator.Outcome.STARTED)c.armPlacement(a.handle());return a;}
  static DomainCoordinator.Handle started(DomainCoordinator.Admission a){check(a.outcome()==DomainCoordinator.Outcome.STARTED,"admission started");return a.handle();}
  static void settle(DomainCoordinator c,DomainCoordinator.Handle h)throws Exception{for(int i=0;i<12&&!h.terminal();i++)c.tick();check(h.terminal(),"bounded simulated restoration plus explicit fake barrier");}
  public static void main(String[] args)throws Exception{
+  var reservedStore=new Storage();var reservedWorld=new Worlds();var reserved=new DomainCoordinator(reservedStore,reservedWorld);
+  var reservedCell=new DomainGeometry.Cell(0,64,0);
+  var reservation=started(reserve(reserved,UUID.randomUUID(),0,64,List.of(new DomainOverlay.Change(reservedCell,"air","blackstone"))));int reservedWrites=reservedStore.writes;
+  for(int i=0;i<60;i++)reserved.tick();
+  check(reservation.phase()==DomainOverlay.Phase.PLACING&&reservedWorld.mutations==0&&reservedStore.writes==reservedWrites,"reservation never places before explicit arm");
+  reserved.armPlacement(reservation);reserved.tick();check(reservation.phase()==DomainOverlay.Phase.ACTIVE&&reservedWorld.mutations==1,"explicit arm authorizes later bounded placement");
+  reserved.requestRestore(reservation,"TEST_END");settle(reserved,reservation);
+  reservation=started(reserve(reserved,UUID.randomUUID(),0,64,List.of(new DomainOverlay.Change(reservedCell,"air","blackstone"))));
+  for(int i=0;i<201;i++)reserved.tick();settle(reserved,reservation);check(reservedWorld.mutations==2&&!reservation.journal().entries().get(0).mutationIntent(),"abandoned reservation expires without world ownership");
   var storage=new Storage();var worlds=new Worlds();var c=new DomainCoordinator(storage,worlds);check(c.ready(),"empty restart ready");
   UUID owner=UUID.randomUUID();var h=started(begin(c,owner,0,64,List.of()));c.tick();check(h.phase()==DomainOverlay.Phase.ACTIVE,"zero-change footprint still reserved");int writes=storage.writes;
   var clash=begin(c,UUID.randomUUID(),40,64,List.of());check(clash.outcome()==DomainCoordinator.Outcome.CLASH&&clash.clashes().equals(List.of(h.identity().domain())),"touching lattice cell clash before incoming mutation");

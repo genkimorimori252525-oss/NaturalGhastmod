@@ -20,7 +20,7 @@ public final class DomainCoordinator {
  private record Key(String dimension,int slot) {}
  public static final class Handle {
   private final DomainCoordinator coordinator;private final DomainOverlay engine;private final DomainGeometry.Plan footprint;
-  private DomainOverlay.World world;private DomainOverlay.Durability durability;
+  private DomainOverlay.World world;private DomainOverlay.Durability durability;private boolean placementArmed;private int unarmedTicks;
   private Handle(DomainCoordinator coordinator,DomainOverlay engine,DomainGeometry.Plan footprint){this.coordinator=coordinator;this.engine=engine;this.footprint=footprint;}
   public DomainOverlay.Identity identity(){return engine.journal().identity();}
   public DomainOverlay.Phase phase(){return engine.journal().phase();}
@@ -81,6 +81,14 @@ public final class DomainCoordinator {
  public void requestRestore(Handle handle,String reason)throws IOException{
   enter();try{owned(handle);handle.engine.requestRestore(reason);}catch(IOException|RuntimeException error){failed=true;throw error;}finally{busy=false;}
  }
+ /** Reservation grants no world mutation. The encounter arms only after its complete tell. */
+ public boolean armPlacement(Handle handle)throws IOException{
+  enter();try{
+   owned(handle);if(handle.phase()!=DomainOverlay.Phase.PLACING||handle.placementArmed)return false;
+   if(handle.unarmedTicks>200){handle.engine.requestRestore("RESERVATION_EXPIRED");return false;}
+   handle.placementArmed=true;return true;
+  }catch(IOException error){failed=true;throw error;}finally{busy=false;}
+ }
  /** Persist aborts before releasing repository ownership; restart performs remaining work. */
  public void shutdown()throws IOException{
   enter();try{for(var h:slots.values())if(!h.terminal())h.engine.requestRestore("SERVER_STOPPING");}finally{failed=true;busy=false;}
@@ -89,10 +97,13 @@ public final class DomainCoordinator {
  public void tick()throws IOException{
   enter();try{
    var handles=List.copyOf(slots.values());if(handles.isEmpty())return;
+   for(var h:handles)if(h.phase()==DomainOverlay.Phase.PLACING&&!h.placementArmed)h.unarmedTicks=Math.min(201,h.unarmedTicks+1);
    for(int scan=0;scan<handles.size();scan++){
     roundRobin=Math.floorMod(roundRobin,handles.size());Handle h=handles.get(roundRobin);roundRobin=(roundRobin+1)%handles.size();if(h.terminal())continue;
     if(h.phase()==DomainOverlay.Phase.ACTIVE||h.phase()==DomainOverlay.Phase.PLACING){
-     if(!worlds.ownerPresent(h.identity()))h.engine.requestRestore("OWNER_LOST");else if(h.phase()==DomainOverlay.Phase.ACTIVE)continue;
+     if(!worlds.ownerPresent(h.identity()))h.engine.requestRestore("OWNER_LOST");
+     else if(h.phase()==DomainOverlay.Phase.PLACING&&!h.placementArmed){if(h.unarmedTicks>200)h.engine.requestRestore("RESERVATION_EXPIRED");else continue;}
+     else if(h.phase()==DomainOverlay.Phase.ACTIVE)continue;
     }
     if(h.world==null)h.world=worlds.world(h.journal());if(h.world==null)continue;
     if(h.phase()==DomainOverlay.Phase.PLACING)h.engine.place(h.world,64);

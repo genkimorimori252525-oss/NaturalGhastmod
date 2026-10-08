@@ -14,13 +14,13 @@ import java.util.UUID;
 /** Major produces bounded intents and projectiles; the existing controller alone moves the boss. */
 public final class SoutouGhastOverheadAttack {
     private final SoutouGhast ghast;
-    private final MajorActionDirector director=new MajorActionDirector();
+    private final MajorActionDirector director;
     private final OverheadBombing art=new OverheadBombing();
     private UUID subject;
     private int sequences,bombs;
     private CommittedPathClearance.Proof lastBombProof;
     private String lastDecision="NONE";
-    public SoutouGhastOverheadAttack(SoutouGhast ghast){this.ghast=ghast;}
+    public SoutouGhastOverheadAttack(SoutouGhast ghast){this.ghast=ghast;director=ghast.getMajorDirector();}
     public boolean active(){return art.active();}
     public OverheadBombing.State state(){return art.state();}
     public int sequenceCount(){return sequences;}
@@ -90,7 +90,7 @@ public final class SoutouGhastOverheadAttack {
         if(!ghast.level().addFreshEntity(shot))return false;
         bombs++;ghast.level().levelEvent(null,1016,ghast.blockPosition(),0);return true;
     }
-    public void reset(){art.reset();director.reset();subject=null;lastBombProof=null;lastDecision="NONE";}
+    public void reset(){if(art.active())director.finished();art.reset();subject=null;lastBombProof=null;lastDecision="NONE";}
     private static FlightVector from(Vec3 point){return SoutouGhastInertialMoveControl.from(point);}
     private static Vec3 to(FlightVector point){return SoutouGhastInertialMoveControl.to(point);}
 }

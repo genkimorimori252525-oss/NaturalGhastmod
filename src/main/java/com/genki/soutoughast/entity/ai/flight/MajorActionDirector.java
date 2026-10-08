@@ -21,6 +21,12 @@ public final class MajorActionDirector {
         decision=selected?"ELIGIBLE":"VARIATION";return selected;
     }
     private boolean reject(String reason){decision=reason;return false;}
+    /** Full participant/floor preparation supplies Domain eligibility independently of Overhead. */
+    public boolean shouldBeginDomain(boolean prepared,boolean offensiveBusy,double variation){
+        if(active)return reject("MAJOR_ACTIVE");if(quiet>0)return reject("QUIET_INTERVAL");if(recent>0)return reject("RECENT_MAJOR");
+        if(!prepared)return reject("DOMAIN_PREPARATION");if(offensiveBusy)return reject("OFFENSE_BUSY");
+        boolean selected=Double.isFinite(variation)&&variation>.99&&variation<=1;decision=selected?"DOMAIN_ELIGIBLE":"VARIATION";return selected;
+    }
     public void began(){if(active)throw new IllegalStateException("ONE_MAJOR_ACTION_ONLY");active=true;recent=1200;}
     public void finished(){active=false;quiet=600;}
     public void rejected(){quiet=Math.max(quiet,60);}

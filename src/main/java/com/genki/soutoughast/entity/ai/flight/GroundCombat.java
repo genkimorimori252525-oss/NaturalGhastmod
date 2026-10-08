@@ -15,6 +15,7 @@ public final class GroundCombat {
     public boolean active(){return phase!=Phase.AIR;}
     public boolean grounded(){return phase==Phase.GROUNDED;}
     public void invalidateTarget(){goal=phase==Phase.GROUNDED?null:goal;tauntLegs=0;pause=12;}
+    public State hold(){if(phase!=Phase.LANDING&&phase!=Phase.TAKEOFF)goal=null;clearSamples=tauntLegs=0;pause=12;return publish(FlightController.Intent.brake(),"DOMAIN_HOLD");}
     /** Query-only landing contact allowance. Actual velocity/native collision stay unchanged. */
     public FlightVector landingSweep(FlightVector position,FlightVector prediction,
             BiPredicate<FlightVector,FlightVector> loadedBody,BiPredicate<FlightVector,FlightVector> freshSupport){
@@ -34,6 +35,11 @@ public final class GroundCombat {
     public State step(FlightVector position,FlightVector observedTarget,CombatAnchor.Region region,boolean clearForFlight,
                       FlightVector ascent,BiPredicate<FlightVector,FlightVector> bodyRoute,
                       BiPredicate<FlightVector,FlightVector> supportedRoute,double variation){
+        return step(position,observedTarget,region,clearForFlight,ascent,bodyRoute,supportedRoute,variation,true,true);
+    }
+    public State step(FlightVector position,FlightVector observedTarget,CombatAnchor.Region region,boolean clearForFlight,
+                      FlightVector ascent,BiPredicate<FlightVector,FlightVector> bodyRoute,
+                      BiPredicate<FlightVector,FlightVector> supportedRoute,double variation,boolean allowTakeoff,boolean allowScuttle){
         if(!active())return state;
         ticks++;if(memory>0)memory--;
         if(phase==Phase.LANDING){
@@ -46,12 +52,13 @@ public final class GroundCombat {
             if(position.subtract(goal).length()<=.2){reset();return state;}
             return publish(toward(position,goal,.35),"TAKEOFF");
         }
-        boolean usableAscent=clearForFlight&&ascent!=null&&ascent.y()>position.y()
+        boolean usableAscent=allowTakeoff&&clearForFlight&&ascent!=null&&ascent.y()>position.y()
                 &&ascent.subtract(position).length()<=4.001&&bodyRoute.test(position,ascent);
         clearSamples=usableAscent?clearSamples+1:0;
         if(clearSamples>=20){phase=Phase.TAKEOFF;ticks=clearSamples=0;goal=ascent;return publish(FlightController.Intent.brake(),"CLEAR_DWELL_COMPLETE");}
         if(phase==Phase.SAFE_HOLD)return publish(FlightController.Intent.brake(),"SAFE_HOLD");
         if(!supportedRoute.test(position,position))return safe("SUPPORT_LOST");
+        if(!allowScuttle){goal=null;tauntLegs=0;pause=12;return publish(FlightController.Intent.brake(),"DOMAIN_HOLD");}
         if(observedTarget==null||region==null){goal=null;tauntLegs=0;pause=12;return publish(FlightController.Intent.brake(),"TARGET_UNOBSERVED");}
         if(pause>0){pause--;return publish(FlightController.Intent.brake(),"READABLE_PAUSE");}
         if(goal!=null){

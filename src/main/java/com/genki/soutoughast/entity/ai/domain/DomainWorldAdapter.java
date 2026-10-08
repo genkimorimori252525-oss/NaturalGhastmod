@@ -2,6 +2,7 @@ package com.genki.soutoughast.entity.ai.domain;
 import java.io.IOException;
 import java.util.*;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.Block;
@@ -76,7 +77,9 @@ public final class DomainWorldAdapter implements DomainOverlay.World {
    thread(level);if(failed)throw new IOException("DOMAIN_NATIVE_PREFLIGHT_HALTED");if(budget<1||budget>MAX_PREFLIGHT_BATCH)throw new IllegalArgumentException("DOMAIN_PREFLIGHT_BATCH");
    try{for(int end=Math.min(plan.cells().size(),cursor+budget);cursor<end;cursor++){
     var tile=plan.cells().get(cursor);var cell=tile.cell();if(!loaded(level,cell))throw new IOException("DOMAIN_NATIVE_PREFLIGHT_UNLOADED");
-    BlockState original=level.getBlockState(pos(cell));safeState(original);BlockState overlay=switch(tile.role()){
+    BlockState original=level.getBlockState(pos(cell));safeState(original);
+    if(tile.role()==DomainGeometry.Role.FLOOR&&!supportsFloor(level,cell,original))throw new IOException("DOMAIN_NATIVE_EXISTING_FLOOR_REQUIRED");
+    BlockState overlay=switch(tile.role()){
      case FLOOR->Blocks.STONE.defaultBlockState();case INTERIOR->Blocks.AIR.defaultBlockState();
      case SHELL->(Math.floorMod(cell.x()+cell.z(),8)==0?Blocks.RED_NETHER_BRICKS:Blocks.BLACKSTONE).defaultBlockState();
     };
@@ -85,4 +88,16 @@ public final class DomainWorldAdapter implements DomainOverlay.World {
    }}catch(IOException|RuntimeException error){failed=true;throw error;}
   }
  }
+ /** One bounded1257-cell commitment sweep. Reuse neither stale floor proof nor forced chunks. */
+ public static void verifyExistingFloor(ServerLevel level,DomainGeometry.Plan plan)throws IOException{
+  thread(level);if(!DomainGeometry.plan(plan.centerX(),plan.floorY(),plan.centerZ(),level.getMinBuildHeight(),level.getMaxBuildHeight()).equals(plan))throw new IOException("DOMAIN_NATIVE_NONCANONICAL_PLAN");
+  int floorCells=0;
+  for(var tile:plan.cells())if(tile.role()==DomainGeometry.Role.FLOOR){
+   if(++floorCells>1257)throw new IOException("DOMAIN_NATIVE_FLOOR_BUDGET");var cell=tile.cell();
+   if(!loaded(level,cell))throw new IOException("DOMAIN_NATIVE_FLOOR_UNLOADED");BlockState state=level.getBlockState(pos(cell));safeState(state);
+   if(!supportsFloor(level,cell,state))throw new IOException("DOMAIN_NATIVE_EXISTING_FLOOR_REQUIRED");
+  }
+  if(floorCells!=1257)throw new IOException("DOMAIN_NATIVE_NONCANONICAL_FLOOR");
+ }
+ private static boolean supportsFloor(ServerLevel level,DomainGeometry.Cell cell,BlockState state){return !state.isAir()&&Block.isFaceFull(state.getCollisionShape(level,pos(cell)),Direction.UP);}
 }

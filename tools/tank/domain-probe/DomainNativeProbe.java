@@ -30,7 +30,7 @@ public final class DomainNativeProbe {
   DomainJournalRepository repository;DomainWorldAdapter.Preflight preflight;DomainOverlay engine;DomainWorldAdapter adapter;
   DomainPersistenceBarrier durability;
   DomainCoordinatorProbe coordinatorProbe;
-  int stage,fixtureCursor,verifyCursor,activeTicks,changedCells,checks;boolean finished;long started;
+  int stage,fixtureCursor,verifyCursor,activeTicks,changedCells,checks;boolean finished;long started,floorSweepNanos;
   Trial(GameTestHelper helper)throws Exception{
    this.helper=helper;level=helper.getLevel();root=Path.of(required("root")).toRealPath();nonce=required("nonce");source=required("source");scenario=required("scenario");
    if(!nonce.matches("[a-f0-9-]{36}")||!source.matches("[a-f0-9]{40}")||!Set.of("baseline","reopen-terminal","crash","recover").contains(scenario)||!root.getFileName().toString().startsWith("domain-probe-"))throw new IOException("DOMAIN_PROBE_AUTHORITY");
@@ -89,6 +89,15 @@ public final class DomainNativeProbe {
    }catch(Exception|AssertionError error){finished=true;try{if(coordinatorProbe!=null)coordinatorProbe.close();}catch(IOException ignored){}try{if(repository!=null)repository.close();}catch(IOException ignored){}try{receipt("FAIL",error);}catch(IOException ignored){}helper.fail("DOMAIN_PRIVATE_PROBE_FAILED: "+error.getClass().getSimpleName()+":"+error.getMessage());}
   }
   void kernel()throws Exception{
+   check(!DomainRuntime.released(),"AUTONOMOUS_DOMAIN_STILL_GATED");
+   long floorStarted=System.nanoTime();DomainWorldAdapter.verifyExistingFloor(level,plan);floorSweepNanos=System.nanoTime()-floorStarted;
+   var floorCell=plan.cells().get(0).cell();fixture(floorCell,Blocks.AIR.defaultBlockState());
+   try{
+    try{DomainWorldAdapter.verifyExistingFloor(level,plan);throw new AssertionError("missing whole floor accepted");}catch(IOException expected){check("DOMAIN_NATIVE_EXISTING_FLOOR_REQUIRED".equals(expected.getMessage()),"FRESH_COMMIT_FLOOR_REJECTS_GAP");}
+    var badPreflight=new DomainWorldAdapter.Preflight(level,plan);
+    try{badPreflight.step(1);throw new AssertionError("synthetic floor accepted");}catch(IOException expected){check("DOMAIN_NATIVE_EXISTING_FLOOR_REQUIRED".equals(expected.getMessage()),"PREFLIGHT_REJECTS_SYNTHETIC_FLOOR");}
+   }finally{fixture(floorCell,Blocks.STONE.defaultBlockState());}
+   DomainWorldAdapter.verifyExistingFloor(level,plan);claims.add("NATIVE_1257CELL_FLOOR_COMMIT_AND_AIR_GAP_REJECTION");
    var cell=new DomainGeometry.Cell(112,16,64);fixture(cell,Blocks.AIR.defaultBlockState());
    var first=start(0,List.of(change(cell,Blocks.AIR.defaultBlockState(),Blocks.BLACKSTONE.defaultBlockState())));var nativeWorld=DomainWorldAdapter.forJournal(level,first.journal());first.place(nativeWorld,1);check(first.journal().phase()==DomainOverlay.Phase.ACTIVE,"NATIVE_SINGLE_ACTIVE");first.requestRestore("DIRECT_EXPIRY");first.restore(nativeWorld,1);finishKernelDurability(first);check(first.terminal()&&level.getBlockState(pos(cell)).isAir(),"NATIVE_SINGLE_EXACT_RESTORE");
    var conflict=start(0,List.of(change(cell,Blocks.AIR.defaultBlockState(),Blocks.BLACKSTONE.defaultBlockState())));nativeWorld=DomainWorldAdapter.forJournal(level,conflict.journal());conflict.place(nativeWorld,1);fixture(cell,Blocks.COBBLESTONE.defaultBlockState());conflict.requestRestore("THIRD_PARTY");conflict.restore(nativeWorld,1);check(!conflict.terminal()&&conflict.journal().entries().get(0).status()==DomainOverlay.Status.CONFLICT&&level.getBlockState(pos(cell)).is(Blocks.COBBLESTONE),"THIRD_PARTY_EDIT_PRESERVED");
@@ -129,7 +138,7 @@ public final class DomainNativeProbe {
   void fixture(DomainGeometry.Cell cell,BlockState state)throws IOException{if(cell.x()<44||cell.x()>127||cell.z()<44||cell.z()>84||cell.y()<15||cell.y()>28||!level.hasChunkAt(pos(cell)))throw new IOException("DOMAIN_PROBE_FIXTURE_BOUNDS");if(!level.getBlockState(pos(cell)).equals(state)&&!level.setBlock(pos(cell),state,Block.UPDATE_CLIENTS|Block.UPDATE_KNOWN_SHAPE))throw new IOException("DOMAIN_PROBE_FIXTURE_SET");}
   void check(boolean ok,String why){checks++;if(!ok)throw new AssertionError(why);}
   void receipt(String verdict,Throwable error)throws IOException{
-   JsonObject result=new JsonObject();result.addProperty("scope","DIRECT_NATIVE_DOMAIN_RELIABILITY_BASELINE");result.addProperty("verdict",verdict);result.addProperty("scenario",scenario);result.addProperty("nonce",nonce);result.addProperty("sourceRevision",source);result.addProperty("pid",ProcessHandle.current().pid());result.addProperty("world",world.toString());result.addProperty("checks",checks);result.addProperty("plannedCells",plan.cells().size());result.addProperty("changedCells",changedCells);result.addProperty("activeTicks",activeTicks);result.addProperty("gameTicks",level.getGameTime()-started);result.addProperty("errorClass",error==null?"":error.getClass().getSimpleName());var items=new com.google.gson.JsonArray();claims.forEach(items::add);result.add("claims",items);
+   JsonObject result=new JsonObject();result.addProperty("scope","DIRECT_NATIVE_DOMAIN_RELIABILITY_BASELINE");result.addProperty("verdict",verdict);result.addProperty("scenario",scenario);result.addProperty("nonce",nonce);result.addProperty("sourceRevision",source);result.addProperty("pid",ProcessHandle.current().pid());result.addProperty("world",world.toString());result.addProperty("checks",checks);result.addProperty("plannedCells",plan.cells().size());result.addProperty("changedCells",changedCells);result.addProperty("activeTicks",activeTicks);result.addProperty("gameTicks",level.getGameTime()-started);result.addProperty("floorCommitSweepNanos",floorSweepNanos);result.addProperty("errorClass",error==null?"":error.getClass().getSimpleName());var items=new com.google.gson.JsonArray();claims.forEach(items::add);result.add("claims",items);
    byte[] bytes=(DomainJournalCodec.canonical(result)+"\n").getBytes(StandardCharsets.UTF_8);try(var channel=FileChannel.open(root.resolve(scenario+"-native.json"),StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE)){ByteBuffer buffer=ByteBuffer.wrap(bytes);while(buffer.hasRemaining())channel.write(buffer);channel.force(true);}
   }
  }

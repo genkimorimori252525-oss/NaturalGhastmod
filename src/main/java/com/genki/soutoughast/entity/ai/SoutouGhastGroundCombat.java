@@ -26,6 +26,13 @@ public final class SoutouGhastGroundCombat {
     public int firedCount(){return fired;}
     public UUID lastProjectileUuid(){return lastProjectileUuid;}
     public void reset(){movement.reset();attack.reset();targetUuid=null;constrained=retry=0;ghast.setCharging(false);}
+    public boolean offensiveBusy(){return attack.state().phase()!=GroundAttack.Phase.IDLE;}
+    public GroundCombat.State hold(){attack.reset();ghast.setCharging(false);return movement.hold();}
+    public boolean beginDomainLanding(FlightVector floor){
+        var position=from(ghast.position());if(floor==null||!clearance.supportedRoute(floor,floor))return false;
+        if(movement.grounded())return Math.abs(position.y()-floor.y())<=.02;
+        return movement.begin(position,floor,clearance::body);
+    }
     public boolean tryBegin(MobilityContext.Sample sample,boolean busy){
         constrained=!sample.clear(8)?Math.min(6,constrained+1):0;
         if(busy||constrained<6)return false;
@@ -34,19 +41,24 @@ public final class SoutouGhastGroundCombat {
         attack.reset();return true;
     }
     public GroundCombat.State tick(LivingEntity target,boolean visible,CombatAnchor.Region region,MobilityContext.Sample sample){
+        return tick(target,visible,region,sample,true,true,true);
+    }
+    public GroundCombat.State tick(LivingEntity target,boolean visible,CombatAnchor.Region region,MobilityContext.Sample sample,
+                                  boolean offense,boolean allowTakeoff,boolean allowScuttle){
         var position=from(ghast.position());
         boolean observed=visible&&target!=null&&target.isAlive();
         UUID next=target!=null&&target.isAlive()?target.getUUID():null;
         if(!java.util.Objects.equals(next,targetUuid)){attack.invalidateTarget();movement.invalidateTarget();targetUuid=next;}
-        if(movement.state().phase()==GroundCombat.Phase.SAFE_HOLD&&retry--<=0){
+        if(allowTakeoff&&movement.state().phase()==GroundCombat.Phase.SAFE_HOLD&&retry--<=0){
             retry=20;var floor=clearance.floor(position);movement.begin(position,floor,clearance::body);
         }
         boolean open=sample.clear(8)&&Integer.bitCount(sample.clearMask()&255)>=3;
         var ascent=open?position.add(new FlightVector(0,4,0)):null;
         var state=movement.step(position,observed?from(target.position()):null,region,open,ascent,
-                clearance::body,clearance::supportedRoute,ghast.getRandom().nextDouble());
+                clearance::body,this::supportedRoute,ghast.getRandom().nextDouble(),allowTakeoff,allowScuttle);
         if(!movement.grounded()){attack.invalidateTarget();}
-        boolean eligible=movement.grounded()&&observed&&clearance.supportedRoute(position,position)
+        if(!offense)attack.reset();
+        boolean eligible=offense&&movement.grounded()&&observed&&supportedRoute(position,position)
                 &&ghast.distanceToSqr(target)>=16&&ghast.distanceToSqr(target)<=2304;
         Vec3 offset=observed?target.getEyePosition().subtract(ghast.getEyePosition()):null;
         var firing=attack.step(offset==null?null:from(offset),eligible);
@@ -68,10 +80,13 @@ public final class SoutouGhastGroundCombat {
     /** The same sole velocity writer also validates inertia's stopping sweep before moving. */
     public boolean safeMotion(Vec3 displacement){
         var position=from(ghast.position());var end=position.add(from(displacement));
-        return movement.grounded()?clearance.supportedRoute(position,end):clearance.body(position,end);
+        return movement.grounded()?supportedRoute(position,end):clearance.body(position,end);
     }
     public Vec3 collisionSweep(Vec3 prediction){
         return to(movement.landingSweep(from(ghast.position()),from(prediction),clearance::body,clearance::support));
+    }
+    private boolean supportedRoute(FlightVector from,FlightVector to){
+        return ghast.getDomainAttack().supportedInteriorRoute(from,to)&&clearance.supportedRoute(from,to);
     }
     private static FlightVector from(Vec3 v){return SoutouGhastInertialMoveControl.from(v);}
     private static Vec3 to(FlightVector v){return SoutouGhastInertialMoveControl.to(v);}

@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.Blocks;
 final class DomainCoordinatorProbe implements AutoCloseable {
  private final DomainNativeProbe.Trial t;private final DomainNativeCoordinator nativeCoordinator;
  private final DomainCoordinator coordinator;private final ArmorStand owner,incomingOwner;
- private final DomainCoordinator.Handle handle;private boolean clashed,finished;
+ private final DomainCoordinator.Handle handle;private boolean clashed,finished;private int tellTicks;
  private final List<DomainGeometry.Cell> cells=List.of(new DomainGeometry.Cell(70,16,64),new DomainGeometry.Cell(71,16,64),new DomainGeometry.Cell(72,16,64));
  DomainCoordinatorProbe(DomainNativeProbe.Trial trial)throws Exception{
   t=trial;nativeCoordinator=DomainNativeCoordinator.open(t.level.getServer());coordinator=nativeCoordinator.coordinator();
@@ -22,6 +22,12 @@ final class DomainCoordinatorProbe implements AutoCloseable {
  }
  boolean tick()throws Exception{
   if(finished)return true;coordinator.tick();
+  if(tellTicks<60){
+   t.check(handle.phase()==DomainOverlay.Phase.PLACING&&handle.journal().entries().stream().allMatch(e->e.status()==DomainOverlay.Status.RESERVED&&!e.mutationIntent()),"NATIVE_UNARMED_TELL_NO_MUTATION_AUTHORITY");
+   for(var cell:cells)t.check(t.level.getBlockState(new net.minecraft.core.BlockPos(cell.x(),cell.y(),cell.z())).isAir(),"NATIVE_UNARMED_TELL_BLOCKS_UNCHANGED");
+   if(++tellTicks==60)t.check(coordinator.armPlacement(handle),"DIRECT_FIXTURE_60_NATIVE_TICKS_EXPLICIT_ARM_NOT_BOSS_SELECTION");
+   return false;
+  }
   if(!clashed&&handle.phase()==DomainOverlay.Phase.ACTIVE){
    t.check(coordinator.offenseAllowed(handle),"NATIVE_COORDINATOR_OWNER_PRESENT_ACTIVE");
    var incoming=coordinator.begin(UUID.randomUUID(),incomingOwner.getUUID(),t.dimension,t.plan,List.of());
