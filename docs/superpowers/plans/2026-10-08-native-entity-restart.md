@@ -14,8 +14,8 @@ Verification: strict source-pinned analyzer derives process distinction, byte-ex
 
 Files: private `EntityRestartProbe.java`, `EntityRestartGeometryTest.java`, `entity-restart-results.mjs`/`.test.mjs`, `run-entity-restart.mjs`, English receipt/feedback. No normal product changes/dependencies/public activation commands unless a demonstrated defect requires a separate minimal regression/fix.
 
-- [ ] Write strict positive/negative analyzer contracts first; retain RED, then implement minimal analyzer.
-- [ ] Implement private probe/two-phase harness; mapped preflight geometry and javac, relevant Node checks and genuine product build.
-- [ ] One compact scoped Astra review and one Important/Critical correction pass, no whole Ground/Domain re-review.
+- [x] Write strict positive/negative analyzer contracts first; retain missing-module RED, then implement minimal analyzer.51related Node checks pass, including actual process creation identity, state/clock/path/owner/reset/closure rejection. PID reuse is distinguished by native process creation time.
+- [x] Implement private probe/two-phase harness; mapped geometry confirms Bomb has10remaining segments after9ticks, mapped javac passes. Retain geometry import/missing-argument-file preparation failures; neither launched Minecraft. Genuine product build is part of the pinned native harness. B waits for the genuine client READY before halting, inside its same finite window.
+- [x] One compact scoped Astra review: no Critical/Important findings; no correction/re-review or whole Ground/Domain review. Actual halted-server ACK compatibility and disk-load continuation remain unproved until the native pair.
 - [ ] Commit/push clean pinned source; one fresh native pair, independently correlate raw rows/events/results/hashes, actual closure and historical85/acceptedJAR.
 - [ ] Record honest English evidence, decisions, limits and useful Tank feedback in GitHub. Leave late-client/input/cues/balance/unobserved selectors/full release pending.
