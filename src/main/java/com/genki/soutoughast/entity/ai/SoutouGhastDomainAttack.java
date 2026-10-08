@@ -45,9 +45,7 @@ public final class SoutouGhastDomainAttack {
    var changes=prepared.commit(region,visible);
    var admission=writer.begin(UUID.randomUUID(),ghast.getUUID(),level.dimension().location().toString(),prepared.plan(),changes);
    if(admission.outcome()!=DomainCoordinator.Outcome.STARTED){decision=admission.outcome().name();prepared=null;retry=20;return false;}
-   coordinator=writer;handle=admission.handle();plan=prepared.plan();subject=player.getUUID();regionGeneration=region.generation();prepared=null;
-   life.begin();director.began();ghast.getStandardAttack().reset();ghast.getGroundCombat().hold();decision="RESERVED_TELL";
-   level.levelEvent(null,1015,ghast.blockPosition(),0);return true;
+   enterReservedEncounter(writer,admission.handle(),prepared.plan(),player,region);return true;
   }catch(IOException|RuntimeException error){
    prepared=null;retry=20;decision=reason(error);
    // Once a reservation exists, a later failed entry cannot silently return to ordinary offense.
@@ -58,6 +56,21 @@ public final class SoutouGhastDomainAttack {
    }
    return false;
   }
+ }
+ /** Common production post-reservation binding; package-local private reliability seam. */
+ void enterReservedEncounter(DomainCoordinator writer,DomainCoordinator.Handle reservation,DomainGeometry.Plan committedPlan,
+   ServerPlayer player,CombatAnchor.Region region)throws IOException{
+  if(active()||failed||ghast.getMajorDirector().active()||ghast.getOverheadAttack().active())throw new IOException("DOMAIN_ENTRY_MAJOR_BUSY");
+  if(!(ghast.level() instanceof ServerLevel level)||!level.getServer().isSameThread()||writer==null||writer!=DomainRuntime.current(level.getServer())
+    ||!writer.ready()||reservation==null||reservation.phase()!=DomainOverlay.Phase.PLACING
+    ||reservation.journal().entries().stream().anyMatch(entry->entry.mutationIntent()||entry.status()!=DomainOverlay.Status.RESERVED)
+    ||!reservation.identity().owner().equals(ghast.getUUID())||!reservation.identity().dimension().equals(level.dimension().location().toString())
+    ||player==null||region==null||committedPlan==null||!player.isAlive()||player.isRemoved()||player.isCreative()||player.isSpectator()
+    ||level.getServer().getPlayerList().getPlayer(player.getUUID())!=player||ghast.getTarget()!=player||!ghast.getSensing().hasLineOfSight(player)
+    ||!DomainPreparation.participantsFit(ghast,player,level,committedPlan))throw new IOException("DOMAIN_ENTRY_RESERVATION_OR_PARTICIPANT");
+  coordinator=writer;handle=reservation;plan=committedPlan;subject=player.getUUID();regionGeneration=region.generation();prepared=null;
+  life.begin();ghast.getMajorDirector().began();ghast.getStandardAttack().reset();ghast.getGroundCombat().hold();decision="RESERVED_TELL";
+  level.levelEvent(null,1015,ghast.blockPosition(),0);
  }
  public GroundCombat.State tick(LivingEntity target,boolean visible,CombatAnchor.Region region,MobilityContext.Sample sample){
   ghast.getMajorDirector().tick(false);

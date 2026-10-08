@@ -11,7 +11,9 @@ public final class DomainGroundPolicyTest {
   check(preparation.canPrepareDomain(128),"start128tick scan with128quiet ticks remaining");
   for(int i=0;i<128;i++)preparation.tick(true);
   check(preparation.shouldBeginDomain(true,false,1),"scan completes at eligibility without forced selection");
-  preparation.began();check(!preparation.canPrepareDomain(128),"active major suppresses new candidates");
+  preparation.began();check(preparation.active()&&!preparation.canPrepareDomain(128),"active major suppresses new candidates and reserved binding");
+  boolean duplicate=false;try{preparation.began();}catch(IllegalStateException expected){duplicate=true;}
+  check(duplicate&&preparation.active(),"duplicate binding cannot replace the current major");
   preparation.finished();for(int i=0;i<600;i++)preparation.tick(true);
   check(!preparation.canPrepareDomain(128),"recent-major memory also gates preparation");
   for(int i=0;i<472;i++)preparation.tick(true);

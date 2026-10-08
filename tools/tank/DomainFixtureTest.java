@@ -18,6 +18,8 @@ public final class DomainFixtureTest {
   CompoundTag interior=PrepareFlightTank.section(14,1,1,true,false,true);
   if(!PrepareFlightTank.block(interior,10,4,10).equals("minecraft:stone"))throw new AssertionError("declared initial Domain seal");checked++;
   if(!PrepareFlightTank.block(interior,9,4,10).equals("minecraft:air"))throw new AssertionError("Domain seal must remain single-cell");checked++;
+  var reliability=PrepareFlightTank.section(14,1,1,false,false,true);
+  if(!PrepareFlightTank.block(reliability,10,4,10).equals("minecraft:air"))throw new AssertionError("reliability baseline must need no ScopedOwner opening");checked++;
   for(int x=24;x<28;x++)for(int y=228;y<232;y++)for(int z=30;z<34;z++){
    int sy=Math.floorDiv(y,16),cx=Math.floorDiv(x,16),cz=Math.floorDiv(z,16);String key=sy+":"+cx+":"+cz;
    var section=sections.computeIfAbsent(key,k->PrepareFlightTank.section(sy,cx,cz,true,false,true));

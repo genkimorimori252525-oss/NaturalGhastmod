@@ -8,6 +8,7 @@ public final class MajorActionDirector {
     public String decision(){return decision;}
     public int quietTicks(){return quiet;}
     public int recentTicks(){return recent;}
+    public boolean active(){return active;}
     /** Start finite read-only scans late enough to finish near shared eligibility. */
     public boolean canPrepareDomain(int scanTicks){
         if(scanTicks<1||scanTicks>200)throw new IllegalArgumentException("DOMAIN_PREPARATION_WINDOW");
