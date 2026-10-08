@@ -22,7 +22,7 @@ import net.minecraftforge.gametest.*;
 public final class DomainNativeProbe {
  @GameTest(template="empty",timeoutTicks=1200)
  public static void reliability(GameTestHelper helper)throws Exception{
-  var probe=new Trial(helper);if(Set.of("crash","recover").contains(probe.scenario)){DomainCrashProbe.run(probe);return;}if(probe.scenario.equals("native-fault")){if(System.getProperty("naturalghast.domainProbe.faultCase","").equals("NATIVE_WRITE_LOCK"))DomainNativeFaultProbe.run(probe);else DomainNativeBoundaryProbe.run(probe);return;}helper.onEachTick(probe::tick);
+  var probe=new Trial(helper);if(Set.of("crash","recover").contains(probe.scenario)){if(System.getProperty("naturalghast.domainProbe.faultCase","").startsWith("STORAGE_"))DomainNativeStorageProbe.run(probe);else DomainCrashProbe.run(probe);return;}if(probe.scenario.equals("native-fault")){if(System.getProperty("naturalghast.domainProbe.faultCase","").equals("NATIVE_WRITE_LOCK"))DomainNativeFaultProbe.run(probe);else DomainNativeBoundaryProbe.run(probe);return;}helper.onEachTick(probe::tick);
  }
  static final class Trial {
   final GameTestHelper helper;final ServerLevel level;final Path root,world;final String nonce,source,scenario,dimension;
