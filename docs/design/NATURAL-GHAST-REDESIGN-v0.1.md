@@ -2,7 +2,7 @@
 
 Revision: v0.6
 Date: 2026-10-08
-Updated: 2026-10-09 (natural-flow relocation, observed Dodge and remembered-cover Lob implementation)
+Updated: 2026-10-09 (natural-flow relocation, observed Dodge, remembered-cover Lob and bounded terminal subdivision)
 
 The user's2026-10-08 clarification supersedes v0.5's player-camera-relative anchor. A combat anchor is a broad, boss-owned world-space region, retained during combat and reselected only when necessary. The user has explicitly accepted its current swimming and authorized further non-danmaku development. Separate controlled camera/moving-Player/LOS scenarios remain limited as recorded. See [the correction design](../superpowers/specs/2026-10-08-combat-region-swimming-design.md), [verification receipt](../COMBAT-REGION-SWIMMING-VERIFICATION.md) and [next tactical unit](../superpowers/plans/2026-10-08-observed-tactics.md). Grand Danmaku implementation is excluded by the current user instruction, including runtime adapters.
 
@@ -302,6 +302,8 @@ A strong example:
 The body appears to disengage while the projectile becomes more dangerous.
 
 Avoid stacking this with another major deception at the same moment. The burst itself should usually be the primary surprise.
+
+The committed Lob recipe can add one interpolated point to its last line segment before full-height floor contact, preserving every original point and the exact endpoint. This adds one trajectory tick; it preserves the spatial arc rather than identical timing. The unchanged full-path/native-ray validator, speed bound,97-point cap and four exact terminal colliders still apply. Unrefinable paths remain subject to rejection. One finite integer-endpoint trial proves the declared stone impact, native explosion and END removal; production Goal/human/readability/native-negative scope remains open. [Terminal plan](../superpowers/plans/2026-10-09-lob-terminal-subdivision.md)/[receipt](../LOB-TERMINAL-VERIFICATION.md).
 
 #### Deflection
 
