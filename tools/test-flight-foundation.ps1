@@ -17,6 +17,7 @@ $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/Complete
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/StandardAttackTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/CommittedTrajectoryTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ProjectileSelectionTest.java"
+$sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ObservedChargeResponseTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/OverheadBombingTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/GroundCombatTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/DomainGroundPolicyTest.java"
@@ -40,6 +41,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Standard charge/rally assertions failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Committed trajectory assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.ProjectileSelectionTest
 if ($LASTEXITCODE -ne 0) { throw 'Projectile selection/validation assertions failed.' }
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.ObservedChargeResponseTest
+if ($LASTEXITCODE -ne 0) { throw 'Observed charge response assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.OverheadBombingTest
 if ($LASTEXITCODE -ne 0) { throw 'Overhead/director assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.GroundCombatTest
