@@ -8,7 +8,7 @@ public final class CombatAnchor {
     public static final double MIN_RANGE=22,MAX_RANGE=34;
     public static final FlightVector RADII=new FlightVector(20,8,20);
     public enum Range { TOO_CLOSE, COMFORTABLE, TOO_FAR }
-    public enum Reason { ACQUIRED, REPLACED, DISENGAGED, SPACE_BLOCKED }
+    public enum Reason { ACQUIRED, REPLACED, DISENGAGED, SPACE_BLOCKED, TACTICAL_RELOCATION }
     public record Region(FlightVector center,FlightVector radii,long generation,Reason reason) {
         public double radius(FlightVector point){
             FlightVector d=point.subtract(center);
@@ -23,6 +23,12 @@ public final class CombatAnchor {
     private int cooldown,disengaged,blocked,targetless;
     public Region region(){return region;}
     public void clear(){region=null;subject=null;cooldown=disengaged=blocked=targetless=0;}
+
+    /** Called only after a physically completed, visible, clearance-checked committed transit. */
+    public boolean commitRelocation(UUID identity,long expectedGeneration,FlightVector center){
+        if(region==null||center==null||identity==null||!identity.equals(subject)||region.generation()!=expectedGeneration)return false;
+        selectAt(identity,center,Reason.TACTICAL_RELOCATION);return true;
+    }
 
     public void observe(UUID identity,FlightVector target,FlightVector boss,boolean noUsableRoute){
         Objects.requireNonNull(identity);targetless=0;

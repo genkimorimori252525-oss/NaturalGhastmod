@@ -6,6 +6,8 @@ import com.genki.soutoughast.entity.ai.flight.FlightVector;
 import com.genki.soutoughast.entity.ai.flight.FlightController;
 import com.genki.soutoughast.entity.ai.flight.MovementPlanner;
 import com.genki.soutoughast.entity.ai.flight.TacticalBrain;
+import com.genki.soutoughast.entity.ai.flight.OverheadReanchor;
+import com.genki.soutoughast.entity.ai.flight.MobilityContext;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.phys.Vec3;
@@ -21,6 +23,9 @@ public final class SoutouGhastAnchorGoal extends Goal {
     private FlightVector lastObservedPosition;
     private final MovementPlanner planner = new MovementPlanner();
     private final TacticalBrain brain = new TacticalBrain();
+    private final OverheadReanchor relocation = new OverheadReanchor();
+    private UUID relocationSubject;
+    private long relocationGeneration;
 
     public SoutouGhastAnchorGoal(SoutouGhast ghast) {
         this.ghast = ghast;
@@ -36,6 +41,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
         boolean present=target!=null&&target.isAlive();
         boolean visible=present&&ghast.getSensing().hasLineOfSight(target);
         FlightVector boss=SoutouGhastInertialMoveControl.from(ghast.position());
+        if(relocation.active()){control().sampleMobility();applyRelocation(target,visible);return;}
         if(ghast.getDomainAttack().active()){applyDomain(target,visible,control().sampleMobility());return;}
         if(ghast.getGroundCombat().active()){
             if(com.genki.soutoughast.entity.ai.domain.DomainRuntime.released())ghast.getMajorDirector().tick(visible);
@@ -73,6 +79,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
         if(ghast.getOverheadAttack().tryBegin(target,visible,anchor.region(),busy)){
             brain.reset();planner.reset();ghast.getStandardAttack().reset();applyMajor(target,visible);return;
         }
+        if(tryRelocation(target,visible,busy,boss)){applyRelocation(target,visible);return;}
         // No live geometry or velocity is read after LOS loss. Committed recipes use locked waypoints.
         FlightVector observedVelocity=visible?SoutouGhastInertialMoveControl.from(target.getDeltaMovement()):null;
         double variation=ghast.getStandardAttack().engaged()?0:ghast.getRandom().nextDouble();
@@ -88,6 +95,47 @@ public final class SoutouGhastAnchorGoal extends Goal {
         }
         Vec3 attackLook=ghast.getStandardAttack().tick(target,visible,brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT);
         if(attackLook!=null)((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(attackLook);
+    }
+
+    private boolean tryRelocation(LivingEntity target,boolean visible,boolean busy,FlightVector boss){
+        var director=ghast.getMajorDirector();
+        // Do not consume extra variation during ordinary ineligible swimming/attack periods.
+        if(!visible||target==null||busy||anchor.region()==null||!anchor.region().contains(boss)
+                ||control().isClearanceBlocked()||control().getMobilityContext()!=MobilityContext.Kind.OPEN_AIR
+                ||director.active()||director.quietTicks()>0||director.recentTicks()>0)return false;
+        var delta=lastObservedPosition.subtract(boss);double distance=Math.hypot(delta.x(),delta.z());
+        if(distance<8||distance>16)return false;
+        if(!director.shouldBeginRelocation(control().getMobilityContext(),true,busy,distance,ghast.getRandom().nextDouble()))return false;
+        if(!relocation.begin(target.getUUID(),lastObservedPosition,target.getBoundingBox().maxY,boss,anchor.region(),this::relocationRoute)){
+            director.rejected();return false;
+        }
+        relocationSubject=target.getUUID();relocationGeneration=anchor.region().generation();director.began();
+        brain.reset();planner.reset();ghast.getStandardAttack().reset();return true;
+    }
+
+    private boolean relocationRoute(FlightVector from,FlightVector to){
+        double height=ghast.getBbHeight();
+        return Math.min(from.y(),to.y())>=ghast.level().getMinBuildHeight()
+                &&Math.max(from.y(),to.y())+height<ghast.level().getMaxBuildHeight()
+                &&control().hasManeuverClearance(from,to);
+    }
+
+    private void applyRelocation(LivingEntity target,boolean visible){
+        ghast.getMajorDirector().tick(false);
+        if(control().getMobilityContext()!=MobilityContext.Kind.OPEN_AIR)relocation.abort();
+        var boss=SoutouGhastInertialMoveControl.from(ghast.position());
+        UUID identity=target!=null&&target.isAlive()?target.getUUID():null;
+        var state=relocation.step(identity,visible,anchor.region(),boss,SoutouGhastInertialMoveControl.from(ghast.getDeltaMovement()),this::relocationRoute);
+        if(state.commit())anchor.commitRelocation(relocationSubject,relocationGeneration,boss);
+        control().setCombatRegion(anchor.region());control().setTacticalState(TacticalBrain.State.idle());
+        control().setMajorIntent(state.intent(),switch(state.phase()){
+            case TELL,CLIMB -> com.genki.soutoughast.entity.ai.flight.MovementPrimitive.RISE;
+            case CROSS -> com.genki.soutoughast.entity.ai.flight.MovementPrimitive.OVERSHOOT;
+            default -> com.genki.soutoughast.entity.ai.flight.MovementPrimitive.BRAKE;
+        });
+        if(visible&&identity!=null&&identity.equals(relocationSubject))((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(target.getEyePosition().subtract(ghast.getEyePosition()));
+        else ((SoutouGhastFlightLookControl)ghast.getLookControl()).clearIntent();
+        if(!relocation.active()){ghast.getMajorDirector().finished();relocationSubject=null;planner.reset();brain.reset();}
     }
 
     private void applyDomain(LivingEntity target,boolean visible,com.genki.soutoughast.entity.ai.flight.MobilityContext.Sample sample){
@@ -124,6 +172,7 @@ public final class SoutouGhastAnchorGoal extends Goal {
     @Override
     public void stop() {
         observedSubject = null;
+        relocation.reset();relocationSubject=null;
         lastObservedPosition=null;
         anchor.clear();control().setCombatRegion(null);
         planner.reset();

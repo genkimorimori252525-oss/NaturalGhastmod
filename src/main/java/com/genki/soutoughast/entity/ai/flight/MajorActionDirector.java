@@ -27,6 +27,13 @@ public final class MajorActionDirector {
         decision=selected?"ELIGIBLE":"VARIATION";return selected;
     }
     private boolean reject(String reason){decision=reason;return false;}
+    public boolean shouldBeginRelocation(MobilityContext.Kind context,boolean observedClearance,boolean offensiveBusy,double horizontalRange,double variation){
+        if(active)return reject("MAJOR_ACTIVE");if(quiet>0)return reject("QUIET_INTERVAL");if(recent>0)return reject("RECENT_MAJOR");
+        if(!observedClearance)return reject("OBSERVATION_OR_CLEARANCE");if(offensiveBusy)return reject("OFFENSE_BUSY");
+        if(context!=MobilityContext.Kind.OPEN_AIR)return reject("MOBILITY_CONTEXT");
+        if(!Double.isFinite(horizontalRange)||horizontalRange<8||horizontalRange>16)return reject("RELOCATION_RANGE");
+        boolean selected=Double.isFinite(variation)&&variation>.995&&variation<1;decision=selected?"RELOCATION_ELIGIBLE":"VARIATION";return selected;
+    }
     /** Full participant/floor preparation supplies Domain eligibility independently of Overhead. */
     public boolean shouldBeginDomain(boolean prepared,boolean offensiveBusy,double variation){
         if(active)return reject("MAJOR_ACTIVE");if(quiet>0)return reject("QUIET_INTERVAL");if(recent>0)return reject("RECENT_MAJOR");

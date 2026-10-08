@@ -19,6 +19,7 @@ $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/Committe
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ProjectileSelectionTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ObservedChargeResponseTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/OverheadBombingTest.java"
+$sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/OverheadReanchorTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/GroundCombatTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/DomainGroundPolicyTest.java"
 $sources += "$root/tools/tank/ObservationFailureBoundary.java"
@@ -45,6 +46,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Projectile selection/validation assertions fai
 if ($LASTEXITCODE -ne 0) { throw 'Observed charge response assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.OverheadBombingTest
 if ($LASTEXITCODE -ne 0) { throw 'Overhead/director assertions failed.' }
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.OverheadReanchorTest
+if ($LASTEXITCODE -ne 0) { throw 'Overhead re-anchor/controller assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.GroundCombatTest
 if ($LASTEXITCODE -ne 0) { throw 'Ground movement/cadence assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.DomainGroundPolicyTest
