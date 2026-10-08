@@ -125,15 +125,17 @@ public final class SoutouGhastAnchorGoal extends Goal {
         if(control().getMobilityContext()!=MobilityContext.Kind.OPEN_AIR)relocation.abort();
         var boss=SoutouGhastInertialMoveControl.from(ghast.position());
         UUID identity=target!=null&&target.isAlive()?target.getUUID():null;
-        var state=relocation.step(identity,visible,anchor.region(),boss,SoutouGhastInertialMoveControl.from(ghast.getDeltaMovement()),this::relocationRoute);
-        if(state.commit())anchor.commitRelocation(relocationSubject,relocationGeneration,boss);
+        var observedLook=visible&&identity!=null&&identity.equals(relocationSubject)?SoutouGhastInertialMoveControl.from(target.getEyePosition().subtract(ghast.getEyePosition())):null;
+        var state=relocation.step(identity,visible,anchor.region(),boss,SoutouGhastInertialMoveControl.from(ghast.getDeltaMovement()),ghast.getYRot(),ghast.getXRot(),observedLook,this::relocationRoute);
+        if(state.commit())anchor.commitRelocation(relocationSubject,relocationGeneration,relocation.candidateCenter());
         control().setCombatRegion(anchor.region());control().setTacticalState(TacticalBrain.State.idle());
         control().setMajorIntent(state.intent(),switch(state.phase()){
             case TELL,CLIMB -> com.genki.soutoughast.entity.ai.flight.MovementPrimitive.RISE;
             case CROSS -> com.genki.soutoughast.entity.ai.flight.MovementPrimitive.OVERSHOOT;
+            case DESCEND,HANDOFF -> com.genki.soutoughast.entity.ai.flight.MovementPrimitive.DROP;
             default -> com.genki.soutoughast.entity.ai.flight.MovementPrimitive.BRAKE;
         });
-        if(visible&&identity!=null&&identity.equals(relocationSubject))((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(target.getEyePosition().subtract(ghast.getEyePosition()));
+        if(state.look()!=null)((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(SoutouGhastInertialMoveControl.to(state.look()));
         else ((SoutouGhastFlightLookControl)ghast.getLookControl()).clearIntent();
         if(!relocation.active()){ghast.getMajorDirector().finished();relocationSubject=null;planner.reset();brain.reset();}
     }

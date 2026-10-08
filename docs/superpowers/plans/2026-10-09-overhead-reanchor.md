@@ -1,5 +1,20 @@
 # Rare committed overhead re-anchor
 
+## Current user correction (supersedes the historical contract below)
+
+User2026-10-09 rejects Player-facing moonwalking and exact-center arrival/stop. From current location, ascend gently and high; face travel direction while passing directly above the frozen observed Player position. Only after physically reaching beyond the Player turn toward the visible same Player; gently descend, then resume ordinary combat as soon as the new broad region's height/volume is entered. Preserve momentum; no robotic center stop.
+
+Compact Astra correction: prepare travel-facing look during climb; actual yaw/pitch within15degrees before crossing. Keep heading through crossing/high braking; bounded target-facing TURN only after behind arrival, actual alignment<=8degrees before descent. Full three loaded-body routes and conservative speed/brake/turn budget,<=48blocks/320ticks. Human clarification overrides final braked-center requirement. Existing LookControl owns4degree yaw/3degree pitch; no direct rotation writes. Frozen candidate center uses original altitude if>=observed top+4, otherwise top+6;20/8/20radii. Rise to max(centerY+12,targetTop+16+.75), climb/descend.12, cross.24. End transit on first radius<=.95entry during descent, commit the frozen candidate center and preserve MOVE/downward velocity; normal Goal resumes next tick. No final brake/hold/center chase. Body clearance, target identity/LOS/generation, shared-major reservation/1200spacing and rare selection remain unchanged.48tick ALIGN/TURN limits and308tick transit deadline reserve12abort ticks. Candidate center is a reference, not a required waypoint.
+
+- [x] User-sequence runtime RED -> orientation-gate/high-climb/turn-before-descent/blocked-descent/upper-band momentum handoff/controller/ordinary planner regressions GREEN.
+- [x] Revised mapped/build/probe/analyzer tests and one compact source review for the new human specification.
+- [ ] Fresh finite native orientation/three-stage transit/height-entry handoff plus12ordinary-planner continuation rows; preserve a07c551/AMAUI0 as historical old-scope proof only.
+- [ ] Append corrected receipt/AF0048/guide, publish decisions and guarded original MD mirrors.
+
+Revised pre-native: genuine MISSING_USER_ASCEND_TRAVEL_FACE_TURN_DESCEND_HANDOFF runtime RED and old-analyzer/new-sequence RED;1444core assertions/all preserved regressions,25revised/72related Node checks, private mapped compilation/syntax and genuine22second offline build PASS. One compact review of the new human specification reports no Important/Critical; no re-review. Finite revised native window360ticks25seconds, max400client rows/128queue; record actual server look/yaw/pitch/body yaw, real client body pose, moving height handoff and12ordinary-planner continuation rows. Private Goal/controller/LookControl execution is distinct from production Goal admission and human readability.
+
+## Historical first implementation (a07c551; superseded movement)
+
 Baseadc3158/LAB056b46c. Prior unit charge-response9474d3d nativezUzncH/receiptadc3158/AF0047 PASS within explicit controlled scope. Actual v0.6 gap: OPEN_AIR Overhead Re-anchor is described, but no deliberate relocation action or CombatAnchor reason exists. User accepts ordinary broad swimming; preserve it.
 
 Compact Astra ruling: implement a shared-major transit, reserving existing director against bombing/Domain/Ground/feints/offense overlap. Visible same target, OPEN_AIR, horizontal distance8..16, no relocation within1200ticks. Freeze observed target geometry. Boss bottom >=6blocks above observed target top, then8blocks beyond horizontal target plane. Full loaded4x4body clearance before start and per leg; total route<=24blocks, execution<=160ticks. Keep old region authoritative until braked arrival; fresh same-target/LOS/generation/destination clearance required for one commit, else recover old region. Never relocate because normal swimming/clearance failed. No camera/input or target-position chase.
@@ -8,9 +23,11 @@ Implementation choices: distinct pure transit helper and narrow AnchorGoal integ
 
 - [x] Genuine missing-action/core RED -> finite transit/arrival/commit/abort/dynamic obstacle/generation/identity/cooldown tests -> implementation/controller simulation GREEN; preserve all core regressions.
 - [x] Mapped Goal integration/build; one compact scoped Astra source review and at most one Important/Critical fix pass, no re-review.
-- [ ] Finite private native transit/new-actor trial or specific retained feasibility failure; honest controlled versus natural/readability scope and owned closure.
+- [x] Finite private native transit/new-actor trial or specific retained feasibility failure; honest controlled versus natural/readability scope and owned closure.
 - [ ] Independent integrity, English receipt/AF0048/guide/GitHub and guarded original MD mirrors.
 
 Domain/rally/cover/input/readability/new-client/arbitrary crash gates remain distinct. Grand Danmaku/Ground barrage/fans remain deferred. No product dependency, save or packet format change, generic actor override or ongoing observation.
 
 Pre-native verification: missing helper compilation RED and missing analyzer module RED;586new core/controller assertions/all retained regressions,21new/68related Node checks, private mapped compilation/syntax and genuine15second offline Forge build PASS. One compact scoped Astra source review: no Important/Critical, no re-review. Native probe explicitly admits a new private transit Goal and uses real controller/travel, native LOS and loaded full-body predicates; it does not execute production AnchorGoal admission or override its selector. Those/native natural/readability gates remain unverified.
+
+Nativea07c551 trialAMAUI0 PASS once:85samples/84motion rows, TELL12/CLIMB2/CROSS64/BRAKE5/DONE1, frozen22.15route, actual above/beyond passage and one braked guarded region update;55rows outside old ellipsoid before commit retain original region.4client rows/native renderer; two owned actors cleaned. Independent3raw/7supplement/3material/7canonical/historical85count/acceptedJAR PASS, cleanACK/VERIFIED_EXIT893ms/EVIDENCE_COMPLETE18rows2lanes. [Scoped receipt](../../OVERHEAD-REANCHOR-VERIFICATION.md). No actual Goal admission/natural/readability/native-negative proof inferred.

@@ -64,8 +64,8 @@ try{
  await launchDebugRun(config,lab);current=await readCurrent(config,lab);assert(current.live&&current.runtimeOwnership?.owned);report.runDir=current.runDir;
  for(const name of ['owner-envelope.json','owner-status.json'])assert(!(await fs.stat(path.join(current.runDir,'control',name)).catch(()=>null)),'ScopedOwner authority present');
  const output=path.join(current.runDir,'evidence/derived/reanchor');await fs.mkdir(output,{recursive:true});const dispatch=Date.now();
- const request={nonce,world,subjectUuid:fixture.subjectUuid,playerUuid:fixture.playerUuid,maxTicks:200,maxWallMs:20000,dispatchEpochMs:dispatch};await write(path.join(output,'request.json'),request);
- let result;do{result=await read(path.join(output,'result.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;});if(result)break;await new Promise(resolve=>setTimeout(resolve,250));}while(Date.now()<dispatch+25000);
+ const request={nonce,world,subjectUuid:fixture.subjectUuid,playerUuid:fixture.playerUuid,maxTicks:360,maxWallMs:25000,dispatchEpochMs:dispatch};await write(path.join(output,'request.json'),request);
+ let result;do{result=await read(path.join(output,'result.json')).catch(error=>{if(error.code==='ENOENT')return null;throw error;});if(result)break;await new Promise(resolve=>setTimeout(resolve,250));}while(Date.now()<dispatch+30000);
  assert(result,'Bounded native result missing');assert.equal(result.nonce,nonce);report.native=result;
  report.analysis=analyzeReanchor(result,request);await write(path.join(output,'analysis.json'),report.analysis);
  report.artifacts=await Promise.all((await fs.readdir(output)).filter(n=>/^(request\.json|actors\.json|rows\.jsonl|joins\.jsonl|clientRows\.jsonl|result\.json|analysis\.json)$/.test(n)).sort().map(async name=>({name,sha256:sha(await fs.readFile(path.join(output,name)))})));

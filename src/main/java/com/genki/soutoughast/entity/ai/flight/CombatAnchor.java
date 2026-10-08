@@ -24,7 +24,7 @@ public final class CombatAnchor {
     public Region region(){return region;}
     public void clear(){region=null;subject=null;cooldown=disengaged=blocked=targetless=0;}
 
-    /** Called only after a physically completed, visible, clearance-checked committed transit. */
+    /** Called only after visible, clearance-checked entry into a committed candidate region. */
     public boolean commitRelocation(UUID identity,long expectedGeneration,FlightVector center){
         if(region==null||center==null||identity==null||!identity.equals(subject)||region.generation()!=expectedGeneration)return false;
         selectAt(identity,center,Reason.TACTICAL_RELOCATION);return true;
