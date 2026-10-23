@@ -70,7 +70,7 @@ public final class OverheadReanchor {
         FlightController.Intent intent;
         if(phase==Phase.TELL||phase==Phase.CLIMB||phase==Phase.CROSS||phase==Phase.DESCEND||phase==Phase.HANDOFF){
             var offset=point().subtract(boss);
-            double speed=Math.min(phase==Phase.TELL?.1:phase==Phase.CROSS?.24:.12,Math.sqrt(2*FlightController.BRAKING*Math.max(0,offset.length()-.4)));
+            double speed=Math.min(phase==Phase.TELL?.15:phase==Phase.CROSS?.36:.18,Math.sqrt(2*FlightController.BRAKING*Math.max(0,offset.length()-.4)));
             intent=FlightController.Intent.move(offset,speed);
         }else intent=FlightController.Intent.brake();
         var look=phase==Phase.TURN||phase==Phase.DESCEND||phase==Phase.HANDOFF?observedLook:phase==Phase.ABORT?null:heading;

@@ -20,8 +20,8 @@ public final class SoutouGhastFlightLookControl extends LookControl {
         if (ghast.level().isClientSide || direction == null || direction.lengthSqr() < 1e-9) return;
         float yaw = (float)(-Mth.atan2(direction.x, direction.z) * Mth.RAD_TO_DEG);
         float pitch = (float)(-Mth.atan2(direction.y, direction.horizontalDistance()) * Mth.RAD_TO_DEG);
-        ghast.setYRot(FlightOrientation.approachDegrees(ghast.getYRot(), yaw, 4));
-        ghast.setXRot(FlightOrientation.approachDegrees(ghast.getXRot(), pitch, 3));
+        ghast.setYRot(FlightOrientation.approachDegrees(ghast.getYRot(), yaw, FlightOrientation.YAW_STEP));
+        ghast.setXRot(FlightOrientation.approachDegrees(ghast.getXRot(), pitch, FlightOrientation.PITCH_STEP));
         ghast.yBodyRot = ghast.getYRot();
         ghast.yHeadRot = ghast.getYRot();
     }

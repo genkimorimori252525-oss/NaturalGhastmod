@@ -23,7 +23,7 @@ public final class OverheadReanchorTest {
         var state=m.step(TARGET,true,region,start,velocity,180,0,OBSERVED.subtract(start),(from,to)->true);
         var next=new FlightController().step(velocity,state.intent());
         check(state.phase()==OverheadReanchor.Phase.TELL&&next.length()>.05&&next.y()>velocity.y(),"existing momentum transitions into gentle rise without stopping");
-        check(next.subtract(velocity).length()<=Math.hypot(.11,.045)+1e-9&&a.region().equals(region),"same controller and retained region remain authoritative");
+        check(next.subtract(velocity).length()<=Math.hypot(FlightController.ACCELERATION,FlightController.LATERAL_ACCELERATION)+1e-9&&a.region().equals(region),"same controller and retained region remain authoritative");
     }
     private static void geometry(){
         var a=anchor();var m=transit(a);check(m.overhead().y()>=17.8&&m.destination().z()==-8&&m.candidateCenter().y()==START.y(),"high passage and frozen region altitude");check(m.routeLength()<=48&&m.budget()<=320,"all three legs and conservative time bounded");
@@ -40,8 +40,8 @@ public final class OverheadReanchorTest {
             var s=m.step(TARGET,true,a.region(),p,v,yaw,pitch,OBSERVED.subtract(p),(x,y)->true);
             check(a.region().equals(original),"region retained throughout transit before guarded commit");
             if(s.commit()){check(v.y()<-.05&&s.intent().mode()==FlightController.Mode.MOVE&&p.subtract(m.candidateCenter()).length()>7,"handoff in height band preserves descending motion without center stop");check(a.commitRelocation(TARGET,original.generation(),m.candidateCenter()),"one authoritative relocation");committed=true;}
-            var next=controller.step(v,s.intent());check(next.length()<=.32+1e-9,"bounded controller speed");check(next.subtract(v).length()<=Math.hypot(FlightController.ACCELERATION,FlightController.LATERAL_ACCELERATION)+1e-9,"same controller acceleration");
-            if(s.look()!=null){float desiredYaw=(float)Math.toDegrees(-Math.atan2(s.look().x(),s.look().z()));float desiredPitch=(float)Math.toDegrees(-Math.atan2(s.look().y(),Math.hypot(s.look().x(),s.look().z())));yaw=FlightOrientation.approachDegrees(yaw,desiredYaw,4);pitch=FlightOrientation.approachDegrees(pitch,desiredPitch,3);}
+            var next=controller.step(v,s.intent());check(next.length()<=.36+1e-9,"bounded controller speed");check(next.subtract(v).length()<=Math.hypot(FlightController.ACCELERATION,FlightController.LATERAL_ACCELERATION)+1e-9,"same controller acceleration");
+            if(s.look()!=null){float desiredYaw=(float)Math.toDegrees(-Math.atan2(s.look().x(),s.look().z()));float desiredPitch=(float)Math.toDegrees(-Math.atan2(s.look().y(),Math.hypot(s.look().x(),s.look().z())));yaw=FlightOrientation.approachDegrees(yaw,desiredYaw,FlightOrientation.YAW_STEP);pitch=FlightOrientation.approachDegrees(pitch,desiredPitch,FlightOrientation.PITCH_STEP);}
             if(s.phase()==OverheadReanchor.Phase.CROSS||s.phase()==OverheadReanchor.Phase.BRAKE)check(s.look().equals(m.heading()),"crossing and high braking face travel heading, never Player");
             if(s.phase()==OverheadReanchor.Phase.TURN){turned=true;check(p.z()<-7,"only behind Player may turn toward Player");}
             if(s.phase()==OverheadReanchor.Phase.DESCEND)descending=true;

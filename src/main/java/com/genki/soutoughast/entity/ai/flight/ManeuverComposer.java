@@ -57,8 +57,8 @@ public final class ManeuverComposer {
         else{
             FlightVector waypoint=phase==Phase.REVEAL?reveal:first,error=waypoint.subtract(boss);
             if(!clearance.test(error)){cancel();return new MovementPlanner.Plan(MovementPrimitive.BRAKE,FlightController.Intent.brake(),boss,range,true);}
-            double speed=Math.min(phase==Phase.REVEAL?.32:.14,Math.sqrt(2*FlightController.BRAKING*Math.max(0,error.length()-.4)));
-            FlightVector desired=error.normalized().scale(speed);eased=eased.add(desired.subtract(eased).limited(.008));
+            double speed=Math.min(phase==Phase.REVEAL?.48:.21,Math.sqrt(2*FlightController.BRAKING*Math.max(0,error.length()-.4)));
+            FlightVector desired=error.normalized().scale(speed);eased=eased.add(desired.subtract(eased).limited(.012));
             MovementPrimitive primitive=switch(action){
                 case FALSE_APPROACH -> phase==Phase.REVEAL?MovementPrimitive.WITHDRAW:MovementPrimitive.APPROACH;
                 case FALSE_RETREAT -> phase==Phase.REVEAL?MovementPrimitive.APPROACH:MovementPrimitive.WITHDRAW;

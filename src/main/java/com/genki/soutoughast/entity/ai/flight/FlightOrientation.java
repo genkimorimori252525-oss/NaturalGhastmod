@@ -2,6 +2,7 @@ package com.genki.soutoughast.entity.ai.flight;
 
 /** Bounded body rotation, independent from the player's smoothed combat-facing region. */
 public final class FlightOrientation {
+    public static final float YAW_STEP=7, PITCH_STEP=5;
     private FlightOrientation() { }
 
     public static float approachDegrees(float current, float desired, float limit) {

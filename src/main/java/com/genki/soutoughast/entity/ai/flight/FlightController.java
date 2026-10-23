@@ -2,10 +2,10 @@ package com.genki.soutoughast.entity.ai.flight;
 
 /** Development tuning in blocks/tick; reads actual velocity, never integrates position. */
 public final class FlightController {
-    public static final double MAX_SPEED = 0.65 * 2.5;
-    public static final double ACCELERATION = 0.11;
-    public static final double BRAKING = 0.035;
-    public static final double LATERAL_ACCELERATION = 0.045;
+    public static final double MAX_SPEED = 1.625;
+    public static final double ACCELERATION = 0.14;
+    public static final double BRAKING = 0.055;
+    public static final double LATERAL_ACCELERATION = 0.09;
 
     public enum Mode { MOVE, BRAKE, HOLD }
     public FlightVector clearanceSweep(FlightVector actualVelocity,FlightVector next){

@@ -11,9 +11,9 @@ public final class FlightFoundationTest {
         check(accelerated.length() > 0.65 - braking.length(), "acceleration exceeds braking");
         check(controller.step(FlightVector.ZERO, FlightController.Intent.brake()).equals(FlightVector.ZERO), "zero stays finite");
         FlightVector turn = controller.step(FORWARD.scale(0.65), FlightController.Intent.move(new FlightVector(1, 0, 0), 0.65));
-        check(turn.z() > 0.60 && turn.x() <= FlightController.LATERAL_ACCELERATION, "high speed turns stay broad");
+        check(turn.z() >= .65-FlightController.BRAKING-1e-9 && turn.x() <= FlightController.LATERAL_ACCELERATION, "high speed turns stay broad");
         FlightVector reverse = controller.step(FORWARD.scale(0.65), FlightController.Intent.move(FORWARD.scale(-1), 0.65));
-        check(reverse.z() > 0.60, "opposite intent cannot snap velocity");
+        check(reverse.z() >= .65-FlightController.BRAKING-1e-9, "opposite intent cannot snap velocity");
         FlightVector v = FlightVector.ZERO;
         for (int i = 0; i < 200; i++) v = controller.step(v, FlightController.Intent.move(FORWARD, 0.65));
         check(v.length() <= 0.650001, "bounded acceleration");
@@ -74,9 +74,9 @@ public final class FlightFoundationTest {
         }
         check(Math.abs(velocity.length()-1.625)<1e-9,"controller actually reaches requested ceiling");
         var turn=controller.step(velocity,FlightController.Intent.move(new FlightVector(1,0,0),1.625));
-        check(turn.z()>1.58&&turn.x()<=FlightController.LATERAL_ACCELERATION,"fast turn remains broad");
+        check(turn.z()>=1.625-FlightController.BRAKING-1e-9&&turn.x()<=FlightController.LATERAL_ACCELERATION,"fast turn remains broad");
         var reverse=controller.step(velocity,FlightController.Intent.move(FORWARD.scale(-1),1.625));
-        check(reverse.z()>1.58,"fast reversal cannot snap");
+        check(reverse.z()>=1.625-FlightController.BRAKING-1e-9,"fast reversal cannot snap");
         for(int i=0;i<60;i++)velocity=controller.step(velocity,FlightController.Intent.hold());
         check(velocity.length()<1e-9,"high speed can settle without snapping");
         CombatAnchor anchor=new CombatAnchor();
@@ -98,7 +98,16 @@ public final class FlightFoundationTest {
         check(!FlightChunkCoverage.loaded(Integer.MIN_VALUE,Integer.MAX_VALUE,0,0,(x,z)->{throw new AssertionError("unbounded chunk query");}),"external impulse coverage cannot overflow budget");
         check(!FlightChunkCoverage.loaded(1,0,0,0,(x,z)->true),"invalid sweep rejects");
         var impulse=new FlightVector(0,0,2.5);
-        check(controller.clearanceSweep(impulse,controller.step(impulse,FlightController.Intent.brake())).length()>80,"above-cap impulse retains full stopping horizon");
+        var impulseNext=controller.step(impulse,FlightController.Intent.brake());
+        double stoppingTravel=impulseNext.length();var residual=impulseNext;
+        for(int i=0;i<100&&residual.length()>1e-9;i++){residual=controller.step(residual,FlightController.Intent.brake());stoppingTravel+=residual.length();}
+        check(controller.clearanceSweep(impulse,impulseNext).length()>=stoppingTravel,"above-cap impulse retains full stopping horizon");
+        float yaw=0;
+        for(int i=0;i<26;i++){
+            float nextYaw=FlightOrientation.approachDegrees(yaw,180,FlightOrientation.YAW_STEP);
+            check(Math.abs(nextYaw-yaw)<=7,"body yaw remains bounded during faster turn");yaw=nextYaw;
+        }
+        check(Math.abs(yaw)==180,"half-turn completes within26ticks instead of45");
         try { FlightController.Intent.move(FORWARD,1.626);throw new AssertionError("overspeed intent accepted"); }
         catch(IllegalArgumentException expected) { }
         System.out.println("PASS: optional high-speed acceleration/turn/braking/sweep/production recovery checks");

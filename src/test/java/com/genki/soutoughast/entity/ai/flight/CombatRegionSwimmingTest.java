@@ -19,7 +19,7 @@ public final class CombatRegionSwimmingTest {
         blockedReturn();
         MovementPlanner planner=new MovementPlanner();FlightController controller=new FlightController();
         FlightVector position=boss,velocity=FlightVector.ZERO;double minX=position.x(),maxX=minX,minY=position.y(),maxY=minY,minZ=position.z(),maxZ=minZ;
-        int rest=0;FlightVector firstWaypoint=null;
+        int rest=0;double peakSpeed=0,totalSpeed=0;FlightVector firstWaypoint=null;
         for(int tick=0;tick<4000;tick++){
             double variation=((tick*37)%997)/997.0;
             var plan=planner.step(anchor,target,position,tick%2==0?FORWARD:FORWARD.scale(-1),MobilityContext.Kind.OPEN_AIR,OPEN,variation,displacement->true);
@@ -28,7 +28,7 @@ public final class CombatRegionSwimmingTest {
             FlightVector next=controller.step(velocity,plan.intent());
             check(next.length()<=FlightController.MAX_SPEED+1e-9,"speed remains capped");
             if(tick>20)check(next.subtract(velocity).length()<=.02,"ambient intent eases turns and reversals");
-            position=position.add(next);velocity=next;
+            position=position.add(next);velocity=next;peakSpeed=Math.max(peakSpeed,next.length());totalSpeed+=next.length();
             check(anchor.evaluate(target,FORWARD,position).inRegion(),"actual swimming remains within the retained region tick="+tick+" radius="+anchor.region().radius(position)+" position="+position+" waypoint="+plan.waypoint());
             if(tick>20&&next.length()<.005)rest++;
             minX=Math.min(minX,position.x());maxX=Math.max(maxX,position.x());minY=Math.min(minY,position.y());maxY=Math.max(maxY,position.y());minZ=Math.min(minZ,position.z());maxZ=Math.max(maxZ,position.z());
@@ -36,6 +36,7 @@ public final class CombatRegionSwimmingTest {
         check(Math.max(maxX-minX,maxZ-minZ)>20,"actual swimming spans far more than a10-block neighborhood");
         check(maxY-minY>3,"actual swimming includes vertical motion");
         check(rest<80,"normal swimming does not repeatedly stop");
+        check(peakSpeed>.34&&totalSpeed/4000>.2,"ordinary production swimming actually uses raised pace without the high-speed ceiling");
         int[] queries={0};planner.reset();
         var denied=planner.step(anchor,target,boss,FORWARD,MobilityContext.Kind.OPEN_AIR,OPEN,.8,d->{queries[0]++;return false;});
         check(denied.intent().mode()!=FlightController.Mode.MOVE,"blocked swimming cannot issue thrust");

@@ -35,14 +35,14 @@ final class ExtendedFeintRecipe {
             if(Math.hypot(offset.x(),offset.z())<6||Math.abs(offset.y())>8)return null;
             var plane=new FlightVector(target.x(),boss.y(),target.z());
             first=plane.add(toward.scale(4)).add(side.scale(6));second=first.add(side.scale(4));
-            legs=List.of(new Leg(TELEGRAPH,first,24,.14,false),new Leg(COMMIT,first,travel(boss,first),.32,true),
-                    brake(),new Leg(REVEAL,second,travel(first,second),.32,true),brake(),returning());
+            legs=List.of(new Leg(TELEGRAPH,first,24,.21,false),new Leg(COMMIT,first,travel(boss,first),.48,true),
+                    brake(),new Leg(REVEAL,second,travel(first,second),.48,true),brake(),returning());
         }else{
             first=boss.add(side.scale(4));second=boss.subtract(side.scale(4));
-            legs=action==TacticalEvaluator.Action.ABORT_FAKE?List.of(new Leg(TELEGRAPH,first,24,.14,false),brake(),returning()):
-                    List.of(new Leg(TELEGRAPH,first,24,.14,false),new Leg(COMMIT,first,8,.14,false),brake(),
-                            new Leg(REVEAL,second,travel(first,second),.32,true),brake(),
-                            new Leg(REVEAL,first,travel(second,first),.32,true),brake(),returning());
+            legs=action==TacticalEvaluator.Action.ABORT_FAKE?List.of(new Leg(TELEGRAPH,first,24,.21,false),brake(),returning()):
+                    List.of(new Leg(TELEGRAPH,first,24,.21,false),new Leg(COMMIT,first,8,.21,false),brake(),
+                            new Leg(REVEAL,second,travel(first,second),.48,true),brake(),
+                            new Leg(REVEAL,first,travel(second,first),.48,true),brake(),returning());
         }
         if(legs.stream().mapToInt(Leg::budget).sum()>160)return null;
         var from=boss;
@@ -55,7 +55,7 @@ final class ExtendedFeintRecipe {
     }
     private static int travel(FlightVector from,FlightVector to){
         // Full travel distance plus acceleration/arrival allowance, no fixed short deadline.
-        return (int)Math.ceil(to.subtract(from).length()/.32)+12;
+        return (int)Math.ceil(to.subtract(from).length()/.48)+12;
     }
     private static Leg brake(){return new Leg(BRAKE,null,12,0,false);}
     private static Leg returning(){return new Leg(RETURN,null,16,0,false);}

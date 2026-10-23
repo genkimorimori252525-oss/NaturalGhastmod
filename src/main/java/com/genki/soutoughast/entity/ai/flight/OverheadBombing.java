@@ -81,7 +81,7 @@ public final class OverheadBombing {
     private State publish(FlightVector goal,boolean release,FlightVector point){
         var intent=FlightController.Intent.hold();
         if(goal!=null&&lastBoss!=null){
-            var error=goal.subtract(lastBoss);double limit=phase==Phase.WITHDRAW?.35:phase==Phase.RETURN?FlightController.MAX_SPEED:.4;
+            var error=goal.subtract(lastBoss);double limit=phase==Phase.WITHDRAW?.525:phase==Phase.RETURN?FlightController.MAX_SPEED:.6;
             if(error.length()>.25)intent=FlightController.Intent.move(error,Math.min(limit,Math.sqrt(2*FlightController.BRAKING*Math.max(0,error.length()-.25))));
         }
         boolean preface=phase==Phase.BOMBING&&ticks>=12+releases*24-8&&ticks<12+releases*24;

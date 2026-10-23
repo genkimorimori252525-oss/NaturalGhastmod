@@ -64,7 +64,7 @@ public final class ObservedProjectileDodgeTest {
                 if(d.state().phase()==ObservedProjectileDodge.Phase.RECOVER)recovered=true;
                 plan=new MovementPlanner().step(anchor,target,position,ZERO,MobilityContext.Kind.OPEN_AIR,new MobilityContext.Sample(1023),.3,x->true);
             }else moving++;
-            var next=controller.step(velocity,plan.intent());check(next.subtract(velocity).length()<=Math.hypot(.11,.045)+1e-9,"sole controller bounds acceleration/inertia");position=position.add(next);velocity=next;
+            var next=controller.step(velocity,plan.intent());check(next.subtract(velocity).length()<=Math.hypot(FlightController.ACCELERATION,FlightController.LATERAL_ACCELERATION)+1e-9,"sole controller bounds acceleration/inertia");position=position.add(next);velocity=next;
             check(anchor.region().equals(retained),"physical dodge/swim keep boss-owned region");
             if(tick==12)check(Math.abs(position.x())>2.5,"actual controller motion leaves observed incoming body lane");
         }

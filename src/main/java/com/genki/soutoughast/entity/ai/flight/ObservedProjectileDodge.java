@@ -99,7 +99,7 @@ public final class ObservedProjectileDodge {
     }
     private MovementPlanner.Plan moving(FlightVector boss,MobilityContext.Kind context){
         var error=state.waypoint().subtract(boss);
-        double speed=Math.min(context==MobilityContext.Kind.CONFINED?.25:.42,Math.sqrt(2*FlightController.BRAKING*Math.max(0,error.length()-.4)));
+        double speed=Math.min(context==MobilityContext.Kind.CONFINED?.375:.63,Math.sqrt(2*FlightController.BRAKING*Math.max(0,error.length()-.4)));
         return new MovementPlanner.Plan(MovementPrimitive.STRAFE,FlightController.Intent.move(error,speed),state.waypoint(),CombatAnchor.Range.COMFORTABLE,true);
     }
     private MovementPlanner.Plan cancel(long tick,FlightVector boss){
