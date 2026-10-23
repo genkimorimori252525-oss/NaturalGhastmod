@@ -14,12 +14,13 @@ public final class ManualSafetyFixtureTest {
   check(p.getInt("SpawnX")==4&&p.getInt("SpawnY")==224&&p.getInt("SpawnZ")==4&&p.getBoolean("SpawnForced"),"forced personal spawn inside room");
   check(p.getString("SpawnDimension").equals("minecraft:overworld"),"respawn dimension");
   var pos=p.getList("Pos",Tag.TAG_DOUBLE);check(pos.size()==3&&pos.getDouble(0)==4.5&&pos.getDouble(1)==224&&pos.getDouble(2)==5.5,"initial protected position");
-  int resistance=0;for(var raw:p.getList("ActiveEffects",Tag.TAG_COMPOUND)){
-   var effect=(CompoundTag)raw;if((effect.getByte("Id")&255)!=11)continue;resistance++;
+  int resistance=0,nightVision=0;for(var raw:p.getList("ActiveEffects",Tag.TAG_COMPOUND)){
+   var effect=(CompoundTag)raw;if((effect.getByte("Id")&255)==16){nightVision++;check(effect.getByte("Amplifier")==0&&effect.getInt("Duration")==-1,"persistent non-flickering Night Vision");check(!effect.getBoolean("ShowParticles"),"unobstructed night vision");continue;}if((effect.getByte("Id")&255)!=11)continue;resistance++;
    check(effect.getByte("Amplifier")==127,"signed-byte reload-safe amplifier");check(effect.getInt("Duration")==-1,"no expiry before human notices");
    check(!effect.getBoolean("ShowParticles")&&effect.getBoolean("ShowIcon"),"no view obstruction, visible effect status");
   }
   check(resistance==1,"exactly one Resistance effect");
+  check(nightVision==1,"exactly one Night Vision effect");
  }
  public static void main(String[] args)throws Exception{
   CompoundTag data=new CompoundTag(),p=new CompoundTag();data.put("GameRules",new CompoundTag());
