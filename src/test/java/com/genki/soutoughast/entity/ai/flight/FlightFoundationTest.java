@@ -52,7 +52,56 @@ public final class FlightFoundationTest {
         check(anchor.evaluate(player, FORWARD, far).inRegion() && v.length() < 0.01, "soft arrival settles in region");
         try { new FlightVector(Double.NaN, 0, 0); throw new AssertionError("nonfinite accepted"); }
         catch (IllegalArgumentException expected) { }
+        highSpeedFlight(controller);
         System.out.println("PASS: 22 flight/facing/anchor/orientation regression assertions");
+    }
+
+    private static void highSpeedFlight(FlightController controller) {
+        check(FlightController.MAX_SPEED == 1.625, "optional ceiling is 2.5 times the previous maximum");
+        var intent=FlightController.Intent.move(FORWARD,1.625);
+        var velocity=FlightVector.ZERO;
+        for(int i=0;i<60;i++){
+            var next=controller.step(velocity,intent);
+            check(next.length()<=1.625+1e-9,"high speed stays capped");
+            check(next.subtract(velocity).length()<=FlightController.ACCELERATION+1e-9,"no instant high speed");
+            var sweep=controller.clearanceSweep(velocity,next);
+            var stopping=next;double travel=next.length();
+            for(int j=0;j<60&&stopping.length()>1e-9;j++){
+                stopping=controller.step(stopping,FlightController.Intent.brake());travel+=stopping.length();
+            }
+            check(sweep.length()+1e-9>=travel,"sweep covers complete next-step braking travel");
+            velocity=next;
+        }
+        check(Math.abs(velocity.length()-1.625)<1e-9,"controller actually reaches requested ceiling");
+        var turn=controller.step(velocity,FlightController.Intent.move(new FlightVector(1,0,0),1.625));
+        check(turn.z()>1.58&&turn.x()<=FlightController.LATERAL_ACCELERATION,"fast turn remains broad");
+        var reverse=controller.step(velocity,FlightController.Intent.move(FORWARD.scale(-1),1.625));
+        check(reverse.z()>1.58,"fast reversal cannot snap");
+        for(int i=0;i<60;i++)velocity=controller.step(velocity,FlightController.Intent.hold());
+        check(velocity.length()<1e-9,"high speed can settle without snapping");
+        CombatAnchor anchor=new CombatAnchor();
+        FlightVector player=FlightVector.ZERO,boss=new FlightVector(0,6,120);
+        anchor.evaluate(player,FORWARD,new FlightVector(0,6,28));
+        double peak=0;velocity=FlightVector.ZERO;
+        for(int i=0;i<450;i++){
+            var recovery=anchor.evaluate(player,FORWARD,boss);
+            velocity=controller.step(velocity,recovery.intent());boss=boss.add(velocity);peak=Math.max(peak,velocity.length());
+        }
+        check(peak>1.624,"production anchor recovery chooses the higher ceiling for a long journey");
+        check(anchor.region().contains(boss)&&velocity.length()<.01,"fast recovery hands off inside retained region");
+        int[] queries={0};
+        check(FlightChunkCoverage.loaded(-1,2,-1,2,(x,z)->{queries[0]++;return true;}),"16-chunk stopping sweep admitted");
+        check(queries[0]==16,"bounded coverage queries");queries[0]=0;
+        check(!FlightChunkCoverage.loaded(-1,3,-1,2,(x,z)->{queries[0]++;return true;}),"oversized sweep brakes");
+        check(queries[0]==0,"over-budget sweep makes no chunk queries");
+        check(!FlightChunkCoverage.loaded(0,3,0,0,(x,z)->x!=2),"missing forward chunk rejects sweep");
+        check(!FlightChunkCoverage.loaded(Integer.MIN_VALUE,Integer.MAX_VALUE,0,0,(x,z)->{throw new AssertionError("unbounded chunk query");}),"external impulse coverage cannot overflow budget");
+        check(!FlightChunkCoverage.loaded(1,0,0,0,(x,z)->true),"invalid sweep rejects");
+        var impulse=new FlightVector(0,0,2.5);
+        check(controller.clearanceSweep(impulse,controller.step(impulse,FlightController.Intent.brake())).length()>80,"above-cap impulse retains full stopping horizon");
+        try { FlightController.Intent.move(FORWARD,1.626);throw new AssertionError("overspeed intent accepted"); }
+        catch(IllegalArgumentException expected) { }
+        System.out.println("PASS: optional high-speed acceleration/turn/braking/sweep/production recovery checks");
     }
 
     private static void check(boolean value, String message) {

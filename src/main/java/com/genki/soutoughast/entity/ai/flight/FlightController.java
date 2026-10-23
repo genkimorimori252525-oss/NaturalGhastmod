@@ -2,14 +2,15 @@ package com.genki.soutoughast.entity.ai.flight;
 
 /** Development tuning in blocks/tick; reads actual velocity, never integrates position. */
 public final class FlightController {
-    public static final double MAX_SPEED = 0.65;
+    public static final double MAX_SPEED = 0.65 * 2.5;
     public static final double ACCELERATION = 0.11;
     public static final double BRAKING = 0.035;
     public static final double LATERAL_ACCELERATION = 0.045;
 
     public enum Mode { MOVE, BRAKE, HOLD }
     public FlightVector clearanceSweep(FlightVector actualVelocity,FlightVector next){
-        double horizon=Math.min(MAX_SPEED/BRAKING+2,actualVelocity.length()/BRAKING+2);
+        // Cover the next speed too, including acceleration and external impulses above the cap.
+        double horizon=Math.max(actualVelocity.length(),next.length())/BRAKING+2;
         return next.scale(horizon*.5+1);
     }
 

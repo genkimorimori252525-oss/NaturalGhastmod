@@ -2,6 +2,7 @@ package com.genki.soutoughast.entity.ai;
 
 import com.genki.soutoughast.entity.SoutouGhast;
 import com.genki.soutoughast.entity.ai.flight.FlightController;
+import com.genki.soutoughast.entity.ai.flight.FlightChunkCoverage;
 import com.genki.soutoughast.entity.ai.flight.FlightVector;
 import com.genki.soutoughast.entity.ai.flight.MobilityContext;
 import com.genki.soutoughast.entity.ai.flight.MovementPlanner;
@@ -74,15 +75,22 @@ public final class SoutouGhastInertialMoveControl extends MoveControl {
         if (ghast.level().isClientSide) return;
         FlightVector actual = from(ghast.getDeltaMovement());
         FlightVector next = controller.step(actual, intent);
-        // One conservative swept box, bounded by the speed cap's stopping horizon.
+        // One conservative swept box covering the complete stopping horizon.
         // Include inertia during a turn; checking only the waypoint would miss walls.
         Vec3 sweep = to(controller.clearanceSweep(actual,next));
         if(ghast.getGroundCombat().active())sweep=ghast.getGroundCombat().collisionSweep(sweep);
-        clearanceBlocked = next.length() > 1e-9 && (!ghast.level().noCollision(ghast,
-                clearanceBox(ghast.getBoundingBox(), sweep))
+        var sweptBody=clearanceBox(ghast.getBoundingBox(),sweep);
+        clearanceBlocked = next.length() > 1e-9 && (!loadedSweep(sweptBody)||!ghast.level().noCollision(ghast,
+                sweptBody)
                 ||ghast.getGroundCombat().active()&&!ghast.getGroundCombat().safeMotion(sweep));
         if (clearanceBlocked) next = controller.step(actual, FlightController.Intent.brake());
         ghast.setDeltaMovement(to(next));
+    }
+
+    private boolean loadedSweep(AABB sweep){
+        int minX=net.minecraft.util.Mth.floor(sweep.minX)>>4,maxX=net.minecraft.util.Mth.floor(sweep.maxX-1e-7)>>4;
+        int minZ=net.minecraft.util.Mth.floor(sweep.minZ)>>4,maxZ=net.minecraft.util.Mth.floor(sweep.maxZ-1e-7)>>4;
+        return FlightChunkCoverage.loaded(minX,maxX,minZ,maxZ,(x,z)->ghast.level().hasChunk(x,z));
     }
 
     public static FlightVector from(Vec3 vector) { return new FlightVector(vector.x, vector.y, vector.z); }
