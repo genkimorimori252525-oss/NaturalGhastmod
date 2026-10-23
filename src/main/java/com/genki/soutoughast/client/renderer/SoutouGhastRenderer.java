@@ -21,7 +21,9 @@ public class SoutouGhastRenderer extends GhastRenderer {
         super.setupRotations(entity,pose,age,bodyYaw,partialTick);
         if(entity instanceof com.genki.soutoughast.entity.SoutouGhast boss){
             // Root rotation precedes MobRenderer's inverted model axes: negative pitch faces downward.
-            pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-boss.majorRenderPitch(partialTick)));
+            float pitch=com.genki.soutoughast.entity.ai.flight.FlightOrientation.renderPitch(
+                    boss.majorRenderPitch(partialTick),boss.majorPitch(),boss.attackRenderPitch(partialTick));
+            pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-pitch));
             if(boss.groundPresentation()){
                 var velocity=boss.getDeltaMovement();double yaw=Math.toRadians(bodyYaw);
                 float roll=(float)Math.max(-6,Math.min(6,(velocity.x*Math.cos(yaw)+velocity.z*Math.sin(yaw))*10));

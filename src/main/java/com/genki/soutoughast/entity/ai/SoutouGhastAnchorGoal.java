@@ -85,8 +85,13 @@ public final class SoutouGhastAnchorGoal extends Goal {
         var dodgePlan=dodge.tick(target,visible,anchor.region(),brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT);
         if(dodgePlan!=null){
             brain.reset();planner.reset();control().setTacticalState(TacticalBrain.State.idle());control().setMovementPlan(dodgePlan);
-            if(visible)((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(target.getEyePosition().subtract(ghast.getEyePosition()));
-            ghast.getStandardAttack().tick(target,visible,true);return;
+            ghast.getStandardAttack().tick(target,visible,true);
+            if(visible){
+                var lookControl=(SoutouGhastFlightLookControl)ghast.getLookControl();
+                var observedLook=target.getEyePosition().subtract(ghast.getEyePosition());
+                if(ghast.isCharging())lookControl.setAttackIntent(observedLook);else lookControl.setIntent(observedLook);
+            }else ((SoutouGhastFlightLookControl)ghast.getLookControl()).clearIntent();
+            return;
         }
         // No live geometry or velocity is read after LOS loss. Committed recipes use locked waypoints.
         FlightVector observedVelocity=visible?SoutouGhastInertialMoveControl.from(target.getDeltaMovement()):null;
@@ -104,7 +109,12 @@ public final class SoutouGhastAnchorGoal extends Goal {
             ((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(look);
         }
         Vec3 attackLook=ghast.getStandardAttack().tick(target,visible,brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT);
-        if(attackLook!=null)((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(attackLook);
+        if(attackLook!=null){
+            var lookControl=(SoutouGhastFlightLookControl)ghast.getLookControl();
+            // Presentation follows only currently observed geometry; shot commitment stays in the attack.
+            if(visible&&ghast.isCharging())lookControl.setAttackIntent(target.getEyePosition().subtract(ghast.getEyePosition()));
+            else lookControl.setIntent(attackLook);
+        }
     }
 
     private boolean tryRelocation(LivingEntity target,boolean visible,boolean busy,FlightVector boss){

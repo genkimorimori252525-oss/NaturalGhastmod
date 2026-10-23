@@ -74,7 +74,9 @@ public final class SoutouGhastGroundCombat {
             }
         }else if(firing.phase()==GroundAttack.Phase.CHARGE&&firing.ticks()==0){ghast.level().levelEvent(null,1015,ghast.blockPosition(),0);}
         Vec3 look=firing.face()?to(firing.direction()):offset;
-        var control=(SoutouGhastFlightLookControl)ghast.getLookControl();if(look==null)control.clearIntent();else control.setIntent(look);
+        var control=(SoutouGhastFlightLookControl)ghast.getLookControl();
+        if(observed&&firing.face())control.setAttackIntent(offset);
+        else if(look==null)control.clearIntent();else control.setIntent(look);
         return state;
     }
     /** The same sole velocity writer also validates inertia's stopping sweep before moving. */

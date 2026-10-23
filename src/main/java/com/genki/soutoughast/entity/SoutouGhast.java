@@ -8,6 +8,7 @@ import com.genki.soutoughast.entity.ai.SoutouGhastOverheadAttack;
 import com.genki.soutoughast.entity.ai.SoutouGhastGroundCombat;
 import com.genki.soutoughast.entity.ai.SoutouGhastDomainAttack;
 import com.genki.soutoughast.entity.ai.flight.MajorActionDirector;
+import com.genki.soutoughast.entity.ai.flight.FlightOrientation;
 import com.genki.soutoughast.entity.projectile.StandardSoutouFireball;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.tags.DamageTypeTags;
@@ -73,12 +74,15 @@ public class SoutouGhast extends Ghast {
     public boolean groundPresentation(){return entityData.get(GROUNDED);}
     private static final net.minecraft.network.syncher.EntityDataAccessor<Float> MAJOR_PITCH=net.minecraft.network.syncher.SynchedEntityData.defineId(SoutouGhast.class,net.minecraft.network.syncher.EntityDataSerializers.FLOAT);
     private float previousMajorPitch,displayedMajorPitch;
+    private float previousAttackPitch,displayedAttackPitch;
     public float majorRenderPitch(float partialTick){return Mth.lerp(partialTick,previousMajorPitch,displayedMajorPitch);}
+    public float attackRenderPitch(float partialTick){return Mth.lerp(partialTick,previousAttackPitch,displayedAttackPitch);}
     public float majorPitch(){return entityData.get(MAJOR_PITCH);}
     @Override protected void defineSynchedData(){super.defineSynchedData();entityData.define(MAJOR_PITCH,0f);entityData.define(GROUNDED,false);}
     @Override public void tick(){
-        previousMajorPitch=displayedMajorPitch;super.tick();
+        previousMajorPitch=displayedMajorPitch;previousAttackPitch=displayedAttackPitch;super.tick();
         displayedMajorPitch=level().isClientSide?Mth.approach(displayedMajorPitch,majorPitch(),3):majorPitch();
+        if(level().isClientSide)displayedAttackPitch=FlightOrientation.attackRenderPitch(displayedAttackPitch,getXRot(),isCharging());
     }
 
     private CombatPhase combatPhase = CombatPhase.SCOUTING;

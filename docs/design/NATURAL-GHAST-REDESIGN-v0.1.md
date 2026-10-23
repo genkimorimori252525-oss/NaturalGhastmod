@@ -1279,3 +1279,8 @@ Recovered latest-known reference JAR:
 - SHA-256: `5ad5fb4a3ff9a96095c60f87f5adff7c14cfdd3668954427b3396037f1471931`
 
 It is a different generation from the older same-named JAR recorded in the v0.02 audit.
+
+
+## 2026-10-24 human amendment: firing-face attention
+
+While the firing expression is active, normal/profile/Rally and Ground shot presentation tightly follows the currently visible Player with yaw and visible pitch, independently of the retained movement course. This explicitly separates visual attention from committed projectile direction/endpoint; it does not introduce homing, hidden tracking or camera-based region movement. Ordinary release eases and declared major/relocation poses keep precedence. [Implementation and scoped checks](../superpowers/plans/2026-10-24-attack-face-tracking.md). Native acceptance is pending.
