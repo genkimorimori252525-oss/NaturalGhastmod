@@ -1,5 +1,9 @@
 # Pinned manual acceptance pack
 
+2026-10-23 routing correction: the Oct9 `run-flight-tank.mjs` commands below are historical OBSERVE_GRID instructions, **not a current manual launch path**. Their temporary Reimu host is absent and their saved classpath is obsolete. Do not execute that block or relabel its observer purpose. TechHub now owns a persistent generic host; Natural is a profile client. Use [the host guide](https://github.com/genkimorimori252525-oss/KNEEKURA-TECH-HUB/blob/codex/mob-pov-camera-20261007/departments/minecraft/lab/native-host/README.md) and an explicitly prepared compatible world/MOD profile.
+
+`node tools/tank/run-manual-rally.mjs --installation INSTALLED --profile PROFILE.json` prepares only; add `--launch` explicitly to run one finite case. It delegates to the installed common launcher and has no Natural runClient, temporary-host or old argument-file dependency. Shared native lifecycle proof is distinct from Rally acceptance. The generic adapter observes actual attack/hurt and vanilla Projectile ownership; it does not expose boss-return counters, short face signals or complete target-specific paths. Those cases below remain NOT_RUN without their required evidence and voluntary human input. Preserve the verified product and accepted swimming; no Grand Danmaku/Ground fans or automatic manual replays.
+
 2026-10-09 Asia/Tokyo; follows the compact Astra ruling in the [implementation audit](NON-DANMAKU-IMPLEMENTATION-AUDIT.md). **Prepared, not executed or accepted.** The full goal remains active. Human input is voluntary; an AI-generated attack, KeyMapping injection or fake Player cannot satisfy these cases.
 
 ## Materials and launch scope
