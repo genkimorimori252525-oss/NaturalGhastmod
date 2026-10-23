@@ -29,6 +29,36 @@ public final class PrepareFlightTank {
   return shell?"minecraft:black_concrete":ground&&y==230|| (singleCellSeal?x==9&&y==(ground?226:228)&&z==6:wall&&!aperture)?"minecraft:stone":"minecraft:air";
  }
  private static CompoundTag state(String name){CompoundTag s=new CompoundTag();s.putString("Name",name);return s;}
+ /** Survival-only manual fixture: a voluntary door and a safe ordinary respawn. */
+ public static CompoundTag manualState(int x,int y,int z){
+  if(x>=1&&x<=7&&z>=1&&z<=7&&y>=Y&&y<=Y+4){
+   boolean shell=x==1||x==7||z==1||z==7||y==Y+4;
+   if(x==4&&z==7&&(y==Y||y==Y+1)){
+    CompoundTag s=state("minecraft:iron_door"),p=new CompoundTag();
+    p.putString("facing","south");p.putString("half",y==Y?"lower":"upper");p.putString("hinge","left");p.putString("open","false");p.putString("powered","false");s.put("Properties",p);return s;
+   }
+   if(x==5&&z==6&&y==Y+1){
+    CompoundTag s=state("minecraft:oak_button"),p=new CompoundTag();p.putString("face","wall");p.putString("facing","north");p.putString("powered","false");s.put("Properties",p);return s;
+   }
+   if(x==4&&z==4&&y==Y+3)return state("minecraft:sea_lantern");
+   return state(shell?"minecraft:bedrock":"minecraft:air");
+  }
+  if(x==5&&z==8&&y==Y+1){
+   CompoundTag s=state("minecraft:oak_button"),p=new CompoundTag();p.putString("face","wall");p.putString("facing","south");p.putString("powered","false");s.put("Properties",p);return s;
+  }
+  return state(fixtureBlock(x,y,z,false,false,true));
+ }
+ public static void manualPlayer(CompoundTag data,CompoundTag player){
+  data.putInt("SpawnX",4);data.putInt("SpawnY",Y);data.putInt("SpawnZ",4);data.putFloat("SpawnAngle",0);
+  data.getCompound("GameRules").putString("spawnRadius","0");
+  player.put("Pos",vector(4.5,Y,5.5));player.put("Rotation",rotation(0,0));
+  player.putString("SpawnDimension","minecraft:overworld");player.putInt("SpawnX",4);player.putInt("SpawnY",Y);player.putInt("SpawnZ",4);player.putFloat("SpawnAngle",0);player.putBoolean("SpawnForced",true);
+  // 1.20.1 loads Amplifier as a signed byte and clamps negatives to zero.
+  // 127 survives reload; 255 would become Resistance I. Death clears effects.
+  ListTag effects=player.getList("ActiveEffects",Tag.TAG_COMPOUND);
+  for(int i=effects.size()-1;i>=0;i--)if((effects.getCompound(i).getByte("Id")&255)==11||effects.getCompound(i).getString("forge:id").equals("minecraft:resistance"))effects.remove(i);
+  CompoundTag resistance=new CompoundTag();resistance.putByte("Id",(byte)11);resistance.putString("forge:id","minecraft:resistance");resistance.putByte("Amplifier",(byte)127);resistance.putInt("Duration",-1);resistance.putBoolean("Ambient",false);resistance.putBoolean("ShowParticles",false);resistance.putBoolean("ShowIcon",true);effects.add(resistance);player.put("ActiveEffects",effects);
+ }
  private static CompoundTag cell(CompoundTag section,int x,int y,int z){
   CompoundTag states=section.getCompound("block_states");ListTag palette=states.getList("palette",Tag.TAG_COMPOUND);
   if(palette.isEmpty())return state("minecraft:air");
@@ -43,6 +73,7 @@ public final class PrepareFlightTank {
  public static CompoundTag section(int sectionY,int chunkX,int chunkZ,boolean singleCellSeal){return section(new CompoundTag(),sectionY,chunkX,chunkZ,singleCellSeal);}
  public static CompoundTag section(int sectionY,int chunkX,int chunkZ,boolean singleCellSeal,boolean ground){return section(new CompoundTag(),sectionY,chunkX,chunkZ,singleCellSeal,ground);}
  public static CompoundTag section(int sectionY,int chunkX,int chunkZ,boolean singleCellSeal,boolean ground,boolean domain){return section(new CompoundTag(),sectionY,chunkX,chunkZ,singleCellSeal,ground,domain);}
+ public static CompoundTag manualSection(int sectionY,int chunkX,int chunkZ){return section(new CompoundTag(),sectionY,chunkX,chunkZ,false,false,true,true);}
  private static CompoundTag section(CompoundTag previous,int sectionY,int chunkX,int chunkZ){
   return section(previous,sectionY,chunkX,chunkZ,false);
  }
@@ -53,10 +84,13 @@ public final class PrepareFlightTank {
   return section(previous,sectionY,chunkX,chunkZ,singleCellSeal,ground,false);
  }
  private static CompoundTag section(CompoundTag previous,int sectionY,int chunkX,int chunkZ,boolean singleCellSeal,boolean ground,boolean domain){
+  return section(previous,sectionY,chunkX,chunkZ,singleCellSeal,ground,domain,false);
+ }
+ private static CompoundTag section(CompoundTag previous,int sectionY,int chunkX,int chunkZ,boolean singleCellSeal,boolean ground,boolean domain,boolean manual){
   ListTag palette=new ListTag();Map<String,Integer> indices=new LinkedHashMap<>();int[] cells=new int[4096];
   for(int y=0;y<16;y++)for(int z=0;z<16;z++)for(int x=0;x<16;x++){
    int wx=chunkX*16+x,wy=sectionY*16+y,wz=chunkZ*16+z;
-   CompoundTag value=allocated(wx,wy,wz)?state(fixtureBlock(wx,wy,wz,singleCellSeal,ground,domain)):cell(previous,x,y,z);
+   CompoundTag value=allocated(wx,wy,wz)?manual?manualState(wx,wy,wz):state(fixtureBlock(wx,wy,wz,singleCellSeal,ground,domain)):cell(previous,x,y,z);
    String key=value.toString();Integer index=indices.get(key);if(index==null){index=palette.size();indices.put(key,index);palette.add(value);}
    cells[(y<<8)|(z<<4)|x]=index;
   }
@@ -70,8 +104,10 @@ public final class PrepareFlightTank {
  private static ListTag vector(double... values){ListTag t=new ListTag();for(double v:values)t.add(DoubleTag.valueOf(v));return t;}
  private static ListTag rotation(float yaw,float pitch){ListTag t=new ListTag();t.add(FloatTag.valueOf(yaw));t.add(FloatTag.valueOf(pitch));return t;}
  public static void main(String[] args)throws Exception{
-  if(args.length!=2&&(args.length!=3||!Set.of("SINGLE_CELL_SEAL","STANDARD_FIREBALL","OVERHEAD_BOMBING","GROUND_COMBAT","DOMAIN_COMBAT","DOMAIN_RELIABILITY","GROUND_RELIABILITY").contains(args[2])))throw new IllegalArgumentException("PRIVATE_FIXTURE_VARIANT_REQUIRED");
+  if(args.length!=2&&(args.length!=3||!Set.of("SINGLE_CELL_SEAL","STANDARD_FIREBALL","OVERHEAD_BOMBING","GROUND_COMBAT","DOMAIN_COMBAT","DOMAIN_RELIABILITY","GROUND_RELIABILITY","MANUAL_RALLY_SAFE").contains(args[2])))throw new IllegalArgumentException("PRIVATE_FIXTURE_VARIANT_REQUIRED");
+  boolean manual=args.length==3&&args[2].equals("MANUAL_RALLY_SAFE");
   boolean groundReliability=args.length==3&&args[2].equals("GROUND_RELIABILITY"),reliability=args.length==3&&(args[2].equals("DOMAIN_RELIABILITY")||groundReliability),singleCellSeal=args.length==3&&!reliability,overhead=args.length==3&&args[2].equals("OVERHEAD_BOMBING"),ground=args.length==3&&(args[2].equals("GROUND_COMBAT")||groundReliability),domain=args.length==3&&(args[2].equals("DOMAIN_COMBAT")||reliability),standard=args.length==3&&(args[2].equals("STANDARD_FIREBALL")||overhead||ground||domain);
+  if(manual){domain=true;standard=true;singleCellSeal=false;}
   // This offline tool edits raw NBT only; Forge bootstrap requires a real launcher.
   net.minecraft.SharedConstants.tryDetectVersion();
   Path root=Path.of(args[0]).toRealPath(),allowed=Path.of(args[1]).toRealPath();
@@ -84,6 +120,7 @@ public final class PrepareFlightTank {
    data.putBoolean("confirmedExperimentalSettings",true);data.putByte("Difficulty",(byte)2);data.putInt("GameType",0);
    if(standard)data.getCompound("GameRules").putString("mobGriefing","false");
    player.put("Pos",domain?vector(26,224,20):vector(9.5,224,3.5));player.put("Motion",vector(0,0,0));player.put("Rotation",rotation(0,overhead?-90:-18));player.putInt("playerGameType",0);player.putFloat("Health",20);
+   if(manual)manualPlayer(data,player);
    CompoundTag abilities=player.getCompound("abilities");for(String key:new String[]{"flying","mayfly","invulnerable","instabuild"})abilities.putBoolean(key,false);
    NbtIo.writeCompressed(level,world.resolve("level.dat").toFile());Path playerFile=world.resolve("playerdata/"+player.getUUID("UUID")+".dat");if(Files.exists(playerFile))NbtIo.writeCompressed(player,playerFile.toFile());
    Path regions=world.resolve("region");CompoundTag seed;
@@ -98,7 +135,7 @@ public final class PrepareFlightTank {
      for(int sy=13;sy<=15;sy++){
       CompoundTag previous=new CompoundTag();int found=-1;
       for(int i=0;i<sections.size();i++)if(sections.getCompound(i).getByte("Y")==sy){previous=sections.getCompound(i);found=i;break;}
-      CompoundTag replacement=section(previous,sy,cx,cz,singleCellSeal,ground,domain);if(found<0)sections.add(replacement);else sections.set(found,replacement);
+      CompoundTag replacement=section(previous,sy,cx,cz,singleCellSeal,ground,domain,manual);if(found<0)sections.add(replacement);else sections.set(found,replacement);
      }
      chunk.put("sections",sections);chunk.remove("Heightmaps");chunk.putBoolean("isLightOn",false);
      try(var output=region.getChunkDataOutputStream(pos)){NbtIo.write(chunk,output);}region.flush();
@@ -117,12 +154,13 @@ public final class PrepareFlightTank {
    JsonObject poses=new JsonObject(),pose=new JsonObject();pose.addProperty("x",domain?26d:9.5d);pose.addProperty("y",domain&&!ground?228d:ground?225d:230d);pose.addProperty("z",domain?32d:9.5d);pose.addProperty("yaw",0f);pose.addProperty("pitch",0f);for(String key:new String[]{"vx","vy","vz"})pose.addProperty(key,0d);poses.add(SUBJECT.toString(),pose);scope.add("subjectPoses",poses);
    JsonObject fixture=new JsonObject();fixture.add("scope",scope);fixture.addProperty("baselineHash",KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(scope)));fixture.addProperty("subjectUuid",SUBJECT.toString());fixture.addProperty("playerUuid",player.getUUID("UUID").toString());
    fixture.addProperty("seedReimuRemoved",seedReimuRemoved);
-   fixture.addProperty("variant",groundReliability?"GROUND_RELIABILITY":reliability?"DOMAIN_RELIABILITY":domain?"DOMAIN_COMBAT":ground?"GROUND_COMBAT":overhead?"OVERHEAD_BOMBING":standard?"STANDARD_FIREBALL":singleCellSeal?"SINGLE_CELL_SEAL":"OPAQUE_LOS_WALL");
+   fixture.addProperty("variant",manual?"MANUAL_RALLY_SAFE":groundReliability?"GROUND_RELIABILITY":reliability?"DOMAIN_RELIABILITY":domain?"DOMAIN_COMBAT":ground?"GROUND_COMBAT":overhead?"OVERHEAD_BOMBING":standard?"STANDARD_FIREBALL":singleCellSeal?"SINGLE_CELL_SEAL":"OPAQUE_LOS_WALL");
    if(domain){fixture.addProperty("domainFloorY",224);fixture.addProperty("subjectInitialY",ground?225:228);fixture.addProperty("entityChunkX",1);fixture.addProperty("entityChunkZ",2);}
    if(ground){fixture.addProperty("groundFloorY",224);fixture.addProperty("groundCeilingY",230);fixture.addProperty("subjectInitialY",225);}
-   fixture.addProperty("offlinePlayerCameraPitch",overhead?-90:-18);
+   fixture.addProperty("offlinePlayerCameraPitch",manual?0:overhead?-90:-18);
+   if(manual){fixture.addProperty("resistanceAmplifier",127);fixture.addProperty("resistanceClearsOnDeath",true);fixture.addProperty("manualEntry","Right-click the oak button beside the iron door, then walk through. Respawn returns inside this protected room; ordinary damage acceptance is excluded.");}
    fixture.addProperty("subjectHealth",100);fixture.addProperty("playerHealth",20);fixture.addProperty("mobGriefingDisabled",standard);
-   fixture.addProperty("changes","PRIVATE_ONLY: offline52x24x52 bounded Tank shell, survival Player observation fixture, "+(reliability?"open Domain reliability baseline without ScopedOwner authority":singleCellSeal?"single-cell initial seal":"opaque LOS wall")+", active ghast; seed Reimu excluded from room chunks. "+(reliability?"Explicit reliability activation in private verification JAR; no natural-selection proof.":"Runtime window opening only through registered owner block actions."));
+   fixture.addProperty("changes","PRIVATE_ONLY: offline52x24x52 bounded Tank shell, survival Player observation fixture, "+(manual?"protected manual entry/respawn and reload-safe Resistance127; no damage/difficulty acceptance":reliability?"open Domain reliability baseline without ScopedOwner authority":singleCellSeal?"single-cell initial seal":"opaque LOS wall")+", active ghast; seed Reimu excluded from room chunks. "+(manual?"Human opens the ordinary button/door; no runtime mutation or forced selection.":reliability?"Explicit reliability activation in private verification JAR; no natural-selection proof.":"Runtime window opening only through registered owner block actions."));
    Files.writeString(root.resolve("fixture.json"),fixture+"\n",StandardOpenOption.CREATE_NEW);
    JsonObject owner=JsonParser.parseString(Files.readString(world.resolve("kneekura-tank-owner.json"))).getAsJsonObject(),recipe=owner.getAsJsonObject("recipe");
    recipe.addProperty("preset","custom");JsonObject sizes=recipe.getAsJsonObject("dimensions");sizes.addProperty("width",SIZE);sizes.addProperty("height",HEIGHT);sizes.addProperty("depth",SIZE);owner.addProperty("recipeHash","sha256:"+KneekuraDebugActionJournal.sha256(KneekuraDebugActionJournal.canonical(recipe)));
