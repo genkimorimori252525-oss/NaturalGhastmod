@@ -27,7 +27,7 @@ import java.util.UUID;
 
 /** Dedicated baseline; deliberately outside vanilla LargeFireball's1000-damage branch. */
 public class StandardSoutouFireball extends Fireball implements IEntityAdditionalSpawnData {
-    public static final float VISUAL_SCALE=1.5F, PICK_RADIUS=1.5F, EXPLOSION_RADIUS=1.5F;
+    public static final float VISUAL_SCALE=4.0F, PICK_RADIUS=1.5F, EXPLOSION_RADIUS=1.5F;
     public static final float DIRECT_DAMAGE=9, RETURN_DAMAGE=20;
     private static final EntityDataAccessor<CompoundTag> FLIGHT=SynchedEntityData.defineId(StandardSoutouFireball.class,EntityDataSerializers.COMPOUND_TAG);
     private UUID origin,deflector,directVictim;

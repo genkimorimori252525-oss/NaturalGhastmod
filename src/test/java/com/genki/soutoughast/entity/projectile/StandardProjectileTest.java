@@ -26,7 +26,7 @@ public final class StandardProjectileTest {
         tag.remove("StandardDeflector");check(!StandardProvenance.read(tag).playerDeflected(),"missing deflector disables admission");
         check(state.matchesReturn(origin,player)&&!state.matchesReturn(UUID.randomUUID(),player),"origin identity is required");
         check(!state.matchesReturn(origin,UUID.randomUUID()),"live owner must match deflector");
-        check(StandardSoutouFireball.PICK_RADIUS==1.5F&&StandardSoutouFireball.VISUAL_SCALE==1.5F,"independent interaction and visual scales");
+        check(StandardSoutouFireball.PICK_RADIUS==1.5F&&StandardSoutouFireball.VISUAL_SCALE==4.0F,"larger presentation keeps independent interaction scale");
         System.out.println("PASS: "+checks+" mapped Standard provenance/type checks (no real-input acceptance)");
     }
     private static void check(boolean value,String message){checks++;if(!value)throw new AssertionError(message);}

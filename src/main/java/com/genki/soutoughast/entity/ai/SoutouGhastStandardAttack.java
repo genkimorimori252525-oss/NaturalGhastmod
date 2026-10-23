@@ -3,6 +3,7 @@ package com.genki.soutoughast.entity.ai;
 import com.genki.soutoughast.entity.SoutouGhast;
 import com.genki.soutoughast.entity.ai.flight.FlightVector;
 import com.genki.soutoughast.entity.ai.flight.RallyReaction;
+import com.genki.soutoughast.entity.ai.flight.RallyAim;
 import com.genki.soutoughast.entity.ai.flight.StandardAttack;
 import com.genki.soutoughast.entity.ai.flight.CommittedTrajectory;
 import com.genki.soutoughast.entity.ai.flight.CommittedProfile;
@@ -26,6 +27,7 @@ public final class SoutouGhastStandardAttack {
     private final StandardAttack attack=new StandardAttack();
     private final RallyReaction rally=new RallyReaction();
     private StandardSoutouFireball incoming;
+    private FlightVector lockedRallyTarget;
     private UUID targetUuid;
     private int fired;
     private final ProjectileSelector selector=new ProjectileSelector();
@@ -53,12 +55,12 @@ public final class SoutouGhastStandardAttack {
     public CommittedProfile committedProfile(){return committedProfile;}
     public long profileCueTick(){return profileCueTick;}
     public boolean engaged(){return attack.state().face()||rally.state().face();}
-    public void reset(){attack.reset();rally.reset();incoming=null;targetUuid=null;selector.reset();stationarity.reset();chargeResponse.reset();cover.reset();lockedEye=null;lockedLanding=null;committedProfile=null;ghast.setCharging(false);}
+    public void reset(){attack.reset();rally.reset();incoming=null;lockedRallyTarget=null;targetUuid=null;selector.reset();stationarity.reset();chargeResponse.reset();cover.reset();lockedEye=null;lockedLanding=null;committedProfile=null;ghast.setCharging(false);}
     public Vec3 tick(LivingEntity target,boolean visible,boolean movementFeint){
         selector.tick();
         boolean present=target!=null&&target.isAlive();
         if(!present||!target.getUUID().equals(targetUuid)){
-            attack.invalidateTarget();rally.reset();incoming=null;targetUuid=present?target.getUUID():null;
+            attack.invalidateTarget();rally.reset();incoming=null;lockedRallyTarget=null;targetUuid=present?target.getUUID():null;
             selector.reset();stationarity.reset();chargeResponse.reset();cover.reset();lockedEye=null;lockedLanding=null;committedProfile=null;
         }
         chargeResponse.tick(ghast.level().getGameTime());
@@ -89,16 +91,23 @@ public final class SoutouGhastStandardAttack {
             for(var candidate:candidates.stream().limit(16).toList()){
                 if(!observedIncoming(candidate))continue;
                 candidate.markBossAttempt();
-                if(rally.begin(candidate.getId(),from(aim),ghast.getRandom().nextDouble())){incoming=candidate;break;}
+                var endpoint=RallyAim.lock(from(candidate.position()),from(target.getBoundingBox().getCenter()),from(observedVelocity));
+                if(rally.begin(candidate.getId(),endpoint.subtract(from(ghast.getEyePosition())),ghast.getRandom().nextDouble())){incoming=candidate;lockedRallyTarget=endpoint;break;}
             }
         }
         Vec3 look=null;
         if(incoming!=null){
-            boolean observed=incoming.isAlive()&&incoming.isOwnReturn(ghast)&&observedIncoming(incoming);
+            boolean observed=visible&&incoming.isAlive()&&incoming.isOwnReturn(ghast)&&observedIncoming(incoming);
             boolean reach=incoming.getBoundingBox().inflate(1.5).intersects(ghast.getBoundingBox());
             var reaction=rally.step(observed,reach);look=to(reaction.direction());
-            if(reaction.fire())incoming.returnByBoss(ghast,look);
-            if(!reaction.face())incoming=null;
+            if(reaction.fire()){
+                // The ball may be several blocks from the boss's eye when reach admits it.
+                // Keep the telegraphed point frozen, but use the ball's actual launch origin.
+                Vec3 direction=to(RallyAim.direction(from(incoming.position()),lockedRallyTarget));
+                boolean clear=ghast.level().clip(new ClipContext(incoming.position(),to(lockedRallyTarget),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,incoming)).getType()==HitResult.Type.MISS;
+                if(clear)incoming.returnByBoss(ghast,direction);
+            }
+            if(!reaction.face()){incoming=null;lockedRallyTarget=null;}
             // Reaction is the sole offensive tell this tick; regular charge waits.
             chargeResponse.observe(observedPosition,attack.step(null,false),false);ghast.setCharging(reaction.face()||reaction.fire());return look;
         }
