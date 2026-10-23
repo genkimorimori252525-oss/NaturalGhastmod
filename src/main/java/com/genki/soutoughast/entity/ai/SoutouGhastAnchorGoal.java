@@ -90,9 +90,11 @@ public final class SoutouGhastAnchorGoal extends Goal {
         }
         // No live geometry or velocity is read after LOS loss. Committed recipes use locked waypoints.
         FlightVector observedVelocity=visible?SoutouGhastInertialMoveControl.from(target.getDeltaMovement()):null;
-        double variation=ghast.getStandardAttack().engaged()?0:ghast.getRandom().nextDouble();
+        // Attack commitment suppresses new feints, not the independent ambient swim course.
+        double variation=ghast.getRandom().nextDouble();
+        double tacticalVariation=ghast.getStandardAttack().engaged()?0:variation;
         var plan = brain.step(anchor,visible?lastObservedPosition:null,observedVelocity,boss,visible,
-                control().getMobilityContext(),sample,variation,control()::hasDirectionalClearance,control()::hasManeuverClearance,
+                control().getMobilityContext(),sample,tacticalVariation,control()::hasDirectionalClearance,control()::hasManeuverClearance,
                 ()->planner.step(anchor,lastObservedPosition,boss,FlightVector.ZERO,
                         control().getMobilityContext(),sample,variation,control()::hasDirectionalClearance));
         control().setTacticalState(brain.state());

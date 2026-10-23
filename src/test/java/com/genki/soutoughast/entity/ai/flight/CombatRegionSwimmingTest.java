@@ -36,7 +36,7 @@ public final class CombatRegionSwimmingTest {
         check(Math.max(maxX-minX,maxZ-minZ)>20,"actual swimming spans far more than a10-block neighborhood");
         check(maxY-minY>3,"actual swimming includes vertical motion");
         check(rest<80,"normal swimming does not repeatedly stop");
-        check(peakSpeed>.34&&totalSpeed/4000>.2,"ordinary production swimming actually uses raised pace without the high-speed ceiling");
+        check(peakSpeed>.38&&totalSpeed/4000>.24,"ordinary production swimming actually uses raised pace without the high-speed ceiling");
         int[] queries={0};planner.reset();
         var denied=planner.step(anchor,target,boss,FORWARD,MobilityContext.Kind.OPEN_AIR,OPEN,.8,d->{queries[0]++;return false;});
         check(denied.intent().mode()!=FlightController.Mode.MOVE,"blocked swimming cannot issue thrust");

@@ -55,13 +55,13 @@ public final class MovementPlanner {
             if(score<best){best=score;selected=candidate;}
         }
         if(selected==null){waypoint=null;remaining=0;eased=FlightVector.ZERO;return stopped(MovementPrimitive.BRAKE,region);}
-        waypoint=selected;remaining=40+(int)(variation*80);swimSpeed=.2+.16*variation;
+        waypoint=selected;remaining=40+(int)(variation*80);swimSpeed=.24+.16*variation;
         swimmingPrimitive=variation<.2?MovementPrimitive.HOLD:MovementPrimitive.DRIFT;
         return moving(waypoint.subtract(boss),region);
     }
     private Plan moving(FlightVector error,CombatAnchor.Evaluation region){
         FlightVector desired=error.normalized().scale(swimSpeed);
-        eased=eased.add(desired.subtract(eased).limited(.016));
+        eased=eased.add(desired.subtract(eased).limited(.019));
         return new Plan(swimmingPrimitive,FlightController.Intent.move(eased,eased.length()),waypoint,region.range(),true);
     }
     private static Plan stopped(MovementPrimitive primitive,CombatAnchor.Evaluation region){
