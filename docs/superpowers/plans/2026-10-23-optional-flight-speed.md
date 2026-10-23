@@ -17,3 +17,10 @@ Grouped flight-core suite PASS, including12,036region/swimming assertions and hi
 These are source/model/build checks. A new packaged product/profile has no native high-speed or subjective movement acceptance until actually observed. The previous product's Rally acceptance does not establish the new artifact's flight acceptance. Ground plain-Java Bootstrap remains BLOCKED pending a transformed Forge harness; do not weaken it or infer full non-danmaku release.
 
 Recovery: select the previous immutable product/profile55a361e9; revert only this source unit if needed. Preserve original85raw world files, accepted/verified JARs, failed runs, finite leases, native STOP/owned exit and evidence finalization. Do not restore old runtime infrastructure.
+
+
+## Packaged speed product and native window
+
+Source2b21bd285c89215fc0cb1169abf7c23477b897cc pushed; distinct uninstrumented mapped product SHA2563fffaa3b09a6db7dedd69e34c5a367daccb811615106181e975f18085a7f8156,178classes. Compared with human-accepted Rally product55a361e9,172classes remain byte-identical; five expected controller/intent/anchor/Overhead/sole-writer classes change and FlightChunkCoverage is added. No private probes. Exact package/material preservation receipt9dd26e9e0f7849eab746388d3312c349; fresh sealed profile preparationec7b27b3d76b4128bd9eda4e3a475af1. Previous accepted/verified artifacts remain unchanged. Final compact Astra source check found no Important/Critical blocker after the loaded-route fix.
+
+Human explicitly available before fresh case161f8906 launch. Same immutable TechHubf09595cb host and safety/Night-Vision/original-grid fixture; finite2400ticks/120s/512events/0captures. Actual READY27.345s. This is startup only; await independent closure/preservation and human observations. The sparse interaction lane does not measure peak flight speed. Do not claim measured1.625speed, arbitrary obstacle safety or all-move acceptance from this window.
