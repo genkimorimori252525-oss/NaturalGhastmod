@@ -3,3 +3,7 @@
 # are changed when only line endings change.
 src/generated/**/.cache/cache text eol=lf
 src/generated/**/*.json text eol=lf
+
+# Canonical supplied scores and sidecars are pinned by raw-byte SHA256.
+src/main/resources/data/soutou_ghast/danmaku/*.json -text
+src/main/resources/data/soutou_ghast/danmaku_visual/*.json -text

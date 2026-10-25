@@ -1,6 +1,6 @@
 package com.genki.soutoughast.entity.ai.flight;
 
-/** Major spacing is independent of ordinary projectile selection; Grand Danmaku is absent. */
+/** Shared major spacing is independent of ordinary projectile selection. */
 public final class MajorActionDirector {
     private int quiet=240,recent;
     private boolean active;
@@ -39,6 +39,12 @@ public final class MajorActionDirector {
         if(active)return reject("MAJOR_ACTIVE");if(quiet>0)return reject("QUIET_INTERVAL");if(recent>0)return reject("RECENT_MAJOR");
         if(!prepared)return reject("DOMAIN_PREPARATION");if(offensiveBusy)return reject("OFFENSE_BUSY");
         boolean selected=Double.isFinite(variation)&&variation>.99&&variation<=1;decision=selected?"DOMAIN_ELIGIBLE":"VARIATION";return selected;
+    }
+    public boolean shouldBeginGrandDanmaku(boolean observedClearance,boolean offensiveBusy,double range,double variation){
+        if(active)return reject("MAJOR_ACTIVE");if(quiet>0)return reject("QUIET_INTERVAL");if(recent>0)return reject("RECENT_MAJOR");
+        if(!observedClearance)return reject("OBSERVATION_OR_CLEARANCE");if(offensiveBusy)return reject("OFFENSE_BUSY");
+        if(!Double.isFinite(range)||range<22||range>34)return reject("DANMAKU_RANGE");
+        boolean selected=Double.isFinite(variation)&&variation>.985&&variation<1;decision=selected?"DANMAKU_ELIGIBLE":"VARIATION";return selected;
     }
     public void began(){if(active)throw new IllegalStateException("ONE_MAJOR_ACTION_ONLY");active=true;recent=1200;}
     public void finished(){active=false;quiet=600;}

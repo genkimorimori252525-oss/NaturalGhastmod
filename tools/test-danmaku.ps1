@@ -16,3 +16,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Supplied canonical scores failed strict core a
 
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.danmaku.core.WorldDanmakuTest $scores
 if ($LASTEXITCODE -ne 0) { throw 'World frame/swarm/collision contracts failed.' }
+
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.danmaku.core.DanmakuPlaybackTest $scores
+if ($LASTEXITCODE -ne 0) { throw 'Danmaku replica/hash/ordering/trail lifetime contracts failed.' }

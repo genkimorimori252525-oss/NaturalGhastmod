@@ -70,6 +70,8 @@ public class SoutouGhast extends Ghast {
     public SoutouGhastGroundCombat getGroundCombat(){return groundCombat;}
     private final SoutouGhastDomainAttack domainAttack=new SoutouGhastDomainAttack(this);
     public SoutouGhastDomainAttack getDomainAttack(){return domainAttack;}
+    private final com.genki.soutoughast.entity.ai.SoutouGhastGrandDanmaku grandDanmaku=new com.genki.soutoughast.entity.ai.SoutouGhastGrandDanmaku(this);
+    public com.genki.soutoughast.entity.ai.SoutouGhastGrandDanmaku getGrandDanmaku(){return grandDanmaku;}
     private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> GROUNDED=net.minecraft.network.syncher.SynchedEntityData.defineId(SoutouGhast.class,net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
     public boolean groundPresentation(){return entityData.get(GROUNDED);}
     private static final net.minecraft.network.syncher.EntityDataAccessor<Float> MAJOR_PITCH=net.minecraft.network.syncher.SynchedEntityData.defineId(SoutouGhast.class,net.minecraft.network.syncher.EntityDataSerializers.FLOAT);

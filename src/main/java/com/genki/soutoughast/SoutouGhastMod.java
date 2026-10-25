@@ -92,11 +92,13 @@ public class SoutouGhastMod
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         context.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        context.registerConfig(ModConfig.Type.CLIENT, com.genki.soutoughast.danmaku.GrandDanmakuClientConfig.SPEC);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {
         // Some common setup code
+        event.enqueueWork(()->{com.genki.soutoughast.danmaku.GrandDanmakuNetwork.register();com.genki.soutoughast.danmaku.GrandDanmakuAssets.ready();});
         LOGGER.info("HELLO FROM COMMON SETUP");
 
         if (Config.logDirtBlock)
