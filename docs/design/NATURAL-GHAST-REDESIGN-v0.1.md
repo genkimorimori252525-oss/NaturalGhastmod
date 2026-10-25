@@ -1284,3 +1284,10 @@ It is a different generation from the older same-named JAR recorded in the v0.02
 ## 2026-10-24 human amendment: firing-face attention
 
 While the firing expression is active, normal/profile/Rally and Ground shot presentation tightly follows the currently visible Player with yaw and visible pitch, independently of the retained movement course. This explicitly separates visual attention from committed projectile direction/endpoint; it does not introduce homing, hidden tracking or camera-based region movement. Ordinary release eases and declared major/relocation poses keep precedence. [Implementation and scoped checks](../superpowers/plans/2026-10-24-attack-face-tracking.md). Native acceptance is pending.
+
+
+## Human amendment: ordinary-shot rhythm (2026-10-25 JST)
+
+Ordinary flight alternates free floating with a brief soft aiming pause. Never hard-stop actual velocity or require arrival at an exact retained point. Preserve the broad boss-owned region and its natural course. Admit one decision opportunity every60–90ticks (3–4.5seconds), sampled once at charge admission; first scheduled release is60–90ticks after target acquisition. At charge tick19, before the special-profile cue/commit, choose fire, deliberate decline or mandatory safety cancellation from current visible geometry and one stored inclination. Do not reroll every tick or shorten the next deadline because a shot was declined. Keep30charge ticks and20face-recovery ticks; soft motion hold ends4ticks after decline versus6ticks after firing, then eases back into ordinary float. Safety/return/feints, Rally, cover Lob, Ground and majors retain separate control. [Implementation plan](../superpowers/plans/2026-10-25-ordinary-shot-rhythm.md).
+
+The human clarified that NaturalGhast is the completion target; existing Tank facilities are used for verification, not expanded as a second product scope. No further manual inspection is requested. Automated technical cases remain distinct from human gameplay/readability/balance acceptance. Grand Danmaku and Ground barrage/fans remain excluded.

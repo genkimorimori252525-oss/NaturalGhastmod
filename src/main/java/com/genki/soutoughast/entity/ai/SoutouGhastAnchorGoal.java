@@ -103,12 +103,12 @@ public final class SoutouGhastAnchorGoal extends Goal {
                 ()->planner.step(anchor,lastObservedPosition,boss,FlightVector.ZERO,
                         control().getMobilityContext(),sample,variation,control()::hasDirectionalClearance));
         control().setTacticalState(brain.state());
-        control().setMovementPlan(plan);
         if(visible){
             Vec3 look=target.getEyePosition().subtract(ghast.getEyePosition());
             ((SoutouGhastFlightLookControl)ghast.getLookControl()).setIntent(look);
         }
         Vec3 attackLook=ghast.getStandardAttack().tick(target,visible,brain.state().action()!=com.genki.soutoughast.entity.ai.flight.TacticalEvaluator.Action.DRIFT);
+        control().setMovementPlan(ghast.getStandardAttack().motionPlan(plan));
         if(attackLook!=null){
             var lookControl=(SoutouGhastFlightLookControl)ghast.getLookControl();
             // Presentation follows only currently observed geometry; shot commitment stays in the attack.

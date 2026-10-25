@@ -5,6 +5,9 @@ import com.genki.soutoughast.entity.ai.flight.FlightVector;
 import com.genki.soutoughast.entity.ai.flight.RallyReaction;
 import com.genki.soutoughast.entity.ai.flight.RallyAim;
 import com.genki.soutoughast.entity.ai.flight.StandardAttack;
+import com.genki.soutoughast.entity.ai.flight.StandardShotRhythm;
+import com.genki.soutoughast.entity.ai.flight.StandardAimingMotion;
+import com.genki.soutoughast.entity.ai.flight.MovementPlanner;
 import com.genki.soutoughast.entity.ai.flight.CommittedTrajectory;
 import com.genki.soutoughast.entity.ai.flight.CommittedProfile;
 import com.genki.soutoughast.entity.ai.flight.ProjectileSelector;
@@ -25,6 +28,8 @@ import java.util.UUID;
 public final class SoutouGhastStandardAttack {
     private final SoutouGhast ghast;
     private final StandardAttack attack=new StandardAttack();
+    private final StandardAimingMotion aimingMotion=new StandardAimingMotion();
+    private boolean rallyTick;
     private final RallyReaction rally=new RallyReaction();
     private StandardSoutouFireball incoming;
     private FlightVector lockedRallyTarget;
@@ -55,12 +60,21 @@ public final class SoutouGhastStandardAttack {
     public CommittedProfile committedProfile(){return committedProfile;}
     public long profileCueTick(){return profileCueTick;}
     public boolean engaged(){return attack.state().face()||rally.state().face();}
-    public void reset(){attack.reset();rally.reset();incoming=null;lockedRallyTarget=null;targetUuid=null;selector.reset();stationarity.reset();chargeResponse.reset();cover.reset();lockedEye=null;lockedLanding=null;committedProfile=null;ghast.setCharging(false);}
+    public boolean aiming(){return attack.aiming()&&!rallyTick;}
+    public StandardShotRhythm.Outcome shotDisposition(){return attack.lastOutcome();}
+    public int decisionsEvaluated(){return attack.decisionsEvaluated();}
+    public MovementPlanner.Plan motionPlan(MovementPlanner.Plan plan){
+        if(rallyTick||attack.coverCycle()){aimingMotion.reset();return plan;}
+        return aimingMotion.apply(plan,attack.aiming());
+    }
+    public void reset(){attack.reset();aimingMotion.reset();rallyTick=false;rally.reset();incoming=null;lockedRallyTarget=null;targetUuid=null;selector.reset();stationarity.reset();chargeResponse.reset();cover.reset();lockedEye=null;lockedLanding=null;committedProfile=null;ghast.setCharging(false);}
     public Vec3 tick(LivingEntity target,boolean visible,boolean movementFeint){
-        selector.tick();
+        selector.tick();rallyTick=false;if(movementFeint)aimingMotion.reset();
         boolean present=target!=null&&target.isAlive();
         if(!present||!target.getUUID().equals(targetUuid)){
-            attack.invalidateTarget();rally.reset();incoming=null;lockedRallyTarget=null;targetUuid=present?target.getUUID():null;
+            attack.invalidateTarget();aimingMotion.reset();
+            if(present&&attack.state().phase()==StandardAttack.Phase.IDLE)attack.delayInitial(StandardShotRhythm.initialQuiet(ghast.getRandom().nextDouble()));
+            rally.reset();incoming=null;lockedRallyTarget=null;targetUuid=present?target.getUUID():null;
             selector.reset();stationarity.reset();chargeResponse.reset();cover.reset();lockedEye=null;lockedLanding=null;committedProfile=null;
         }
         chargeResponse.tick(ghast.level().getGameTime());
@@ -84,7 +98,7 @@ public final class SoutouGhastStandardAttack {
         cover.observe(targetUuid,ghast.level().getGameTime(),observedEye,observedLanding,context(),movementFeint);
         if(wasCover&&!cover.active())cancelCover();
         // A visible charge cannot donate its age/recipe to a newly hidden cover attack.
-        if(!visible&&!cover.active()&&attack.state().phase()==StandardAttack.Phase.CHARGE){attack.step(null,false);committedProfile=null;}
+        if(!visible&&!cover.active()&&attack.state().phase()==StandardAttack.Phase.CHARGE){attack.cancelCharge();committedProfile=null;}
         if(incoming==null&&!attack.state().face()&&!movementFeint&&visible){
             var candidates=ghast.level().getEntitiesOfClass(StandardSoutouFireball.class,ghast.getBoundingBox().inflate(14),p->p.canBossReact(ghast));
             candidates.sort(java.util.Comparator.comparingDouble(ghast::distanceToSqr));
@@ -97,6 +111,7 @@ public final class SoutouGhastStandardAttack {
         }
         Vec3 look=null;
         if(incoming!=null){
+            rallyTick=true;
             boolean observed=visible&&incoming.isAlive()&&incoming.isOwnReturn(ghast)&&observedIncoming(incoming);
             boolean reach=incoming.getBoundingBox().inflate(1.5).intersects(ghast.getBoundingBox());
             var reaction=rally.step(observed,reach);look=to(reaction.direction());
@@ -135,7 +150,18 @@ public final class SoutouGhastStandardAttack {
             }
         }
         boolean eligible=!movementFeint&&(visible?ghast.distanceToSqr(target)>=64&&ghast.distanceToSqr(target)<=4096:hiddenCover);
-        var state=coverStarted?attack.state():attack.step(aim==null?null:from(aim),eligible);
+        StandardShotRhythm.Cycle opportunity=null;
+        if(eligible&&!hiddenCover&&attack.readyForCycle())opportunity=StandardShotRhythm.sample(ghast.getRandom().nextDouble(),ghast.getRandom().nextDouble());
+        var disposition=StandardShotRhythm.CLEAR;
+        if(visible&&!attack.coverCycle()&&attack.state().phase()==StandardAttack.Phase.CHARGE&&attack.state().ticks()==18){
+            Vec3 eye=ghast.getEyePosition(),muzzle=eye.add(aim.scale(3));
+            boolean muzzleClear=CommittedPathClearance.loadedRay(ghast.level(),eye,muzzle)
+                    &&ghast.level().clip(new ClipContext(eye,muzzle,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,ghast)).getType()==HitResult.Type.MISS;
+            var region=((SoutouGhastInertialMoveControl)ghast.getMoveControl()).getCombatRegion();
+            disposition=new StandardShotRhythm.Context(true,region!=null&&region.contains(from(ghast.position())),muzzleClear,
+                    ghast.distanceTo(target),ghast.getDeltaMovement().length(),observedVelocity.subtract(ghast.getDeltaMovement()).length());
+        }
+        var state=coverStarted?attack.state():attack.step(aim==null?null:from(aim),eligible,opportunity,disposition);
         if(state.phase()==StandardAttack.Phase.CHARGE&&state.ticks()<20&&visible){
             lockedEye=aimPoint;lockedLanding=new Vec3(aimPoint.x,target.getY()-.25,aimPoint.z);
             curveSide=observedVelocity.dot(new Vec3(-aim.z,0,aim.x))>=0?-1:1;
