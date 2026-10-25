@@ -3,6 +3,7 @@ package com.genki.soutoughast.entity.ai;
 import com.genki.soutoughast.entity.SoutouGhast;
 import com.genki.soutoughast.entity.ai.flight.FlightVector;
 import com.genki.soutoughast.entity.ai.flight.RallyReaction;
+import com.genki.soutoughast.entity.ai.flight.RallyFeint;
 import com.genki.soutoughast.entity.ai.flight.RallyAim;
 import com.genki.soutoughast.entity.ai.flight.StandardAttack;
 import com.genki.soutoughast.entity.ai.flight.StandardShotRhythm;
@@ -31,6 +32,8 @@ public final class SoutouGhastStandardAttack {
     private final StandardAimingMotion aimingMotion=new StandardAimingMotion();
     private boolean rallyTick;
     private final RallyReaction rally=new RallyReaction();
+    private final RallyFeint rallyFeint=new RallyFeint();
+    private MovementPlanner.Plan rallyFeintMotion;
     private StandardSoutouFireball incoming;
     private FlightVector lockedRallyTarget;
     private UUID targetUuid;
@@ -59,17 +62,18 @@ public final class SoutouGhastStandardAttack {
     public double observedDisplacement(){return stationarity.displacement();}
     public CommittedProfile committedProfile(){return committedProfile;}
     public long profileCueTick(){return profileCueTick;}
-    public boolean engaged(){return attack.state().face()||rally.state().face();}
+    public boolean engaged(){return attack.state().face()||rally.state().face()||rallyFeint.active();}
     public boolean aiming(){return attack.aiming()&&!rallyTick;}
     public StandardShotRhythm.Outcome shotDisposition(){return attack.lastOutcome();}
     public int decisionsEvaluated(){return attack.decisionsEvaluated();}
     public MovementPlanner.Plan motionPlan(MovementPlanner.Plan plan){
+        if(rallyFeintMotion!=null){aimingMotion.reset();return rallyFeintMotion;}
         if(rallyTick||attack.coverCycle()){aimingMotion.reset();return plan;}
         return aimingMotion.apply(plan,attack.aiming());
     }
-    public void reset(){attack.reset();aimingMotion.reset();rallyTick=false;rally.reset();incoming=null;lockedRallyTarget=null;targetUuid=null;selector.reset();stationarity.reset();chargeResponse.reset();cover.reset();lockedEye=null;lockedLanding=null;committedProfile=null;ghast.setCharging(false);}
+    public void reset(){attack.reset();aimingMotion.reset();rallyTick=false;rally.reset();rallyFeint.reset();rallyFeintMotion=null;incoming=null;lockedRallyTarget=null;targetUuid=null;selector.reset();stationarity.reset();chargeResponse.reset();cover.reset();lockedEye=null;lockedLanding=null;committedProfile=null;ghast.setCharging(false);}
     public Vec3 tick(LivingEntity target,boolean visible,boolean movementFeint){
-        selector.tick();rallyTick=false;if(movementFeint)aimingMotion.reset();
+        selector.tick();rallyTick=false;rallyFeintMotion=null;if(movementFeint)aimingMotion.reset();
         boolean present=target!=null&&target.isAlive();
         if(!present||!target.getUUID().equals(targetUuid)){
             attack.invalidateTarget();aimingMotion.reset();
@@ -77,6 +81,7 @@ public final class SoutouGhastStandardAttack {
             rally.reset();incoming=null;lockedRallyTarget=null;targetUuid=present?target.getUUID():null;
             selector.reset();stationarity.reset();chargeResponse.reset();cover.reset();lockedEye=null;lockedLanding=null;committedProfile=null;
         }
+        rallyFeint.observeSubject(present?target.getUUID():null,ghast.level().getGameTime());
         chargeResponse.tick(ghast.level().getGameTime());
         if(!present){
             var committed=attack.step(null,false);chargeResponse.observe(null,committed,false);ghast.setCharging(committed.face());
@@ -99,17 +104,37 @@ public final class SoutouGhastStandardAttack {
         if(wasCover&&!cover.active())cancelCover();
         // A visible charge cannot donate its age/recipe to a newly hidden cover attack.
         if(!visible&&!cover.active()&&attack.state().phase()==StandardAttack.Phase.CHARGE){attack.cancelCharge();committedProfile=null;}
-        if(incoming==null&&!attack.state().face()&&!movementFeint&&visible){
+        if(incoming==null&&!rallyFeint.active()&&!attack.state().face()&&!movementFeint&&visible){
             var candidates=ghast.level().getEntitiesOfClass(StandardSoutouFireball.class,ghast.getBoundingBox().inflate(14),p->p.canBossReact(ghast));
             candidates.sort(java.util.Comparator.comparingDouble(ghast::distanceToSqr));
             for(var candidate:candidates.stream().limit(16).toList()){
                 if(!observedIncoming(candidate))continue;
                 candidate.markBossAttempt();
                 var endpoint=RallyAim.lock(from(candidate.position()),from(target.getBoundingBox().getCenter()),from(observedVelocity));
-                if(rally.begin(candidate.getId(),endpoint.subtract(from(ghast.getEyePosition())),ghast.getRandom().nextDouble())){incoming=candidate;lockedRallyTarget=endpoint;break;}
+                if(rally.begin(candidate.getId(),endpoint.subtract(from(ghast.getEyePosition())),ghast.getRandom().nextDouble())){
+                    incoming=candidate;lockedRallyTarget=endpoint;
+                    var control=(SoutouGhastInertialMoveControl)ghast.getMoveControl();
+                    // Only after two actual ordinary returns to this same observed deflector.
+                    if(targetUuid.equals(candidate.deflectorUuid())&&rallyFeint.learned(ghast.level().getGameTime())
+                            &&rallyFeint.begin(candidate.getUUID(),ghast.level().getGameTime(),from(ghast.position()),from(candidate.getDeltaMovement()),
+                                control.getCombatRegion(),context(),ghast.getRandom().nextDouble(),this::rallyFeintRoute))rally.reset();
+                    break;
+                }
             }
         }
         Vec3 look=null;
+        if(rallyFeint.active()){
+            rallyTick=true;
+            boolean observed=incoming!=null&&incoming.isAlive()&&incoming.isOwnReturn(ghast)&&observedIncoming(incoming);
+            var control=(SoutouGhastInertialMoveControl)ghast.getMoveControl();
+            rallyFeintMotion=rallyFeint.step(ghast.level().getGameTime(),visible&&!movementFeint,observed,
+                    control.getCombatRegion(),from(ghast.position()),context(),this::rallyFeintRoute);
+            chargeResponse.observe(observedPosition,attack.step(null,false),false);
+            ghast.setCharging(rallyFeint.face());
+            // A committed feint never redirects this projectile, even on abort or early collision.
+            if(!rallyFeint.active()){incoming=null;lockedRallyTarget=null;}
+            return visible?aim:null;
+        }
         if(incoming!=null){
             rallyTick=true;
             boolean observed=visible&&incoming.isAlive()&&incoming.isOwnReturn(ghast)&&observedIncoming(incoming);
@@ -120,7 +145,7 @@ public final class SoutouGhastStandardAttack {
                 // Keep the telegraphed point frozen, but use the ball's actual launch origin.
                 Vec3 direction=to(RallyAim.direction(from(incoming.position()),lockedRallyTarget));
                 boolean clear=ghast.level().clip(new ClipContext(incoming.position(),to(lockedRallyTarget),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,incoming)).getType()==HitResult.Type.MISS;
-                if(clear)incoming.returnByBoss(ghast,direction);
+                if(clear&&incoming.returnByBoss(ghast,direction)&&targetUuid.equals(incoming.deflectorUuid()))rallyFeint.ordinaryReturn(incoming.getUUID(),ghast.level().getGameTime());
             }
             if(!reaction.face()){incoming=null;lockedRallyTarget=null;}
             // Reaction is the sole offensive tell this tick; regular charge waits.
@@ -246,6 +271,11 @@ public final class SoutouGhastStandardAttack {
             lastRejection=invalidRange.getMessage();return null;
         }
         return null;
+    }
+    private boolean rallyFeintRoute(FlightVector start,FlightVector end){
+        return Math.min(start.y(),end.y())>=ghast.level().getMinBuildHeight()
+                &&Math.max(start.y(),end.y())+ghast.getBbHeight()<ghast.level().getMaxBuildHeight()
+                &&((SoutouGhastInertialMoveControl)ghast.getMoveControl()).hasManeuverClearance(start,end);
     }
     private int curveSide=1;
     private boolean observedIncoming(StandardSoutouFireball projectile){

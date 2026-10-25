@@ -17,6 +17,7 @@ $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/Complete
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/StandardAttackTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/StandardShotRhythmTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/RallyAimTest.java"
+$sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/RallyFeintTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/CommittedTrajectoryTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ProjectileSelectionTest.java"
 $sources += "$root/src/test/java/com/genki/soutoughast/entity/ai/flight/ObservedChargeResponseTest.java"
@@ -45,6 +46,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Complete feint assertions failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Standard charge/rally assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.StandardShotRhythmTest
 if ($LASTEXITCODE -ne 0) { throw 'Ordinary-shot rhythm/disposition/inertia assertions failed.' }
+& "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.RallyFeintTest
+if ($LASTEXITCODE -ne 0) { throw 'Learned Rally feint assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.RallyAimTest
 if ($LASTEXITCODE -ne 0) { throw 'Rally endpoint/origin assertions failed.' }
 & "$JavaHome/bin/java.exe" -ea -cp $output com.genki.soutoughast.entity.ai.flight.CommittedTrajectoryTest

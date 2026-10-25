@@ -1,73 +1,27 @@
-# NaturalGhastmod — 総統ガスト v0.02
+# NaturalGhastmod — Soutou Ghast redesign
 
-Minecraft **1.20.1 / Forge 47.4.10 / Java 17** 向けの未完成MODです。
-ユーザー提供の最新ソースを保存した開発snapshotであり、既知の不具合を修正した動作保証版ではありません。
+Minecraft1.20.1 / Forge47.4.10 / Java17. Development branch `codex/natural-tactics-20261008`; registry ID remains `soutou_ghast:soutou_ghast`. This branch implements the scoped non-danmaku redesign. GitHub main may still describe the older0.02snapshot; select the exact revision and artifact before testing.
 
-**現在のソースにはコンパイルを妨げる問題があります。実機受入・マルチプレイ検証は未実施です。**
+Read the [current design](docs/design/NATURAL-GHAST-REDESIGN-v0.1.md), its dated human amendments, and the [implementation/evidence audit](docs/NON-DANMAKU-IMPLEMENTATION-AUDIT.md). The latest direct human requirements take precedence over older snapshot descriptions and acceptance checklists.
 
-## 再設計・Codex実装の入口
+Implemented scope includes boss-owned broad combat regions and inertial floating; observed-only tactical selection, movement feints and natural-flow overhead relocation; ordinary fallible shots/Rally, learned return-face dodges, committed Burst/Curve/Lob profiles, remembered-cover Lob and observed projectile evasion; Overhead Bombing, positive Ground fallback and reversible Domain support; persisted projectile/entity state and passive client synchronization. Grand Danmaku and Ground barrage/fans remain excluded. Optional compatibility is conditional.
 
-現在の**目標仕様はv0.02の既存実装ではなく、全面再設計側**です。
+Ordinary shots briefly slow existing floating intent while aiming. The AI receives one60–90tick decision opportunity, can deliberately decline, and resumes float earlier after declining. Projectile aim commitment is independent from visible-target face attention. The [rhythm plan](docs/superpowers/plans/2026-10-25-ordinary-shot-rhythm.md) and [learned Rally plan](docs/superpowers/plans/2026-10-25-learned-rally-feint.md) specify bounds and safety precedence.
 
-- [Natural Ghast redesign — current design](docs/design/NATURAL-GHAST-REDESIGN-v0.1.md)
-- [Codex implementation handoff — 2026-10-07](docs/CODEX-HANDOFF-2026-10-07.md)
+## Verification
 
-特に、**Grand Danmakuの最終弾幕パターンはまだ未制作**です。Draft PR #1やTECH-HUB上のScoreはruntime / authoring経路を検証するためのテスト資産であり、完成した弾幕デザインではありません。
-
-## 現在の実装
-
-- `SCOUTING / CHASING / BOMBARDMENT / ENRAGED / RETREATING` の5段階AI。
-- 性格4種、距離・高度の調整、最後の目撃位置、予測照準、移動先のfeint。
-- `FAST_SMALL / HEAVY_SLOW / GROUND_FIRE / SPLITTER / WALL_BURST` の5種類の火球。
-- 総統ガストの装甲描画、独自音声、spawn egg。
-
-登録IDは引き続き `soutou_ghast:soutou_ghast` です。v0.02への移入でゲーム挙動は変更していません。
-
-## 既知の不具合と未確定仕様
-
-| 項目 | 現状 |
-|---|---|
-| コンパイル | 火球の`BaseFireBlock` importが誤っており、`LargeFireball.explosionPower`のprivateフィールドを直接参照しています。診断compileで2種類の原因による4 errorsを確認 |
-| ソースと旧JAR | 元アーカイブのJARは旧世代で、新AI/variantを含みません。混同を避けるため旧JARは本repositoryに含めていません |
-| 火球の型・描画・同期 | 独自火球をVanilla EntityTypeで生成。独自renderer未登録、variant未同期、client/serverで速度処理が不一致。保存後の再ロードで独自動作を失う構造 |
-| 射撃間隔 | 視線遮蔽・射程外などで負のcooldownが0へ戻り、次の射撃が早まります |
-| 周回 | 通常周回の式でdirectionの符号が相殺され、符号反転だけでは周回が逆転しません |
-| 弾速・照準 | Vanillaの加速と独自profileが重なり、設定弾速・照準用speedHint・計算上の速度が一致しません |
-| 地面着火 | 追加着火が`mobGriefing`/Forge eventを確認せず、通常爆発の制御を迂回します |
-| 状態・追跡・移動 | 溶岩ENRAGEDが毎tick抽選、最後の目撃情報とlive情報が混在、rayと本体AABBの到達判定が不整合 |
-| 分裂・壁放出 | 保存された古い目標への分裂、反射との不整合、元弾爆発による子弾への干渉経路があります。具体的な症状は実機未確認 |
-| 耐久・装甲・反射 | Vanilla GhastのHP10・反射火球1000 damageを継承。装甲は描画のみ。ボス仕様として決定が必要 |
-
-詳細な根拠行、14項目の指摘、設計不足、次担当AIへの作業順は
-[現状調査・引き継ぎ](docs/SOUTOU-GHAST-AUDIT-2026-10-06.md)を参照してください。
-
-## 検証状況
-
-- 原本73ファイルをSHA-256で固定し、ゲーム実装と資産を照合して移入しました。
-- 火球単体の診断compileは**4 errors**。完全なGradle buildの代わりではありません。
-- 隔離copyの正式wrapperによる`compileJava --offline`は、foojay-resolver未キャッシュでJava compile前に停止しました。
-- 静的計算・音声参照・snapshot照合のprobeを同梱しています。Minecraftの実行試験ではありません。
-- **Forge実機・専用server・マルチプレイ・性能・ボスbalanceは未検証です。**
-
-静的probeはrepository rootで実行できます（Python標準libraryのみ）。
-
-```powershell
-python docs/audit/static_probes.py
-```
-
-ビルドはJDK17を使用し、依存を取得できる環境で実行してください。
-現状は上記のソースエラーが残るため、成功を期待しないでください。
+Use a JDK17 and the project wrapper. Cached dependencies permit offline verification:
 
 ```powershell
 $env:JAVA_HOME = 'C:/Program Files/Java/jdk-17'
-.\gradlew.bat compileJava build --no-daemon --console=plain
+./tools/test-flight-foundation.ps1 -JavaHome $env:JAVA_HOME
+./gradlew.bat compileJava processResources --offline --console=plain
 ```
 
-## バージョンと資料
+The grouped pure tests and actual Forge compilation pass for the current implementation unit. Source/model/build checks, controlled native cases, genuine Player input and subjective acceptance are separate scopes. The audit links detailed receipts and retained FAIL/BLOCKED/UNKNOWN cases. Do not infer general release, multiplayer compatibility, balance or every naturally selected action from compilation or a finite client run. The human has declined further manual inspections; retain unobserved cases honestly.
 
-- 公開snapshot: **0.02**。
-- 元ソースの内部versionは1.0.0でした。今回の移入でversion/display名のみ0.02へ変更しています。
-- [変更履歴](CHANGELOG.md)
-- [ソース・旧JARの由来](docs/audit/provenance.json)
-- [火球診断compileの記録](docs/audit/javac-fireball.log)
-- `README.txt`等は元アーカイブのForge MDK資料です。現在の状態は本READMEと調査報告を参照してください。
+Use the existing source-bound KNEEKURA-TECH-HUB Tank with finite actor/world/process authority. Never recreate legacy standalone LAB/SimLab as fallback, open original/finalized world NBT, replace accepted artifacts, inject Player inputs or force behavior to fill coverage gaps. Target-MOD technical fixtures and probes remain separate from production JARs.
+
+## Historical snapshot
+
+The original0.02snapshot and its compile/runtime defects are preserved in the [2026-10-06 audit](docs/SOUTOU-GHAST-AUDIT-2026-10-06.md), [publication provenance](docs/audit/provenance.json) and [change log](CHANGELOG.md). Those historical failures do not describe this redesigned branch's current compile result. The original Forge MDK README.txt is reference material.
