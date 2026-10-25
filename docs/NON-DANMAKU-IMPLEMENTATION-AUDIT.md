@@ -1,5 +1,14 @@
 # Non-danmaku implementation and acceptance audit
 
+## Current reconciliation — 2026-10-25JST
+
+NaturalGhast is the completion target; existing Tank is a test facility. Full GitHub design review uses the current feature-branch v0.6 plus dated human amendments, not main's older v0.5. The human's Oct23 ordinary-Rally PASS removes the old face-to-dodge implementation deferral: source41bcee9 now implements its learned, rare, finite and fallible branch. Source5f287fd implements the latest soft ordinary-aiming/fire-or-decline rhythm. Compact Astra identifies no further ungated product gap within the non-danmaku scope. README now describes this branch rather than the historical0.02compile failure.
+
+[Current actual verification and limits](ORDINARY-SHOT-RHYTHM-VERIFICATION.md) supersede only the overlapping implementation/native cases below. All other rows and their missing evidence remain historical records. No further manual inspections are requested; this changes workflow, not the truth of prior NOT_RUN/UNKNOWN. Scoped implementation and automated technical integration are complete; full subjective/gameplay/release acceptance is not established. Grand Danmaku and Ground barrage/fans remain excluded. Do not add parent Tank features or manufacture native interaction to close acceptance gaps.
+
+## Historical matrix and former manual continuation (2026-10-09)
+
+
 2026-10-09 Asia/Tokyo. Implementation inspected at `d98f89d` after `dd0622e`; product/tool source is unchanged between those revisions. TechHub `db63a4f`; host `7f149609`. GitHub main's design blob remains `0cee12f32878179a64477ccd6aad04143584c203`/v0.5. The local [v0.6 design](design/NATURAL-GHAST-REDESIGN-v0.1.md), including the user's retained-region and natural-flow relocation corrections, remains normative. Do not synchronize backward to a camera-owned anchor.
 
 The previous goal turn made concrete progress: bounded Lob subdivision, one native terminal trial, independent integrity audit, English receipts/AF0051 and guarded original MD mirrors. No native process remains live. The subsequent documentation repair moves the unchanged terminal contract from Burst to Lob; it changes no product behavior.
