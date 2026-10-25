@@ -2,7 +2,7 @@
 
 ## Latest scope extension — 2026-10-25 supplied Danmaku
 
-The human now supplies and authorizes three Grand Danmaku scores/four textures with fading trails; prior Grand Danmaku exclusions below are historical, superseded only for this supplied scope. Ground barrage/fans remain excluded. [Port plan](superpowers/plans/2026-10-25-supplied-grand-danmaku.md): data/pure foundations verified, production integration still IN_PROGRESS. [Domain full-cycle receipt](DOMAIN-FULL-LIFECYCLE-VERIFICATION.md) supersedes only the prior missing controlled400tick normal combat/restore/takeoff case; natural admission, moving counterplay and other missing acceptance are not inferred.
+The human now supplies and authorizes three Grand Danmaku scores/four textures with fading trails; prior Grand Danmaku exclusions below are historical, superseded only for this supplied scope. Ground barrage/fans remain excluded. [Port plan](superpowers/plans/2026-10-25-supplied-grand-danmaku.md): production integration and automatic source/model/build/resource/controlled-Domain/synthetic-GPU checks are complete within their stated scopes. [Grand verification](GRAND-DANMAKU-VERIFICATION.md) retains PARTIAL natural gameplay and other missing acceptance. [Domain full-cycle receipt](DOMAIN-FULL-LIFECYCLE-VERIFICATION.md) supersedes only the prior missing controlled400tick normal combat/restore/takeoff case; natural admission, moving counterplay and other missing acceptance are not inferred.
 
 ## Current reconciliation — 2026-10-25JST
 
