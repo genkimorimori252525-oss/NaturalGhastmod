@@ -1,5 +1,9 @@
 # Non-danmaku implementation and acceptance audit
 
+## Latest scope extension — 2026-10-25 supplied Danmaku
+
+The human now supplies and authorizes three Grand Danmaku scores/four textures with fading trails; prior Grand Danmaku exclusions below are historical, superseded only for this supplied scope. Ground barrage/fans remain excluded. [Port plan](superpowers/plans/2026-10-25-supplied-grand-danmaku.md): data/pure foundations verified, production integration still IN_PROGRESS. [Domain full-cycle receipt](DOMAIN-FULL-LIFECYCLE-VERIFICATION.md) supersedes only the prior missing controlled400tick normal combat/restore/takeoff case; natural admission, moving counterplay and other missing acceptance are not inferred.
+
 ## Current reconciliation — 2026-10-25JST
 
 NaturalGhast is the completion target; existing Tank is a test facility. Full GitHub design review uses the current feature-branch v0.6 plus dated human amendments, not main's older v0.5. The human's Oct23 ordinary-Rally PASS removes the old face-to-dodge implementation deferral: source41bcee9 now implements its learned, rare, finite and fallible branch. Source5f287fd implements the latest soft ordinary-aiming/fire-or-decline rhythm. Compact Astra identifies no further ungated product gap within the non-danmaku scope. README now describes this branch rather than the historical0.02compile failure.

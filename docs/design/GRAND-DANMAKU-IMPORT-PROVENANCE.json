@@ -1,0 +1,101 @@
+{
+  "sourceCoreCommit": "db8b8a120b368db0e06a7ac36bb55c9872750eb4",
+  "sourceArchiveSha256": "920d800f16eb0f0e122c1c34f96bb509af2fb76bebf1bceab2b366cf6f0447b7",
+  "sourceBaseline": "e095b9312a4fc8037f6be80f6e130ff17eb45327",
+  "canonicalScoresUnchanged": true,
+  "existingTestScoreRetainedAsTestAsset": true,
+  "files": [
+    {
+      "path": "src/main/java/com/genki/soutoughast/danmaku/core/DanmakuPattern.java",
+      "sha256": "0b5b1228f448ff27f1944efd66be9162398eb765bfd72c22065b144a3bd56c39",
+      "gitSource": "db8b8a120b368db0e06a7ac36bb55c9872750eb4:src/main/java/com/genki/soutoughast/danmaku/core/DanmakuPattern.java"
+    },
+    {
+      "path": "src/main/java/com/genki/soutoughast/danmaku/core/GrandDanmakuScore.java",
+      "sha256": "6aaf111d9f1ee02c8abece9952615ac76e8e54c5ce3b6f078fffb18d433e274b",
+      "gitSource": "db8b8a120b368db0e06a7ac36bb55c9872750eb4:src/main/java/com/genki/soutoughast/danmaku/core/GrandDanmakuScore.java"
+    },
+    {
+      "path": "src/main/java/com/genki/soutoughast/danmaku/core/GrandDanmakuScoreJson.java",
+      "sha256": "c63d051e9a49f17242c17e742cc86ff27e2e5d66f4ee277aba98a27437100eba",
+      "gitSource": "db8b8a120b368db0e06a7ac36bb55c9872750eb4:src/main/java/com/genki/soutoughast/danmaku/core/GrandDanmakuScoreJson.java"
+    },
+    {
+      "path": "src/main/java/com/genki/soutoughast/danmaku/core/GrandDanmakuSession.java",
+      "sha256": "673e6462d628e5bc9eb09e976818de2f2b0d9b5a0b395a5ac5af7d97e13c07e6",
+      "gitSource": "db8b8a120b368db0e06a7ac36bb55c9872750eb4:src/main/java/com/genki/soutoughast/danmaku/core/GrandDanmakuSession.java"
+    },
+    {
+      "path": "src/danmakuTest/java/com/genki/soutoughast/danmaku/core/GrandDanmakuCoreTest.java",
+      "sha256": "c413cfca573ae754108ab50ff6b3913638c741db6040e4803effd4b6f284de82",
+      "gitSource": "db8b8a120b368db0e06a7ac36bb55c9872750eb4:src/danmakuTest/java/com/genki/soutoughast/danmaku/core/GrandDanmakuCoreTest.java"
+    },
+    {
+      "path": "src/main/resources/data/soutou_ghast/danmaku/grand_danmaku_v1.json",
+      "sha256": "6f16fe41a53927669717e7a46a0bb2fcf1c9e2b30c129a779204c027d73a02f2",
+      "gitSource": "db8b8a120b368db0e06a7ac36bb55c9872750eb4:src/main/resources/data/soutou_ghast/danmaku/grand_danmaku_v1.json"
+    },
+    {
+      "path": "src/main/resources/data/soutou_ghast/danmaku/kouengeki_grand_danmaku_v1.json",
+      "sha256": "4b1d8ac5e7ab0c9934bd5b1115724914df74ffda937df25a3ef280521130cfe7",
+      "suppliedPath": "scores/kouengeki_grand_danmaku_v1.json"
+    },
+    {
+      "path": "src/main/resources/data/soutou_ghast/danmaku_visual/kouengeki_visual_and_gameplay.json",
+      "sha256": "ca0c66f65ad7d4b1fdfd8273f13f5d832eb75968befcfd07218bceeb4f1f8dd7",
+      "suppliedPath": "specs/kouengeki_visual_and_gameplay.json"
+    },
+    {
+      "path": "src/main/resources/data/soutou_ghast/danmaku/kokuseki_kairo_grand_danmaku_v1.json",
+      "sha256": "e1dfbe8d2a5535635c5312ea2138ca1b6ac83458c8ecd50f93087bb3a82996be",
+      "suppliedPath": "scores/kokuseki_kairo_grand_danmaku_v1.json"
+    },
+    {
+      "path": "src/main/resources/data/soutou_ghast/danmaku_visual/kokuseki_visual_and_gameplay.json",
+      "sha256": "d2d5b598b79e674f3105ab8fab179525ac4d7f1613f3ce4fe65a4a9d0831c39c",
+      "suppliedPath": "specs/kokuseki_visual_and_gameplay.json"
+    },
+    {
+      "path": "src/main/resources/data/soutou_ghast/danmaku/seisou_tenmaku_grand_danmaku_v2.json",
+      "sha256": "e3a180ff4b2073a7b4718945bab8acbf0a4fba93107d8891f5aead1e81da8847",
+      "suppliedPath": "scores/seisou_tenmaku_grand_danmaku_v2.json"
+    },
+    {
+      "path": "src/main/resources/data/soutou_ghast/danmaku_visual/seisou_visual_and_gameplay.json",
+      "sha256": "ecd4a96d6253d0e19e7c689d94d08328abc9ecbbc1d12f69a1e68af4126e596e",
+      "suppliedPath": "specs/seisou_visual_and_gameplay.json"
+    },
+    {
+      "path": "src/main/resources/assets/soutou_ghast/textures/danmaku/white.png",
+      "sha256": "b96835210f656218f4457704da0a7c7d3223dd5ed4ec139bf4926d48a5daa995",
+      "suppliedTexture": "white",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "path": "src/main/resources/assets/soutou_ghast/textures/danmaku/orange.png",
+      "sha256": "a4febf386b2eef6f4c55d7d0a3a23332cdaffa1f41f8e51153c05b95bcc0b686",
+      "suppliedTexture": "orange",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "path": "src/main/resources/assets/soutou_ghast/textures/danmaku/dark_red.png",
+      "sha256": "5b1dbfbbbec8de4c024b0b61e888359b5d112f39e5bbd7f06ce1b71f4f5ff8df",
+      "suppliedTexture": "dark_red",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "path": "src/main/resources/assets/soutou_ghast/textures/danmaku/red.png",
+      "sha256": "a629d14e582c15e8dc238569b5171f303c1f991487dae7157c430adcbfbd385d",
+      "suppliedTexture": "red",
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "excluded": "Supplied Seisou v1, old AI assumptions and HTML preview are not production behavior.",
+  "postImportCorrections": [
+    {
+      "path": "src/main/java/com/genki/soutoughast/danmaku/core/DanmakuPattern.java",
+      "reason": "Retain live bullets after individual emission track end; new boundary RED reproduced undercount versus analytic geometry. Emission geometry and supplied score bytes unchanged.",
+      "currentSha256": "40d95000e80334ec326fc3aaae19638ea8c274d7992817d58f5d0803ae39fc00"
+    }
+  ]
+}

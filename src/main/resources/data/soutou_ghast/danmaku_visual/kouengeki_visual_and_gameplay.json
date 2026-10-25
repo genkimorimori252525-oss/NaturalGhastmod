@@ -1,0 +1,185 @@
+{
+  "visualSpecVersion": 1,
+  "patternId": "kouengeki",
+  "displayName": "紅焔劇",
+  "scorePath": "scores/kouengeki_grand_danmaku_v1.json",
+  "scoreSha256": "4b1d8ac5e7ab0c9934bd5b1115724914df74ffda937df25a3ef280521130cfe7",
+  "scoreSchemaVersion": 2,
+  "status": "RETAINED_UNCHANGED",
+  "phases": [
+    {
+      "id": "prelude",
+      "startTick": 0,
+      "endTick": 38,
+      "label": "チャージ"
+    },
+    {
+      "id": "halo",
+      "startTick": 38,
+      "endTick": 134,
+      "label": "紅環の予告"
+    },
+    {
+      "id": "spiral",
+      "startTick": 134,
+      "endTick": 283,
+      "label": "反照螺旋"
+    },
+    {
+      "id": "petals",
+      "startTick": 283,
+      "endTick": 444,
+      "label": "黒焔花"
+    },
+    {
+      "id": "finale",
+      "startTick": 444,
+      "endTick": 540,
+      "label": "開いた包囲"
+    }
+  ],
+  "palette": {
+    "ember": {
+      "core": "#ffb143",
+      "highlight": "#ffe4a3",
+      "glow": "#fb6b22",
+      "isHitCore": true,
+      "trailSeconds": 0.7,
+      "glowScale": 2.7,
+      "additive": true
+    },
+    "blood": {
+      "core": "#ed454b",
+      "highlight": "#ffc09a",
+      "glow": "#d92836",
+      "isHitCore": true,
+      "trailSeconds": 0.52,
+      "glowScale": 2.3,
+      "additive": true
+    },
+    "dark": {
+      "core": "#841c36",
+      "highlight": "#f16f63",
+      "glow": "#a02c39",
+      "isHitCore": true,
+      "trailSeconds": 0.47,
+      "glowScale": 2.1,
+      "additive": false
+    },
+    "shadow": {
+      "core": "#100d14",
+      "highlight": "#5c1b2a",
+      "glow": "#ad3d44",
+      "outline": "#d84a50",
+      "isHitCore": true,
+      "trailSeconds": 0.4,
+      "glowScale": 1.8,
+      "additive": false
+    }
+  },
+  "trackMaterials": {
+    "halo_ember_outer": "ember",
+    "halo_blood_inner": "blood",
+    "halo_shadow_edge": "shadow",
+    "halo_dark_needle": "dark",
+    "twin_ember_cw": "ember",
+    "twin_dark_ccw": "dark",
+    "twin_shadow_cross": "shadow",
+    "twin_blood_center": "blood",
+    "petal_blood_1": "blood",
+    "petal_ember_2": "ember",
+    "petal_blood_3": "blood",
+    "petal_ember_4": "ember",
+    "petal_blood_5": "blood",
+    "petal_ember_6": "ember",
+    "petal_shadow_1": "shadow",
+    "petal_shadow_2": "shadow",
+    "petal_shadow_3": "shadow",
+    "petal_dark_needle": "dark",
+    "finale_blood_gate": "blood",
+    "finale_ember_rim": "ember",
+    "finale_shadow_rim": "shadow",
+    "finale_dark_needle": "dark"
+  },
+  "renderOnly": {
+    "particleTrailsHaveHitboxes": false,
+    "cosmeticParticlesAreDamaging": false,
+    "bloomHasHitbox": false,
+    "trailMaxSeconds": 0.28,
+    "style": "standard",
+    "baseEmissionPoint": "Ghast mouth world-space",
+    "backgroundStarsOptional": false,
+    "accessibility": {
+      "reducedBloomKeepsAllHitCoresVisible": true,
+      "noForcedScreenShake": true,
+      "noFullWhiteOut": true
+    },
+    "cameraIsForPreviewOnly": true
+  },
+  "cinematicBeats": [
+    {
+      "startTick": 0,
+      "endTick": 38,
+      "phaseId": "prelude",
+      "bodyMotion": "STATIONARY_ATTACK_FACE",
+      "sound": "CHARGE_CUE_SELECT_EXISTING_OR_ADD",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 38,
+      "endTick": 134,
+      "phaseId": "halo",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 134,
+      "endTick": 283,
+      "phaseId": "spiral",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 283,
+      "endTick": 444,
+      "phaseId": "petals",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 444,
+      "endTick": 540,
+      "phaseId": "finale",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    }
+  ],
+  "damageCandidateNotBalanceApproved": {
+    "bulletDamage": 1.0,
+    "damageUnit": "minecraft_health_points",
+    "blockDestruction": false,
+    "terrainExplosion": false,
+    "contactCooldownTicksPerTarget": 10,
+    "hitRadiusMultiplierRelativeToVisual": 0.48,
+    "friendlyFire": "follow_existing_mod_policy"
+  },
+  "mobilityRequirements": {
+    "preferred": "OPEN_AIR",
+    "allowSemiOpenIfClearanceVerified": true,
+    "suppressIfConfined": true,
+    "noContinuousHoming": true,
+    "noOffSourceDamageBullets": true
+  },
+  "liveStats": {
+    "peakLiveBullets": 226,
+    "peakTick": 153,
+    "totalBulletsEmitted": 813,
+    "maxBulletsEmittedInOneTick": 26,
+    "activeBurstTicks": 116
+  },
+  "notes": "円環・二重螺旋・黒焔花。開花を主題にした原案。"
+}

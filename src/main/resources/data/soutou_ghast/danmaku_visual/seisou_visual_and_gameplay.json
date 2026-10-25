@@ -1,0 +1,194 @@
+{
+  "visualSpecVersion": 1,
+  "patternId": "seisou",
+  "displayName": "星葬天幕",
+  "scorePath": "scores/seisou_tenmaku_grand_danmaku_v2.json",
+  "scoreSha256": "e3a180ff4b2073a7b4718945bab8acbf0a4fba93107d8891f5aead1e81da8847",
+  "scoreSchemaVersion": 2,
+  "status": "REBUILT_V2_REPLACES_V1",
+  "phases": [
+    {
+      "id": "prelude",
+      "startTick": 0,
+      "endTick": 50,
+      "label": "暗転・黒日のチャージ"
+    },
+    {
+      "id": "eclipse",
+      "startTick": 50,
+      "endTick": 204,
+      "label": "黒日の冠"
+    },
+    {
+      "id": "vault",
+      "startTick": 204,
+      "endTick": 372,
+      "label": "天蓋の聖堂"
+    },
+    {
+      "id": "parade",
+      "startTick": 372,
+      "endTick": 540,
+      "label": "星海の行列"
+    },
+    {
+      "id": "collapse",
+      "startTick": 540,
+      "endTick": 680,
+      "label": "恒星崩落"
+    }
+  ],
+  "palette": {
+    "ember": {
+      "core": "#ffb143",
+      "highlight": "#ffe4a3",
+      "glow": "#fb6b22",
+      "isHitCore": true,
+      "trailSeconds": 0.7,
+      "glowScale": 2.7,
+      "additive": true
+    },
+    "blood": {
+      "core": "#ed454b",
+      "highlight": "#ffc09a",
+      "glow": "#d92836",
+      "isHitCore": true,
+      "trailSeconds": 0.52,
+      "glowScale": 2.3,
+      "additive": true
+    },
+    "dark": {
+      "core": "#841c36",
+      "highlight": "#f16f63",
+      "glow": "#a02c39",
+      "isHitCore": true,
+      "trailSeconds": 0.47,
+      "glowScale": 2.1,
+      "additive": false
+    },
+    "shadow": {
+      "core": "#100d14",
+      "highlight": "#5c1b2a",
+      "glow": "#ad3d44",
+      "outline": "#d84a50",
+      "isHitCore": true,
+      "trailSeconds": 0.4,
+      "glowScale": 1.8,
+      "additive": false
+    }
+  },
+  "trackMaterials": {
+    "eclipse_shadow_orbit": "shadow",
+    "eclipse_dark_orbit": "dark",
+    "eclipse_ember_rays": "ember",
+    "eclipse_ember_inner": "ember",
+    "eclipse_blood_rays": "blood",
+    "eclipse_shadow_core": "shadow",
+    "eclipse_ember_axis": "ember",
+    "vault_ember_upper": "ember",
+    "vault_blood_lower": "blood",
+    "vault_dark_left": "dark",
+    "vault_dark_right": "dark",
+    "vault_ember_arc_l": "ember",
+    "vault_ember_arc_r": "ember",
+    "vault_shadow_trim_l": "shadow",
+    "vault_shadow_trim_r": "shadow",
+    "parade_ember_n": "ember",
+    "parade_blood_s": "blood",
+    "parade_shadow_w": "shadow",
+    "parade_shadow_e": "shadow",
+    "parade_dark_pulse": "dark",
+    "parade_ember_veil": "ember",
+    "parade_blood_veil": "blood",
+    "parade_ember_bells": "ember",
+    "collapse_shadow_iris": "shadow",
+    "collapse_ember_spokes": "ember",
+    "collapse_blood_spokes": "blood",
+    "collapse_dark_orbit": "dark",
+    "collapse_ember_rim": "ember",
+    "collapse_shadow_needles": "shadow",
+    "collapse_ember_flash": "ember",
+    "collapse_blood_flash": "blood"
+  },
+  "renderOnly": {
+    "particleTrailsHaveHitboxes": false,
+    "cosmeticParticlesAreDamaging": false,
+    "bloomHasHitbox": false,
+    "trailMaxSeconds": 0.7,
+    "style": "celestial_rework",
+    "baseEmissionPoint": "Ghast mouth world-space",
+    "backgroundStarsOptional": true,
+    "accessibility": {
+      "reducedBloomKeepsAllHitCoresVisible": true,
+      "noForcedScreenShake": true,
+      "noFullWhiteOut": true
+    },
+    "cameraIsForPreviewOnly": true
+  },
+  "cinematicBeats": [
+    {
+      "startTick": 0,
+      "endTick": 50,
+      "phaseId": "prelude",
+      "bodyMotion": "STATIONARY_ATTACK_FACE",
+      "sound": "CHARGE_CUE_SELECT_EXISTING_OR_ADD",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 50,
+      "endTick": 204,
+      "phaseId": "eclipse",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 204,
+      "endTick": 372,
+      "phaseId": "vault",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 372,
+      "endTick": 540,
+      "phaseId": "parade",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 540,
+      "endTick": 680,
+      "phaseId": "collapse",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    }
+  ],
+  "damageCandidateNotBalanceApproved": {
+    "bulletDamage": 1.0,
+    "damageUnit": "minecraft_health_points",
+    "blockDestruction": false,
+    "terrainExplosion": false,
+    "contactCooldownTicksPerTarget": 10,
+    "hitRadiusMultiplierRelativeToVisual": 0.48,
+    "friendlyFire": "follow_existing_mod_policy"
+  },
+  "mobilityRequirements": {
+    "preferred": "OPEN_AIR",
+    "allowSemiOpenIfClearanceVerified": true,
+    "suppressIfConfined": true,
+    "noContinuousHoming": true,
+    "noOffSourceDamageBullets": true
+  },
+  "liveStats": {
+    "peakLiveBullets": 1020,
+    "peakTick": 676,
+    "totalBulletsEmitted": 3065,
+    "maxBulletsEmittedInOneTick": 68,
+    "activeBurstTicks": 194
+  },
+  "notes": "旧・双翼/五芒星/流星構成は破棄。黒日食の光冠→光の天蓋→星海の行列→恒星崩落。"
+}

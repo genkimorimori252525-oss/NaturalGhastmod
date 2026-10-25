@@ -1,0 +1,188 @@
+{
+  "visualSpecVersion": 1,
+  "patternId": "kokuseki",
+  "displayName": "黒赤回廊",
+  "scorePath": "scores/kokuseki_kairo_grand_danmaku_v1.json",
+  "scoreSha256": "e1dfbe8d2a5535635c5312ea2138ca1b6ac83458c8ecd50f93087bb3a82996be",
+  "scoreSchemaVersion": 2,
+  "status": "RETAINED_UNCHANGED",
+  "phases": [
+    {
+      "id": "prelude",
+      "startTick": 0,
+      "endTick": 40,
+      "label": "チャージ"
+    },
+    {
+      "id": "open",
+      "startTick": 40,
+      "endTick": 156,
+      "label": "開門"
+    },
+    {
+      "id": "lattice",
+      "startTick": 156,
+      "endTick": 304,
+      "label": "交差廊"
+    },
+    {
+      "id": "false_gate",
+      "startTick": 304,
+      "endTick": 438,
+      "label": "偽門"
+    },
+    {
+      "id": "close",
+      "startTick": 438,
+      "endTick": 540,
+      "label": "閉門"
+    }
+  ],
+  "palette": {
+    "ember": {
+      "core": "#ffb143",
+      "highlight": "#ffe4a3",
+      "glow": "#fb6b22",
+      "isHitCore": true,
+      "trailSeconds": 0.7,
+      "glowScale": 2.7,
+      "additive": true
+    },
+    "blood": {
+      "core": "#ed454b",
+      "highlight": "#ffc09a",
+      "glow": "#d92836",
+      "isHitCore": true,
+      "trailSeconds": 0.52,
+      "glowScale": 2.3,
+      "additive": true
+    },
+    "dark": {
+      "core": "#841c36",
+      "highlight": "#f16f63",
+      "glow": "#a02c39",
+      "isHitCore": true,
+      "trailSeconds": 0.47,
+      "glowScale": 2.1,
+      "additive": false
+    },
+    "shadow": {
+      "core": "#100d14",
+      "highlight": "#5c1b2a",
+      "glow": "#ad3d44",
+      "outline": "#d84a50",
+      "isHitCore": true,
+      "trailSeconds": 0.4,
+      "glowScale": 1.8,
+      "additive": false
+    }
+  },
+  "trackMaterials": {
+    "open_shadow_left": "shadow",
+    "open_shadow_right": "shadow",
+    "open_dark_left": "dark",
+    "open_dark_right": "dark",
+    "open_ember_stream": "ember",
+    "open_blood_needle": "blood",
+    "lattice_ember_a": "ember",
+    "lattice_ember_b": "ember",
+    "lattice_dark_a": "dark",
+    "lattice_dark_b": "dark",
+    "lane_shadow_left": "shadow",
+    "lane_shadow_right": "shadow",
+    "lane_blood_sweep": "blood",
+    "false_gate_left": "blood",
+    "false_gate_right": "blood",
+    "false_dark_inner": "dark",
+    "false_blood_slash_l": "blood",
+    "false_blood_slash_r": "blood",
+    "false_ember_hint": "ember",
+    "close_shadow_side_l": "shadow",
+    "close_shadow_side_r": "shadow",
+    "close_dark_top": "dark",
+    "close_dark_bottom": "dark",
+    "close_ember_lock": "ember",
+    "close_blood_core": "blood"
+  },
+  "renderOnly": {
+    "particleTrailsHaveHitboxes": false,
+    "cosmeticParticlesAreDamaging": false,
+    "bloomHasHitbox": false,
+    "trailMaxSeconds": 0.28,
+    "style": "standard",
+    "baseEmissionPoint": "Ghast mouth world-space",
+    "backgroundStarsOptional": false,
+    "accessibility": {
+      "reducedBloomKeepsAllHitCoresVisible": true,
+      "noForcedScreenShake": true,
+      "noFullWhiteOut": true
+    },
+    "cameraIsForPreviewOnly": true
+  },
+  "cinematicBeats": [
+    {
+      "startTick": 0,
+      "endTick": 40,
+      "phaseId": "prelude",
+      "bodyMotion": "STATIONARY_ATTACK_FACE",
+      "sound": "CHARGE_CUE_SELECT_EXISTING_OR_ADD",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 40,
+      "endTick": 156,
+      "phaseId": "open",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 156,
+      "endTick": 304,
+      "phaseId": "lattice",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 304,
+      "endTick": 438,
+      "phaseId": "false_gate",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    },
+    {
+      "startTick": 438,
+      "endTick": 540,
+      "phaseId": "close",
+      "bodyMotion": "RELATIVE_STATIONARY_LOCK",
+      "sound": "OPTIONAL_PHASE_CUE_UNASSIGNED",
+      "cosmeticHitbox": false
+    }
+  ],
+  "damageCandidateNotBalanceApproved": {
+    "bulletDamage": 1.0,
+    "damageUnit": "minecraft_health_points",
+    "blockDestruction": false,
+    "terrainExplosion": false,
+    "contactCooldownTicksPerTarget": 10,
+    "hitRadiusMultiplierRelativeToVisual": 0.48,
+    "friendlyFire": "follow_existing_mod_policy"
+  },
+  "mobilityRequirements": {
+    "preferred": "OPEN_AIR",
+    "allowSemiOpenIfClearanceVerified": true,
+    "suppressIfConfined": true,
+    "noContinuousHoming": true,
+    "noOffSourceDamageBullets": true
+  },
+  "liveStats": {
+    "peakLiveBullets": 193,
+    "peakTick": 160,
+    "totalBulletsEmitted": 690,
+    "maxBulletsEmittedInOneTick": 26,
+    "activeBurstTicks": 101
+  },
+  "notes": "左右の壁・斜め格子・偽門・閉門。通路支配型の原案。"
+}
