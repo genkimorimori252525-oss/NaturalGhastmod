@@ -44,7 +44,7 @@ public final class SoutouGhastGrandDanmaku {
                 ||busy||boss.getMajorDirector().active()||boss.getMajorDirector().quietTicks()>0||boss.getMajorDirector().recentTicks()>0
                 ||control().getMobilityContext()!=MobilityContext.Kind.OPEN_AIR||boss.getDomainAttack().active()||boss.getGroundCombat().active()
                 ||boss.getOverheadAttack().active()||!GrandDanmakuAssets.ready())return false;
-        double range=boss.distanceTo(player);if(range<22||range>34||!muzzleClear(player))return false;
+        double range=boss.distanceTo(player);if(range<22||range>34||!muzzleClear(player)||!freshAdmissionClearance())return false;
         if(!boss.getMajorDirector().shouldBeginGrandDanmaku(true,busy,range,boss.getRandom().nextDouble()))return false;
         UUID id=UUID.randomUUID();if(!DanmakuWorldBudget.acquire(level,id)){boss.getMajorDirector().rejected();lastReason="LEVEL_SESSION_BUDGET";return false;}
         try{
@@ -86,6 +86,15 @@ public final class SoutouGhastGrandDanmaku {
     private State idle(){return new State("IDLE",-1,FlightController.Intent.brake(),null,false,lastReason);}
     private DanmakuFrame currentFrame(ServerPlayer player,DanmakuFrame prior){
         Vec3 forward=player.getEyePosition().subtract(boss.getEyePosition()).normalize(),mouth=boss.getEyePosition().add(forward.scale(3));return DanmakuFrame.toward(vector(mouth),vector(player.getEyePosition()),prior);
+    }
+    // Hysteresis may still report OPEN_AIR while inertia is carrying the body toward a floor.
+    // Recheck the loaded stopping corridor and its vertical envelope before reserving authority.
+    private boolean freshAdmissionClearance(){
+        var start=from(boss.position());var actual=from(boss.getDeltaMovement());var controller=new FlightController();
+        var stop=start.add(controller.clearanceSweep(actual,controller.step(actual,FlightController.Intent.hold())));
+        return control().hasManeuverClearance(start,stop)
+                &&control().hasManeuverClearance(stop,stop.add(new FlightVector(0,4,0)))
+                &&control().hasManeuverClearance(stop,stop.add(new FlightVector(0,-4,0)));
     }
     private boolean muzzleClear(ServerPlayer player){
         Vec3 eye=boss.getEyePosition(),muzzle=eye.add(player.getEyePosition().subtract(eye).normalize().scale(3));

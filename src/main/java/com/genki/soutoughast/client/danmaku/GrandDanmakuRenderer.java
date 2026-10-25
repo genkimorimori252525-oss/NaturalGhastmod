@@ -53,10 +53,15 @@ public final class GrandDanmakuRenderer {
     }
     @SubscribeEvent public static void render(RenderLevelStageEvent event){
         if(event.getStage()!=RenderLevelStageEvent.Stage.AFTER_PARTICLES||!ready())return;
+        renderPlaybacks(event,GrandDanmakuClient.sessions());
+    }
+    /** Package-private rendering seam: private GPU tests supply isolated visual-only replicas. */
+    static void renderPlaybacks(RenderLevelStageEvent event,Collection<DanmakuPlayback> playbacks){
+        if(event.getStage()!=RenderLevelStageEvent.Stage.AFTER_PARTICLES||!ready())return;
         var minecraft=Minecraft.getInstance();if(minecraft.level==null)return;long began=System.nanoTime();lastCores=lastTrails=lastGhosts=0;
         try{
             boolean reduced=GrandDanmakuClientConfig.reduced();double clientTick=minecraft.level.getGameTime()+event.getPartialTick();var draws=new ArrayList<Draw>();
-            for(var playback:GrandDanmakuClient.sessions()){
+            for(var playback:playbacks){
                 var id=playback.identity();if(!playback.valid()||id==null)continue;var pattern=GrandDanmakuAssets.get(id.pattern());double now=playback.renderAge(clientTick);
                 for(var bullet:playback.bullets()){
                     int track=bullet.trackIndex(),tail=reduced?Math.min(4,pattern.trailTicks().get(track)):pattern.trailTicks().get(track);
