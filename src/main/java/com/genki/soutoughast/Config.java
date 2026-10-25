@@ -52,6 +52,8 @@ public class Config
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
     {
+        // Loading another spec (including CLIENT) must never read this COMMON spec early.
+        if (event.getConfig().getSpec() != SPEC || event instanceof ModConfigEvent.Unloading) return;
         logDirtBlock = LOG_DIRT_BLOCK.get();
         magicNumber = MAGIC_NUMBER.get();
         magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
